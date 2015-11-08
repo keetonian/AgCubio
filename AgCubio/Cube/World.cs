@@ -9,7 +9,24 @@ namespace AgCubio
     public class World
     {
 
+        readonly int Width;
 
+        readonly int Height;
+
+        /// <summary>
+        /// Need to decide how to track all of these, delete them, and create them on a screen.
+        /// </summary>
+        public HashSet<Cube> Cubes
+        {
+            get;
+            set;
+        }
+
+        public World(int width, int height)
+        {
+            Width = width;
+            Height = height;
+        }
         /*
 
         The World Class
