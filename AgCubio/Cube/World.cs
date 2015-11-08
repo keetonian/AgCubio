@@ -26,6 +26,7 @@ namespace AgCubio
         {
             Width = width;
             Height = height;
+            Cubes = new HashSet<Cube>();
         }
         /*
 
