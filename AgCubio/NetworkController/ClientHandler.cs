@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Cube
+namespace AgCubio
 {
-    class Class1
+    public class ClientHandler
     {
     }
 }

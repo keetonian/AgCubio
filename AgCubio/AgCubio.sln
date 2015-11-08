@@ -5,6 +5,10 @@ VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cubio Libraries", "Cube\Cubio Libraries.csproj", "{27D869FF-124A-4491-BB85-C5C6AD3485C6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "View", "View\View.csproj", "{326ED698-FFA9-4877-8D12-A12D60C6B4C7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkController", "NetworkController\NetworkController.csproj", "{C456668D-96A7-4218-9406-DE1FF66FCBF3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{27D869FF-124A-4491-BB85-C5C6AD3485C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{27D869FF-124A-4491-BB85-C5C6AD3485C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{27D869FF-124A-4491-BB85-C5C6AD3485C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{326ED698-FFA9-4877-8D12-A12D60C6B4C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{326ED698-FFA9-4877-8D12-A12D60C6B4C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{326ED698-FFA9-4877-8D12-A12D60C6B4C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{326ED698-FFA9-4877-8D12-A12D60C6B4C7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C456668D-96A7-4218-9406-DE1FF66FCBF3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C456668D-96A7-4218-9406-DE1FF66FCBF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C456668D-96A7-4218-9406-DE1FF66FCBF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C456668D-96A7-4218-9406-DE1FF66FCBF3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
