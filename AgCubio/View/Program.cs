@@ -10,6 +10,12 @@ namespace AgCubio
 {
     static class Program
     {
+
+        //TODO: I actually think that the Display.cs class should contain both the world and the client objects.
+        // The Display.cs is the place that is being updated contstantly, therefore, it should reference both of these objects and work with them as needed.
+        // The purpose of this class is mostly just to set up the program, that is, provide a point of entry and not much more. The rest of the work will happen 'under the hood'.
+
+
         static World world;
 
         /// <summary>
