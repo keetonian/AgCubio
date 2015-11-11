@@ -31,6 +31,14 @@ namespace AgCubio
         public double loc_y { get; set; }
 
         /// <summary>
+        /// The team ID.
+        /// Keeps track of players when they split.
+        /// Food id: 0.
+        /// </summary>
+        [JsonProperty]
+        public int Team_ID { get; private set; }
+
+        /// <summary>
         /// ID of this current cube
         /// </summary>
         [JsonProperty]
@@ -120,7 +128,7 @@ namespace AgCubio
         /// <param name="mass">Cube mass</param>
         /// <param name="color">Cube color</param>
         [JsonConstructor]
-        public Cube(double x, double y, int uid, bool food, string name, double mass, int color)
+        public Cube(double x, double y, int uid, bool food, string name, double mass, int color, int team_id)
         {
             loc_x = x;
             loc_y = y;
@@ -129,6 +137,7 @@ namespace AgCubio
             Name = name;
             Mass = mass;
             argb_color = color;
+            Team_ID = team_id;
         }
 
 

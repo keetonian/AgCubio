@@ -14,6 +14,7 @@ namespace AgCubio
 {
     public partial class Display : Form
     {
+        public delegate void Callback(object state);
 
         private World World;
 
@@ -82,7 +83,8 @@ namespace AgCubio
 
             foreach (string t in s)
             {
-                World.Cubes.Add(JsonConvert.DeserializeObject<Cube>(t));
+                Cube c = JsonConvert.DeserializeObject<Cube>(t);
+                World.Cubes.Add(c.uid, c);
             }
         }
 
@@ -101,15 +103,40 @@ namespace AgCubio
 
         private void Display_Paint(object sender, PaintEventArgs e)
         {
-            foreach (Cube c in World.Cubes)
+            foreach (Cube c in World.Cubes.Values)
             {
-                System.Diagnostics.Debug.WriteLine("Cube:" + c.uid + " width:" + (int)c.width);
+                //System.Diagnostics.Debug.WriteLine("Cube:" + c.uid + " width:" + (int)c.width);
 
                 Brush brush = new SolidBrush(Color.FromArgb(c.argb_color));
 
                 e.Graphics.FillRectangle(brush, new Rectangle((int)c.left,(int)c.top,(int)c.width,(int)c.width));
             }
             this.Invalidate();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            this.button1.Hide();
+            Callback callback = SendName;
+            Network.Connect_to_Server(callback, textBoxServer.Text);
+            
+        }
+
+        private void SendName(Object State)
+        {
+            Preserved_State_Object state = (Preserved_State_Object)State;
+            Network.Send(state.socket, textBoxName.Text);
+            Callback c = GetData;
+            state.callback_function = c;
+            System.Diagnostics.Debug.WriteLine("Hello from Display.cs, the callback, that sends the name!");
+        }
+
+        private void GetData(Object State)
+        {
+            System.Diagnostics.Debug.WriteLine("In the GetData function in Display.cs");
+
+            Preserved_State_Object state = (Preserved_State_Object)State;
+            //Get data!
         }
     }
 }

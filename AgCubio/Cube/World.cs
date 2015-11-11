@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace AgCubio
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class World
     {
 
@@ -16,7 +19,7 @@ namespace AgCubio
         /// <summary>
         /// Need to decide how to track all of these, delete them, and create them on a screen.
         /// </summary>
-        public HashSet<Cube> Cubes
+        public Dictionary<int,Cube> Cubes
         {
             get;
             set;
@@ -26,7 +29,7 @@ namespace AgCubio
         {
             Width = width;
             Height = height;
-            Cubes = new HashSet<Cube>();
+            Cubes = new Dictionary<int,Cube>();
         }
         /*
 
