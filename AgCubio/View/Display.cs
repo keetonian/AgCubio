@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -17,6 +18,8 @@ namespace AgCubio
         public delegate void Callback(object state);
 
         private World World;
+
+        private Socket socket;
 
         /// <summary>
         /// 
@@ -118,7 +121,9 @@ namespace AgCubio
         {
             this.button1.Hide();
             Callback callback = SendName;
-            Network.Connect_to_Server(callback, textBoxServer.Text);
+
+            //save the socket so that it doesn't go out of scope or get garbage collected (happened a few times).
+            socket = Network.Connect_to_Server(callback, textBoxServer.Text);
             
         }
 
