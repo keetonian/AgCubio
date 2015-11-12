@@ -25,9 +25,9 @@ namespace AgCubio
 
         private int PlayerID;
 
-        private bool connected;
+        private double PrevMouseLoc_x, PrevMouseLoc_y;
 
-
+        
         /// <summary>
         /// 
         /// </summary>
@@ -61,9 +61,6 @@ namespace AgCubio
         /// <param name="e"></param>
         private void Display_Paint(object sender, PaintEventArgs e)
         {
-            //if (!connected)
-            //    return;
-
             GetCubes();
 
             lock(World)
@@ -128,7 +125,9 @@ namespace AgCubio
             Cube c = JsonConvert.DeserializeObject<Cube>(state.cubedata);
             PlayerID = c.Team_ID;
 
-            connected = true;
+            // Set the default move coordinates to the player block's starting location
+            PrevMouseLoc_x = c.loc_x;
+            PrevMouseLoc_y = c.loc_y;
 
             Network.I_Want_More_Data(state);
         }
@@ -144,6 +143,11 @@ namespace AgCubio
                 CubeData.Append(state.cubedata);
             }
 
+            // Send a move request following the convention: '(move, dest_x, dest_y)\n';
+            string move = "(move, " + PrevMouseLoc_x + ", " + PrevMouseLoc_y + ")\n";
+            Network.Send(socket, move);
+
+            // Ask for more data
             Network.I_Want_More_Data(state);
         }
 
@@ -186,27 +190,18 @@ namespace AgCubio
         }
         
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         private void Display_MouseMove(object sender, MouseEventArgs e)
         {
-            if (!connected)
-                return;
-
-            Cube player = World.Cubes[PlayerID];
-
-            System.Diagnostics.Debug.WriteLine("Mouse_X: " + e.X + " Cube_X: " + player.loc_x + " Mouse_Y: " + e.Y + " Cube_Y: " + player.loc_y);
-            double angle = Math.Atan2(player.loc_y - e.Y, e.X - player.loc_x);
-            //System.Diagnostics.Debug.WriteLine(angle * 180 / Math.PI);
-            //Need a direction
-            //Need a speed
-            string move = "(move, " + e.X + ", " + e.Y + ")\n";
-            Network.Send(socket, move);
-            //'(move, dest_x, dest_y)\n';
+            // Get new coordinates to move to from the mouse
+            PrevMouseLoc_x = e.X;
+            PrevMouseLoc_y = e.Y;
         }
 
-        private void Display_MouseHover(object sender, EventArgs e)
-        {
-            
-        }
+
+
+
     }
 }
