@@ -164,7 +164,7 @@ namespace AgCubio
 
         private void Display_MouseMove(object sender, MouseEventArgs e)
         {
-            e.x
+            
         }
     }
 }
