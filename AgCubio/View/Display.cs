@@ -67,9 +67,21 @@ namespace AgCubio
             {
                 foreach (Cube c in World.Cubes.Values)
                 {
+                    //Cube
                     Brush brush = new SolidBrush(Color.FromArgb(c.argb_color));
+                    RectangleF rectangle = new RectangleF((int)c.left, (int)c.top, (int)c.width, (int)c.width);
+                    e.Graphics.FillRectangle(brush, rectangle);
 
-                    e.Graphics.FillRectangle(brush, new Rectangle((int)c.left, (int)c.top, (int)c.width, (int)c.width));
+                    //writing the player name. Sometimes, if the player is consumed, then the string is still written. Therefore, we only put a name if the mass is > 0
+                    if (!c.food && c.Mass > 0)
+                    {
+                        StringFormat stringFormat = new StringFormat();
+                        stringFormat.Alignment = StringAlignment.Center;
+                        stringFormat.LineAlignment = StringAlignment.Center;
+                        int stringSize = (int)(c.width / c.Name.Length) + 10;
+                        e.Graphics.DrawString(c.Name, new Font(FontFamily.GenericSerif, stringSize, FontStyle.Italic, GraphicsUnit.Pixel),
+                            new SolidBrush(Color.Black), rectangle /*new Point((int)c.loc_x,(int)c.loc_y)*/, stringFormat);
+                    }
                 }
             }
 
@@ -123,7 +135,7 @@ namespace AgCubio
             state.callback_function = new Callback(GetData);
 
             Cube c = JsonConvert.DeserializeObject<Cube>(state.cubedata);
-            PlayerID = c.Team_ID;
+            PlayerID = c.uid;
 
             // Set the default move coordinates to the player block's starting location
             PrevMouseLoc_x = c.loc_x;
@@ -172,6 +184,10 @@ namespace AgCubio
                     for (int i = 0; i < cubes.Length - 1; i++)
                     {
                         Cube c = JsonConvert.DeserializeObject<Cube>(cubes[i]);
+                        if(c.Mass == 0)
+                        {
+                            World.Cubes.Remove(c.uid);
+                        }
                         World.Cubes[c.uid] = c;
                     }
 
