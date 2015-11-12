@@ -91,6 +91,7 @@
             this.Name = "Display";
             this.Text = "AgCubio Client";
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.Display_Paint);
+            this.MouseHover += new System.EventHandler(this.Display_MouseHover);
             this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.Display_MouseMove);
             this.ResumeLayout(false);
             this.PerformLayout();
