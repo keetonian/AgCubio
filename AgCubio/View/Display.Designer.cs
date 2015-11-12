@@ -40,14 +40,14 @@
             this.textBoxServer.Location = new System.Drawing.Point(469, 114);
             this.textBoxServer.Name = "textBoxServer";
             this.textBoxServer.Size = new System.Drawing.Size(198, 22);
-            this.textBoxServer.TabIndex = 0;
+            this.textBoxServer.TabIndex = 1;
             // 
             // button1
             // 
             this.button1.Location = new System.Drawing.Point(694, 88);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(224, 75);
-            this.button1.TabIndex = 1;
+            this.button1.TabIndex = 3;
             this.button1.Text = "Connect";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
@@ -66,7 +66,7 @@
             this.textBoxName.Location = new System.Drawing.Point(106, 114);
             this.textBoxName.Name = "textBoxName";
             this.textBoxName.Size = new System.Drawing.Size(203, 22);
-            this.textBoxName.TabIndex = 3;
+            this.textBoxName.TabIndex = 0;
             // 
             // label2
             // 
@@ -87,9 +87,11 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.textBoxServer);
+            this.DoubleBuffered = true;
             this.Name = "Display";
-            this.Text = "Form1";
+            this.Text = "AgCubio Client";
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.Display_Paint);
+            this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.Display_MouseMove);
             this.ResumeLayout(false);
             this.PerformLayout();
 

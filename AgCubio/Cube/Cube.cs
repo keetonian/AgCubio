@@ -76,7 +76,7 @@ namespace AgCubio
         /// </summary>
         public double width
         {
-            get { return Math.Sqrt(Mass); }
+            get { return Math.Sqrt(Mass) * 2; } // return Mass/2;
             private set { }
         }
 
@@ -103,7 +103,7 @@ namespace AgCubio
         /// </summary>
         public double top
         {
-            get { return loc_y + (width / 2); }
+            get { return loc_y - (width / 2); }
             private set { }
         }
 
@@ -112,7 +112,7 @@ namespace AgCubio
         /// </summary>
         public double bottom
         {
-            get { return loc_y - (width / 2); }
+            get { return loc_y + (width / 2); }
             private set { }
         }
 
