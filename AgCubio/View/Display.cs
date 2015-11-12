@@ -23,6 +23,10 @@ namespace AgCubio
 
         private StringBuilder CubeData;
 
+        private int PlayerID;
+
+        private bool connected;
+
 
         /// <summary>
         /// 
@@ -57,6 +61,9 @@ namespace AgCubio
         /// <param name="e"></param>
         private void Display_Paint(object sender, PaintEventArgs e)
         {
+            //if (!connected)
+            //    return;
+
             GetCubes();
 
             lock(World)
@@ -105,10 +112,26 @@ namespace AgCubio
         /// <param name="state"></param>
         private void SendName(Preserved_State_Object state)
         {
-            state.callback_function = new Callback(GetData);
+            state.callback_function = new Callback(GetPlayerCube);
             Network.Send(state.socket, textBoxName.Text);
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="state"></param>
+        private void GetPlayerCube(Preserved_State_Object state)
+        {
+            state.callback_function = new Callback(GetData);
+
+            Cube c = JsonConvert.DeserializeObject<Cube>(state.cubedata);
+            PlayerID = c.Team_ID;
+
+            connected = true;
+
+            Network.I_Want_More_Data(state);
+        }
 
         /// <summary>
         /// 
@@ -161,10 +184,29 @@ namespace AgCubio
                 CubeData = new StringBuilder(lastCube);
             }
         }
+        
+
 
         private void Display_MouseMove(object sender, MouseEventArgs e)
         {
-            e.x
+            if (!connected)
+                return;
+
+            Cube player = World.Cubes[PlayerID];
+
+            System.Diagnostics.Debug.WriteLine("Mouse_X: " + e.X + " Cube_X: " + player.loc_x + " Mouse_Y: " + e.Y + " Cube_Y: " + player.loc_y);
+            double angle = Math.Atan2(player.loc_y - e.Y, e.X - player.loc_x);
+            //System.Diagnostics.Debug.WriteLine(angle * 180 / Math.PI);
+            //Need a direction
+            //Need a speed
+            string move = "(move, " + e.X + ", " + e.Y + ")\n";
+            Network.Send(socket, move);
+            //'(move, dest_x, dest_y)\n';
+        }
+
+        private void Display_MouseHover(object sender, EventArgs e)
+        {
+            
         }
     }
 }
