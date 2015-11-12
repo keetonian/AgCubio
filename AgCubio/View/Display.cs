@@ -201,7 +201,17 @@ namespace AgCubio
         }
 
 
-
-
+        /// <summary>
+        /// 
+        /// </summary>
+        private void Display_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyData == Keys.Space)
+            {
+                // Send a move request following the convention: '(move, dest_x, dest_y)\n';
+                string split = "(split, " + PrevMouseLoc_x + ", " + PrevMouseLoc_y + ")\n";
+                Network.Send(socket, split);
+            }
+        }
     }
 }
