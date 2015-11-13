@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -15,6 +16,10 @@ namespace AgCubio
 {
     public partial class Display : Form
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="state"></param>
         public delegate void Callback(Preserved_State_Object state);
 
         private World World;
@@ -25,21 +30,21 @@ namespace AgCubio
 
         private int PlayerID;
 
-        private double PrevMouseLoc_x, PrevMouseLoc_y;
+        private int PrevMouseLoc_x, PrevMouseLoc_y;
 
-        
+
         /// <summary>
         /// 
         /// </summary>
         public Display()
         {
-            World = new World(1000,1000);
+            World = new World(1000, 1000);
             CubeData = new StringBuilder();
             InitializeComponent();
             DoubleBuffered = true;
         }
 
-        
+
         /// <summary>
         /// 
         /// </summary>
@@ -52,7 +57,7 @@ namespace AgCubio
                 return cp;
             }
         }
-        
+
 
         /// <summary>
         /// 
@@ -63,28 +68,65 @@ namespace AgCubio
         {
             GetCubes();
 
-            lock(World)
+            lock (World)
             {
+                //TODO: ENDGAME if world.cubes.containskey(playerid) is false.
+                //DOes this even go here?
+
+                double s =  1000/ World.Cubes[PlayerID].width;
+                double scale = 5500/World.Cubes[PlayerID].Mass;//Math.Sqrt(s);
+
+                double Px = World.Cubes[PlayerID].loc_x;
+                double Py = World.Cubes[PlayerID].loc_y;
+
+                //Mouse location is slightly off.
+                PrevMouseLoc_x = (int)(Display.MousePosition.X + Px - Width/2);
+                PrevMouseLoc_y = (int)(Display.MousePosition.Y + Py - Height/2);
+
+                System.Diagnostics.Debug.WriteLine(PrevMouseLoc_x + " , " + PrevMouseLoc_y);
+
+
                 foreach (Cube c in World.Cubes.Values)
                 {
-                    //Cube
-                    Brush brush = new SolidBrush(Color.FromArgb(c.argb_color));
-                    RectangleF rectangle = new RectangleF((int)c.left, (int)c.top, (int)c.width, (int)c.width);
-                    e.Graphics.FillRectangle(brush, rectangle);
-
-                    //writing the player name. Sometimes, if the player is consumed, then the string is still written. Therefore, we only put a name if the mass is > 0
-                    if (!c.food && c.Mass > 0)
+                    Brush brush;
+                    RectangleF rectangle;
+                    //Food
+                    if (c.food)
                     {
+                        brush = new SolidBrush(Color.FromArgb(c.argb_color));
+                        rectangle = new RectangleF((int)((c.loc_x - Px)*scale + Width/2), (int)((c.loc_y - Py)*scale + Height/2), (int)(c.width*scale), (int)(c.width*scale));
+                        e.Graphics.FillRectangle(brush, rectangle);
+                    }
+                    else if(c.uid == PlayerID)
+                    {
+                        rectangle = new RectangleF((int)(Width/2 - c.width/2), (int)(Height/ 2 -c.width/2), (int)(c.width), (int)(c.width));
+                        brush = new LinearGradientBrush(rectangle, Color.FromArgb(c.argb_color), Color.WhiteSmoke, LinearGradientMode.BackwardDiagonal);
+                        e.Graphics.FillRectangle(brush, rectangle);
+
                         StringFormat stringFormat = new StringFormat();
                         stringFormat.Alignment = StringAlignment.Center;
                         stringFormat.LineAlignment = StringAlignment.Center;
-                        int stringSize = (int)(c.width / c.Name.Length) + 10;
+                        int stringSize = (int)(c.width / (c.Name.Length + 1)) + 10;
+                        e.Graphics.DrawString(c.Name, new Font(FontFamily.GenericSerif, stringSize, FontStyle.Italic, GraphicsUnit.Pixel),
+                            new SolidBrush(Color.Black), rectangle /*new Point((int)c.loc_x,(int)c.loc_y)*/, stringFormat);
+                    }
+                    //Player
+                    //writing the player name. Sometimes, if the player is consumed, then the string is still written. Therefore, we only put a name if the mass is > 0
+                    else if (c.Mass > 0)
+                    {
+                        rectangle = new RectangleF((int)((c.loc_x - Px)*scale + Width/2), (int)((c.loc_y - Py)*scale + Height/2), (int)(c.width), (int)(c.width));
+                        brush = new LinearGradientBrush(rectangle, Color.FromArgb(c.argb_color), Color.WhiteSmoke, LinearGradientMode.BackwardDiagonal);
+                        e.Graphics.FillRectangle(brush, rectangle);
+
+                        StringFormat stringFormat = new StringFormat();
+                        stringFormat.Alignment = StringAlignment.Center;
+                        stringFormat.LineAlignment = StringAlignment.Center;
+                        int stringSize = (int)(c.width / (c.Name.Length+1)) + 10;
                         e.Graphics.DrawString(c.Name, new Font(FontFamily.GenericSerif, stringSize, FontStyle.Italic, GraphicsUnit.Pixel),
                             new SolidBrush(Color.Black), rectangle /*new Point((int)c.loc_x,(int)c.loc_y)*/, stringFormat);
                     }
                 }
-            }
-
+            }            
             this.Invalidate();
         }
 
@@ -96,22 +138,21 @@ namespace AgCubio
         /// <param name="e"></param>
         private void button1_Click(object sender, EventArgs e)
         {
-            this.button1.Hide();
-            this.textBoxName.Hide();
-            this.textBoxServer.Hide();
-            this.label1.Hide();
-            this.label2.Hide();
-
             //save the socket so that it doesn't go out of scope or get garbage collected (happened a few times).
             try
             {
                 socket = Network.Connect_to_Server(new Callback(SendName), textBoxServer.Text);
+
+                this.connectButton.Hide();
+                this.textBoxName.Hide();
+                this.textBoxServer.Hide();
+                this.nameLabel.Hide();
+                this.addressLabel.Hide();
             }
-            catch(FormatException ex)
+            catch (FormatException ex)
             {
                 MessageBox.Show(ex.Message); // TODO: MAKE THIS WORK
             }
-
         }
 
 
@@ -132,14 +173,22 @@ namespace AgCubio
         /// <param name="state"></param>
         private void GetPlayerCube(Preserved_State_Object state)
         {
-            state.callback_function = new Callback(GetData);
+            state.callback_function = new Callback(SendMoveReceiveData);
 
             Cube c = JsonConvert.DeserializeObject<Cube>(state.cubedata);
             PlayerID = c.uid;
 
+            lock (World)
+            {
+                World.Cubes.Add(c.uid, c);
+            }
+
+            this.Paint += new System.Windows.Forms.PaintEventHandler(this.Display_Paint);
+            this.Invalidate();
+
             // Set the default move coordinates to the player block's starting location
-            PrevMouseLoc_x = c.loc_x;
-            PrevMouseLoc_y = c.loc_y;
+            PrevMouseLoc_x = (int)Width/2;
+            PrevMouseLoc_y = (int)Height/2;
 
             Network.I_Want_More_Data(state);
         }
@@ -148,9 +197,9 @@ namespace AgCubio
         /// 
         /// </summary>
         /// <param name="state"></param>
-        private void GetData(Preserved_State_Object state)
+        private void SendMoveReceiveData(Preserved_State_Object state)
         {
-            lock(CubeData)
+            lock (CubeData)
             {
                 CubeData.Append(state.cubedata);
             }
@@ -172,28 +221,30 @@ namespace AgCubio
             //run on another thread
             if (CubeData.Length < 1)
                 return;
-            
-            lock(CubeData)
+
+            lock (CubeData)
             {
                 String[] cubes = Regex.Split(CubeData.ToString(), "\n");
                 string lastCube;
 
-                lock(World)
+                lock (World)
                 {
                     // Parse all cubes into the world except the last one
                     for (int i = 0; i < cubes.Length - 1; i++)
                     {
                         Cube c = JsonConvert.DeserializeObject<Cube>(cubes[i]);
-                        if(c.Mass == 0)
+                        World.Cubes[c.uid] = c;
+
+                        if (c.Mass == 0)
                         {
+                            //TODO: ENDgame scenario if player dies, does not have any split off cubes.
                             World.Cubes.Remove(c.uid);
                         }
-                        World.Cubes[c.uid] = c;
                     }
 
                     // Parse the last cube into the world only if it is complete
                     lastCube = cubes[cubes.Length - 1];
-                    if(lastCube.Length > 0 && lastCube.Last() == '}')
+                    if (lastCube.Length > 0 && lastCube.Last() == '}')
                     {
                         Cube c = JsonConvert.DeserializeObject<Cube>(lastCube);
                         World.Cubes.Add(c.uid, c);
@@ -204,30 +255,24 @@ namespace AgCubio
                 CubeData = new StringBuilder(lastCube);
             }
         }
+
         
-
         /// <summary>
         /// 
         /// </summary>
-        private void Display_MouseMove(object sender, MouseEventArgs e)
+        /// <param name="msg"></param>
+        /// <param name="keyData"></param>
+        /// <returns></returns>
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            // Get new coordinates to move to from the mouse
-            PrevMouseLoc_x = e.X;
-            PrevMouseLoc_y = e.Y;
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        private void Display_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyData == Keys.Space)
+            if (keyData == Keys.Space && socket != null)
             {
-                // Send a move request following the convention: '(move, dest_x, dest_y)\n';
                 string split = "(split, " + PrevMouseLoc_x + ", " + PrevMouseLoc_y + ")\n";
                 Network.Send(socket, split);
             }
+
+            return base.ProcessCmdKey(ref msg, keyData);
         }
+        
     }
 }
