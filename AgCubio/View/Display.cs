@@ -32,13 +32,15 @@ namespace AgCubio
 
         private int PrevMouseLoc_x, PrevMouseLoc_y;
 
+        HashSet<int> PlayerSplitID = new HashSet<int>();
+
 
         /// <summary>
         /// 
         /// </summary>
         public Display()
         {
-            World = new World(1000, 1000);
+            World = new World(Width, Height);
             CubeData = new StringBuilder();
             InitializeComponent();
             DoubleBuffered = true;
@@ -70,18 +72,36 @@ namespace AgCubio
 
             lock (World)
             {
+                int split = 0;
+
+                double Px = 0;
+                double Py = 0;
+
                 //TODO: ENDGAME if world.cubes.containskey(playerid) is false.
                 //DOes this even go here?
+                double totalMass = 0;
+                foreach(int i in PlayerSplitID)
+                {
+                    if (World.Cubes.ContainsKey(i))
+                    {
+                        totalMass += World.Cubes[i].Mass;
+                        split++;
+                        Px += World.Cubes[i].loc_x;
+                        Py += World.Cubes[i].loc_y;
+                    }
+                }
 
-                double s =  1000/ World.Cubes[PlayerID].width;
-                double scale = 5500/World.Cubes[PlayerID].Mass;//Math.Sqrt(s);
+                Px = Px / split;
+                Py = Py / split;
 
-                double Px = World.Cubes[PlayerID].loc_x;
-                double Py = World.Cubes[PlayerID].loc_y;
+                double scale = 5500/(totalMass * (Math.Sqrt(split))); //Math.Sqrt(s);
+
+                double width = Math.Sqrt(totalMass);
+
 
                 //Mouse location is slightly off.
-                PrevMouseLoc_x = (int)(Display.MousePosition.X + Px - Width/2);
-                PrevMouseLoc_y = (int)(Display.MousePosition.Y + Py - Height/2);
+                PrevMouseLoc_x = (int)(Display.MousePosition.X + Px + width - Width/2);
+                PrevMouseLoc_y = (int)(Display.MousePosition.Y + Py + width - Height/2);
 
                 System.Diagnostics.Debug.WriteLine(PrevMouseLoc_x + " , " + PrevMouseLoc_y);
 
@@ -124,6 +144,18 @@ namespace AgCubio
                         int stringSize = (int)(c.width / (c.Name.Length+1)) + 10;
                         e.Graphics.DrawString(c.Name, new Font(FontFamily.GenericSerif, stringSize, FontStyle.Italic, GraphicsUnit.Pixel),
                             new SolidBrush(Color.Black), rectangle /*new Point((int)c.loc_x,(int)c.loc_y)*/, stringFormat);
+
+                        if(c.Team_ID == PlayerID && !PlayerSplitID.Contains(c.uid))
+                        {
+                            PlayerSplitID.Add(c.uid);
+                        }
+                    }
+                    else//mass is 0.
+                    {
+                        if(PlayerSplitID.Contains(c.uid))
+                        {
+                            PlayerSplitID.Remove(c.uid);
+                        }
                     }
                 }
             }            
@@ -177,6 +209,7 @@ namespace AgCubio
 
             Cube c = JsonConvert.DeserializeObject<Cube>(state.cubedata);
             PlayerID = c.uid;
+            PlayerSplitID.Add(PlayerID);
 
             lock (World)
             {
