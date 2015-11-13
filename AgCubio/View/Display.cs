@@ -94,7 +94,7 @@ namespace AgCubio
                     if (c.food)
                     {
                         brush = new SolidBrush(Color.FromArgb(c.argb_color));
-                        rectangle = new RectangleF((int)((c.loc_x - Px)*scale + Width/2), (int)((c.loc_y - Py)*scale + Height/2), (int)(c.width*scale), (int)(c.width*scale));
+                        rectangle = new RectangleF((int)((c.loc_x - Px - c.width*scale*2.5)*scale + Width/2), (int)((c.loc_y - Py - c.width * scale * 2.5) *scale + Height/2), (int)(c.width*scale*5), (int)(c.width*scale*5));
                         e.Graphics.FillRectangle(brush, rectangle);
                     }
                     else if(c.uid == PlayerID)
