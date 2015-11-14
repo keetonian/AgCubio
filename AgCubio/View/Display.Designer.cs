@@ -35,6 +35,8 @@
             this.addressLabel = new System.Windows.Forms.Label();
             this.ExitToMainScreen = new System.Windows.Forms.Button();
             this.Statistics = new System.Windows.Forms.Label();
+            this.MassLabel = new System.Windows.Forms.Label();
+            this.PlayerMass = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // textBoxServer
@@ -97,18 +99,40 @@
             // 
             this.Statistics.AutoSize = true;
             this.Statistics.Font = new System.Drawing.Font("Microsoft Sans Serif", 25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Statistics.Location = new System.Drawing.Point(500, 224);
+            this.Statistics.Location = new System.Drawing.Point(348, 236);
             this.Statistics.Name = "Statistics";
             this.Statistics.Size = new System.Drawing.Size(202, 48);
             this.Statistics.TabIndex = 7;
             this.Statistics.Text = "Statistics:";
             this.Statistics.Visible = false;
             // 
+            // MassLabel
+            // 
+            this.MassLabel.AutoSize = true;
+            this.MassLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 16.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.MassLabel.Location = new System.Drawing.Point(235, 331);
+            this.MassLabel.Name = "MassLabel";
+            this.MassLabel.Size = new System.Drawing.Size(206, 32);
+            this.MassLabel.TabIndex = 8;
+            this.MassLabel.Text = "Greatest Mass:";
+            this.MassLabel.Visible = false;
+            // 
+            // PlayerMass
+            // 
+            this.PlayerMass.AutoSize = true;
+            this.PlayerMass.Location = new System.Drawing.Point(489, 341);
+            this.PlayerMass.Name = "PlayerMass";
+            this.PlayerMass.Size = new System.Drawing.Size(0, 17);
+            this.PlayerMass.TabIndex = 9;
+            this.PlayerMass.Visible = false;
+            // 
             // Display
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(982, 1000);
+            this.Controls.Add(this.PlayerMass);
+            this.Controls.Add(this.MassLabel);
             this.Controls.Add(this.Statistics);
             this.Controls.Add(this.ExitToMainScreen);
             this.Controls.Add(this.addressLabel);
@@ -134,6 +158,8 @@
         private System.Windows.Forms.Label addressLabel;
         private System.Windows.Forms.Button ExitToMainScreen;
         private System.Windows.Forms.Label Statistics;
+        private System.Windows.Forms.Label MassLabel;
+        private System.Windows.Forms.Label PlayerMass;
     }
 }
 

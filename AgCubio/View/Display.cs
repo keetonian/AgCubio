@@ -194,6 +194,11 @@ namespace AgCubio
             this.ExitToMainScreen.Left = Width / 2 - this.ExitToMainScreen.Size.Width / 2;
             this.Statistics.Show();
             this.Statistics.Left = Width / 2 - this.Statistics.Size.Width / 2;
+            this.MassLabel.Show();
+            this.PlayerMass.Show();
+            this.PlayerMass.Text = MaxMass.ToString();
+            this.MassLabel.Left = Width / 2 - (this.PlayerMass.Width + this.MassLabel.Width + 20) / 2;
+            this.PlayerMass.Left = this.MassLabel.Left + 20;
         }
 
 
@@ -394,6 +399,8 @@ namespace AgCubio
         {
             ShowMainScreen();
             this.ExitToMainScreen.Hide();
+            this.PlayerMass.Hide();
+            this.MassLabel.Hide();
         }
 
 
