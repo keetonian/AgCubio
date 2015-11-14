@@ -191,7 +191,12 @@ namespace AgCubio
 
         private void UnableToConnect()
         {
-            MessageBox.Show("Unable to connect","Connection Error",MessageBoxButtons.RetryCancel, MessageBoxIcon.Error,MessageBoxDefaultButton.Button1);
+            DialogResult result = MessageBox.Show("Unable to connect","Connection Error",MessageBoxButtons.RetryCancel, MessageBoxIcon.Error,MessageBoxDefaultButton.Button1);
+            if(result == DialogResult.Retry)
+            {
+                button1_Click(null, null);
+                return;
+            }
             ShowMainScreen();
         }
 

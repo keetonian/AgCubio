@@ -11,3 +11,9 @@ Problems to still work on:
 	6. Endgame scenario: provide some statistics, allow for player to play again
 	7. Update only when the scene changes
 	8. NETWORK: SendCallBack needs to be implemented.
+
+	November 14, 2015:
+	Problems fixed:
+		1. Exiting gracefully when connection is lost, also prompts player to play again.
+		2. Scaling looks ok and does well when player splits, but player positions after a split are still off.
+		3. Retry implemented for a failed connection attempt.
