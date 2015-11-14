@@ -10,4 +10,4 @@ Problems to still work on:
 	5. Allow to retry connecting after a failed connection.
 	6. Endgame scenario: provide some statistics, allow for player to play again
 	7. Update only when the scene changes
-	8. NETWORK: no reference to AgCubio
+	8. NETWORK: SendCallBack needs to be implemented.

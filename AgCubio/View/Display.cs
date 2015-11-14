@@ -22,6 +22,8 @@ namespace AgCubio
         /// <param name="state"></param>
         public delegate void Callback(Preserved_State_Object state);
 
+        private delegate void MainMenu();
+
         private World World;
 
         private Socket socket;
@@ -34,6 +36,10 @@ namespace AgCubio
 
         HashSet<int> PlayerSplitID = new HashSet<int>();
 
+        Timer timer;
+
+        private bool Connected;
+
 
         /// <summary>
         /// 
@@ -44,6 +50,7 @@ namespace AgCubio
             CubeData = new StringBuilder();
             InitializeComponent();
             DoubleBuffered = true;
+            
         }
 
 
@@ -68,7 +75,14 @@ namespace AgCubio
         /// <param name="e"></param>
         private void Display_Paint(object sender, PaintEventArgs e)
         {
-            GetCubes();
+            if (Connected)
+                GetCubes();
+            else
+            {
+                MessageBox.Show("You've been disconnected.");
+                ShowMainScreen();
+                return;
+            }
 
             lock (World)
             {
@@ -159,7 +173,26 @@ namespace AgCubio
                     }
                 }
             }            
-            this.Invalidate();
+        }
+
+
+        private void ShowMainScreen()
+        {
+            timer.Stop();
+            Connected = false;
+            this.Paint -= new System.Windows.Forms.PaintEventHandler(this.Display_Paint);
+            World = new World(Width, Height);
+                this.connectButton.Show();
+                this.textBoxName.Show();
+                this.textBoxServer.Show();
+                this.nameLabel.Show();
+                this.addressLabel.Show();
+        }
+
+        private void UnableToConnect()
+        {
+            MessageBox.Show("Unable to connect","Connection Error",MessageBoxButtons.RetryCancel, MessageBoxIcon.Error,MessageBoxDefaultButton.Button1);
+            ShowMainScreen();
         }
 
 
@@ -180,11 +213,37 @@ namespace AgCubio
                 this.textBoxServer.Hide();
                 this.nameLabel.Hide();
                 this.addressLabel.Hide();
+                Connected = true;
+
+                this.Invalidate();
+                if (timer == null)
+                {
+                    timer = new Timer();
+                    timer.Interval = 25;
+                    timer.Tick += new EventHandler(Timer_Tick);
+                    timer.Start();
+                }
+                else
+                {
+                    timer.Start();
+                }
             }
             catch (FormatException ex)
             {
                 MessageBox.Show(ex.Message); // TODO: MAKE THIS WORK
+                Connected = false;
             }
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        public void Timer_Tick(Object sender, EventArgs e)
+        {
+            this.Invalidate();
         }
 
 
@@ -194,6 +253,12 @@ namespace AgCubio
         /// <param name="state"></param>
         private void SendName(Preserved_State_Object state)
         {
+            if (!socket.Connected)
+            {
+                Connected = false;
+                this.Invoke(new MainMenu(UnableToConnect));
+                return;
+            }
             state.callback_function = new Callback(GetPlayerCube);
             Network.Send(state.socket, textBoxName.Text);
         }
@@ -251,6 +316,12 @@ namespace AgCubio
         /// </summary>
         private void GetCubes()
         {
+            if (!socket.Connected)
+            {
+                Connected = false;
+                return;
+            }
+
             //run on another thread
             if (CubeData.Length < 1)
                 return;
