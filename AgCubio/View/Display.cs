@@ -22,6 +22,7 @@ namespace AgCubio
         /// <param name="state"></param>
         public delegate void Callback(Preserved_State_Object state);
 
+        //Used to call void functions out of another thread.
         private delegate void MainMenu();
 
         private World World;
@@ -36,10 +37,13 @@ namespace AgCubio
 
         HashSet<int> PlayerSplitID = new HashSet<int>();
 
+        //Used to call the paint event.
         Timer timer;
 
+        //Used to tell if the socket is connected.
         private bool Connected;
 
+        //Maximum player mass achieved.
         private double MaxMass;
 
 
@@ -52,12 +56,12 @@ namespace AgCubio
             CubeData = new StringBuilder();
             InitializeComponent();
             DoubleBuffered = true;
-            
+
         }
 
 
         /// <summary>
-        /// 
+        /// Used to set controls on the initial text boxes.
         /// </summary>
         protected override CreateParams CreateParams
         {
@@ -71,7 +75,9 @@ namespace AgCubio
 
 
         /// <summary>
-        /// 
+        /// Paints the state of the world.
+        /// Needs to constantly repaint itself, because the view is constantly changing.
+        /// The view is based on the player position and size.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -81,6 +87,7 @@ namespace AgCubio
                 GetCubes();
             else
             {
+                //Disconnection: proceed with this method call.
                 MessageBox.Show("You've been disconnected.");
                 ShowMainScreen();
                 return;
@@ -96,23 +103,27 @@ namespace AgCubio
                 //TODO: ENDGAME if world.cubes.containskey(playerid) is false.
                 //DOes this even go here?
                 double totalMass = 0;
-                foreach(int i in PlayerSplitID)
+                foreach (int i in PlayerSplitID)
                 {
                     if (World.Cubes.ContainsKey(i))
                     {
                         totalMass += World.Cubes[i].Mass;
                         split++;
+
+                        //Some efforts to make perspective work when there are multiple cubes.
+                        //Doesn't work yet.
                         Px += World.Cubes[i].loc_x;
                         Py += World.Cubes[i].loc_y;
                     }
                 }
 
-                if(totalMass == 0)
+                //If the total mass of all of the player and else cubes is 0, it means that the game has ended.
+                if (totalMass == 0)
                 {
                     EndGame();
                     return;
                 }
-                else if(totalMass > MaxMass && MaxMass != 0)
+                else if (totalMass > MaxMass && MaxMass != 0)
                 {
                     MaxMass = totalMass;
                 }
@@ -120,14 +131,14 @@ namespace AgCubio
                 Px = Px / split;
                 Py = Py / split;
 
-                double scale = 5500/(totalMass * (Math.Sqrt(split))); //Math.Sqrt(s);
+                double scale = 5500 / (totalMass * (Math.Sqrt(split))); //Math.Sqrt(s);
 
                 double width = Math.Sqrt(totalMass);
 
 
                 //Mouse location is slightly off.
-                PrevMouseLoc_x = (int)(Display.MousePosition.X + Px + width - Width/2);
-                PrevMouseLoc_y = (int)(Display.MousePosition.Y + Py + width - Height/2);
+                PrevMouseLoc_x = (int)(Display.MousePosition.X + Px + width - Width / 2);
+                PrevMouseLoc_y = (int)(Display.MousePosition.Y + Py + width - Height / 2);
 
                 System.Diagnostics.Debug.WriteLine(PrevMouseLoc_x + " , " + PrevMouseLoc_y);
 
@@ -140,12 +151,12 @@ namespace AgCubio
                     if (c.food)
                     {
                         brush = new SolidBrush(Color.FromArgb(c.argb_color));
-                        rectangle = new RectangleF((int)((c.loc_x - Px - c.width*scale*2.5)*scale + Width/2), (int)((c.loc_y - Py - c.width * scale * 2.5) *scale + Height/2), (int)(c.width*scale*5), (int)(c.width*scale*5));
+                        rectangle = new RectangleF((int)((c.loc_x - Px - c.width * scale * 2.5) * scale + Width / 2), (int)((c.loc_y - Py - c.width * scale * 2.5) * scale + Height / 2), (int)(c.width * scale * 5), (int)(c.width * scale * 5));
                         e.Graphics.FillRectangle(brush, rectangle);
                     }
-                    else if(c.uid == PlayerID)
+                    else if (c.uid == PlayerID)
                     {
-                        rectangle = new RectangleF((int)(Width/2 - c.width/2), (int)(Height/ 2 -c.width/2), (int)(c.width), (int)(c.width));
+                        rectangle = new RectangleF((int)(Width / 2 - c.width / 2), (int)(Height / 2 - c.width / 2), (int)(c.width), (int)(c.width));
                         brush = new LinearGradientBrush(rectangle, Color.FromArgb(c.argb_color), Color.WhiteSmoke, LinearGradientMode.BackwardDiagonal);
                         e.Graphics.FillRectangle(brush, rectangle);
 
@@ -160,34 +171,38 @@ namespace AgCubio
                     //writing the player name. Sometimes, if the player is consumed, then the string is still written. Therefore, we only put a name if the mass is > 0
                     else if (c.Mass > 0)
                     {
-                        rectangle = new RectangleF((int)((c.loc_x - Px)*scale + Width/2), (int)((c.loc_y - Py)*scale + Height/2), (int)(c.width), (int)(c.width));
+                        rectangle = new RectangleF((int)((c.loc_x - Px) * scale + Width / 2), (int)((c.loc_y - Py) * scale + Height / 2), (int)(c.width), (int)(c.width));
                         brush = new LinearGradientBrush(rectangle, Color.FromArgb(c.argb_color), Color.WhiteSmoke, LinearGradientMode.BackwardDiagonal);
                         e.Graphics.FillRectangle(brush, rectangle);
 
                         StringFormat stringFormat = new StringFormat();
                         stringFormat.Alignment = StringAlignment.Center;
                         stringFormat.LineAlignment = StringAlignment.Center;
-                        int stringSize = (int)(c.width / (c.Name.Length+1)) + 10;
+                        int stringSize = (int)(c.width / (c.Name.Length + 1)) + 10;
                         e.Graphics.DrawString(c.Name, new Font(FontFamily.GenericSerif, stringSize, FontStyle.Italic, GraphicsUnit.Pixel),
                             new SolidBrush(Color.Black), rectangle /*new Point((int)c.loc_x,(int)c.loc_y)*/, stringFormat);
 
-                        if(c.Team_ID == PlayerID && !PlayerSplitID.Contains(c.uid))
+                        if (c.Team_ID == PlayerID && !PlayerSplitID.Contains(c.uid))
                         {
                             PlayerSplitID.Add(c.uid);
                         }
                     }
                     else//mass is 0.
                     {
-                        if(PlayerSplitID.Contains(c.uid))
+                        if (PlayerSplitID.Contains(c.uid))
                         {
+                            //Does this code run?
                             PlayerSplitID.Remove(c.uid);
                         }
                     }
                 }
-            }            
+            }
         }
 
 
+        /// <summary>
+        /// Shows player stats at the end and a button to replay the game.
+        /// </summary>
         private void EndGame()
         {
             this.ExitToMainScreen.Show();
@@ -202,25 +217,56 @@ namespace AgCubio
         }
 
 
+        /// <summary>
+        /// Shows the main screen again.
+        /// </summary>
         private void ShowMainScreen()
         {
             timer.Stop();
+
+            //Make sure the socket is disconnected.
+            CleanSocket();
+
+            //Make sure program knows we are disconnected right now.
             Connected = false;
+            
+            //Disconnects the paint method for now.
+            //For some reason just stopping the timer didn't stop this from repainting?
             this.Paint -= new System.Windows.Forms.PaintEventHandler(this.Display_Paint);
+
+            //Reset the world.
             World = new World(Width, Height);
-                this.connectButton.Show();
-                this.textBoxName.Show();
-                this.textBoxServer.Show();
-                this.nameLabel.Show();
-                this.addressLabel.Show();
+
+            //Show the normal labels and everything.
+            this.connectButton.Show();
+            this.textBoxName.Show();
+            this.textBoxServer.Show();
+            this.nameLabel.Show();
+            this.addressLabel.Show();
         }
 
+
+        /// <summary>
+        /// Disconnects the socket.
+        /// </summary>
+        private void CleanSocket()
+        {
+            socket.Blocking = true;
+
+            //Get rid of old data.
+            CubeData = new StringBuilder();
+        }
+
+
+        /// <summary>
+        /// Is called if the program is unable to connect to a server.
+        /// </summary>
         private void UnableToConnect()
         {
-            DialogResult result = MessageBox.Show("Unable to connect","Connection Error",MessageBoxButtons.RetryCancel, MessageBoxIcon.Error,MessageBoxDefaultButton.Button1);
-            if(result == DialogResult.Retry)
+            DialogResult result = MessageBox.Show("Unable to connect", "Connection Error", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1);
+            if (result == DialogResult.Retry)
             {
-                button1_Click(null, null);
+                Connect_Click(null, null);
                 return;
             }
             ShowMainScreen();
@@ -228,15 +274,12 @@ namespace AgCubio
 
 
         /// <summary>
-        /// 
+        /// Event for clicking the connect button.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void button1_Click(object sender, EventArgs e)
+        private void Connect_Click(object sender, EventArgs e)
         {
-            //make a new stringbuilder each time this button is clicked, gets rid of old partial data.
-            CubeData = new StringBuilder();
-
             try
             {
                 //save the socket so that it doesn't go out of scope or get garbage collected (happened a few times).
@@ -271,7 +314,7 @@ namespace AgCubio
 
 
         /// <summary>
-        /// 
+        /// Paints the screen at each timer click.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -282,7 +325,7 @@ namespace AgCubio
 
 
         /// <summary>
-        /// 
+        /// Sends the player name to the server. Callback method.
         /// </summary>
         /// <param name="state"></param>
         private void SendName(Preserved_State_Object state)
@@ -299,7 +342,7 @@ namespace AgCubio
 
 
         /// <summary>
-        /// 
+        /// Gets the player cube from the server. Callback method.
         /// </summary>
         /// <param name="state"></param>
         private void GetPlayerCube(Preserved_State_Object state)
@@ -319,14 +362,14 @@ namespace AgCubio
             this.Invalidate();
 
             // Set the default move coordinates to the player block's starting location
-            PrevMouseLoc_x = (int)Width/2;
-            PrevMouseLoc_y = (int)Height/2;
+            PrevMouseLoc_x = (int)Width / 2;
+            PrevMouseLoc_y = (int)Height / 2;
 
             Network.I_Want_More_Data(state);
         }
 
         /// <summary>
-        /// 
+        /// Sends and receives data from the server. Callback method.
         /// </summary>
         /// <param name="state"></param>
         private void SendMoveReceiveData(Preserved_State_Object state)
@@ -346,7 +389,7 @@ namespace AgCubio
 
 
         /// <summary>
-        /// 
+        /// Deserializes cubes. Threadsafe.
         /// </summary>
         private void GetCubes()
         {
@@ -393,8 +436,13 @@ namespace AgCubio
                 CubeData = new StringBuilder(lastCube);
             }
         }
-        
 
+
+        /// <summary>
+        /// Button to click to exit to the main screen after a game-over scenario.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void ExitToMainScreen_Click(object sender, EventArgs e)
         {
             ShowMainScreen();
@@ -405,7 +453,7 @@ namespace AgCubio
 
 
         /// <summary>
-        /// 
+        /// Allows the space bar to work, send split requests.
         /// </summary>
         /// <param name="msg"></param>
         /// <param name="keyData"></param>
@@ -420,6 +468,6 @@ namespace AgCubio
 
             return base.ProcessCmdKey(ref msg, keyData);
         }
-        
+
     }
 }

@@ -56,7 +56,7 @@
             this.connectButton.TabIndex = 3;
             this.connectButton.Text = "Connect";
             this.connectButton.UseVisualStyleBackColor = true;
-            this.connectButton.Click += new System.EventHandler(this.button1_Click);
+            this.connectButton.Click += new System.EventHandler(this.Connect_Click);
             // 
             // nameLabel
             // 

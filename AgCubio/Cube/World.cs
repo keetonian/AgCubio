@@ -38,6 +38,9 @@ namespace AgCubio
             Cubes = new Dictionary<int,Cube>();
         }
 
+
+        //OK THIS ISN"T WORKING HERE. LEAVING ALL LOGIC IN PAINT METHOD FOR NOW.
+
 //        public double getX(this Cube cube)
 //        {
 //            //rectangle = new RectangleF((int)((c.loc_x - Px - c.width * scale * 2.5) * scale + Width / 2), (int)((c.loc_y - Py - c.width * scale * 2.5) * scale + Height / 2), 

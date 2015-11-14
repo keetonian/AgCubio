@@ -48,6 +48,7 @@ namespace AgCubio
             }
             catch (SocketException)
             {
+                //Manage problems with a socket connection, return to above program.
                 state.socket.Close();
                 state.socket.Dispose();
                 state.callback_function.DynamicInvoke(state);
@@ -81,6 +82,7 @@ namespace AgCubio
             }
             catch(Exception)
             {
+                //If there is a problem with the socket, close it, then let the above program find the closure, try again.
                 state.socket.Close();
                 state.socket.Dispose();
             }
