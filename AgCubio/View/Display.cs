@@ -40,6 +40,8 @@ namespace AgCubio
 
         private bool Connected;
 
+        private double MaxMass;
+
 
         /// <summary>
         /// 
@@ -103,6 +105,16 @@ namespace AgCubio
                         Px += World.Cubes[i].loc_x;
                         Py += World.Cubes[i].loc_y;
                     }
+                }
+
+                if(totalMass == 0)
+                {
+                    EndGame();
+                    return;
+                }
+                else if(totalMass > MaxMass && MaxMass != 0)
+                {
+                    MaxMass = totalMass;
                 }
 
                 Px = Px / split;
@@ -176,6 +188,15 @@ namespace AgCubio
         }
 
 
+        private void EndGame()
+        {
+            this.ExitToMainScreen.Show();
+            this.ExitToMainScreen.Left = Width / 2 - this.ExitToMainScreen.Size.Width / 2;
+            this.Statistics.Show();
+            this.Statistics.Left = Width / 2 - this.Statistics.Size.Width / 2;
+        }
+
+
         private void ShowMainScreen()
         {
             timer.Stop();
@@ -208,9 +229,12 @@ namespace AgCubio
         /// <param name="e"></param>
         private void button1_Click(object sender, EventArgs e)
         {
-            //save the socket so that it doesn't go out of scope or get garbage collected (happened a few times).
+            //make a new stringbuilder each time this button is clicked, gets rid of old partial data.
+            CubeData = new StringBuilder();
+
             try
             {
+                //save the socket so that it doesn't go out of scope or get garbage collected (happened a few times).
                 socket = Network.Connect_to_Server(new Callback(SendName), textBoxServer.Text);
 
                 this.connectButton.Hide();
@@ -364,8 +388,15 @@ namespace AgCubio
                 CubeData = new StringBuilder(lastCube);
             }
         }
-
         
+
+        private void ExitToMainScreen_Click(object sender, EventArgs e)
+        {
+            ShowMainScreen();
+            this.ExitToMainScreen.Hide();
+        }
+
+
         /// <summary>
         /// 
         /// </summary>

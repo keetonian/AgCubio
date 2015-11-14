@@ -1,5 +1,7 @@
 ﻿Server Problems:
 1. Defines cube size as being too big, therefore, our resizing and drawing does not look optimal. We will need to fix the server code.
+2. Movements: can be jerky, way too fast. Server controls speed, so the speed on that side needs to be lessened.
+3. Player starting size is much too big.
 
 November 13, 2015:
 Problems to still work on:

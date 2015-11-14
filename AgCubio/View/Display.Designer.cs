@@ -33,6 +33,8 @@
             this.nameLabel = new System.Windows.Forms.Label();
             this.textBoxName = new System.Windows.Forms.TextBox();
             this.addressLabel = new System.Windows.Forms.Label();
+            this.ExitToMainScreen = new System.Windows.Forms.Button();
+            this.Statistics = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // textBoxServer
@@ -80,11 +82,35 @@
             this.addressLabel.TabIndex = 4;
             this.addressLabel.Text = "Server Address:";
             // 
+            // ExitToMainScreen
+            // 
+            this.ExitToMainScreen.Location = new System.Drawing.Point(244, 442);
+            this.ExitToMainScreen.Name = "ExitToMainScreen";
+            this.ExitToMainScreen.Size = new System.Drawing.Size(388, 123);
+            this.ExitToMainScreen.TabIndex = 6;
+            this.ExitToMainScreen.Text = "Exit To Main Screen";
+            this.ExitToMainScreen.UseVisualStyleBackColor = true;
+            this.ExitToMainScreen.Visible = false;
+            this.ExitToMainScreen.Click += new System.EventHandler(this.ExitToMainScreen_Click);
+            // 
+            // Statistics
+            // 
+            this.Statistics.AutoSize = true;
+            this.Statistics.Font = new System.Drawing.Font("Microsoft Sans Serif", 25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Statistics.Location = new System.Drawing.Point(500, 224);
+            this.Statistics.Name = "Statistics";
+            this.Statistics.Size = new System.Drawing.Size(202, 48);
+            this.Statistics.TabIndex = 7;
+            this.Statistics.Text = "Statistics:";
+            this.Statistics.Visible = false;
+            // 
             // Display
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(982, 1000);
+            this.Controls.Add(this.Statistics);
+            this.Controls.Add(this.ExitToMainScreen);
             this.Controls.Add(this.addressLabel);
             this.Controls.Add(this.textBoxName);
             this.Controls.Add(this.nameLabel);
@@ -106,6 +132,8 @@
         private System.Windows.Forms.Label nameLabel;
         private System.Windows.Forms.TextBox textBoxName;
         private System.Windows.Forms.Label addressLabel;
+        private System.Windows.Forms.Button ExitToMainScreen;
+        private System.Windows.Forms.Label Statistics;
     }
 }
 
