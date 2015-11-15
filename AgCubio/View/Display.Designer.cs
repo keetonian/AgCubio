@@ -37,6 +37,8 @@
             this.Statistics = new System.Windows.Forms.Label();
             this.MassLabel = new System.Windows.Forms.Label();
             this.PlayerMass = new System.Windows.Forms.Label();
+            this.FPSlabel = new System.Windows.Forms.Label();
+            this.FPSvalue = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // textBoxServer
@@ -120,17 +122,39 @@
             // PlayerMass
             // 
             this.PlayerMass.AutoSize = true;
-            this.PlayerMass.Location = new System.Drawing.Point(489, 341);
+            this.PlayerMass.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.PlayerMass.Location = new System.Drawing.Point(491, 332);
             this.PlayerMass.Name = "PlayerMass";
-            this.PlayerMass.Size = new System.Drawing.Size(0, 17);
+            this.PlayerMass.Size = new System.Drawing.Size(74, 31);
             this.PlayerMass.TabIndex = 9;
+            this.PlayerMass.Text = "1000";
             this.PlayerMass.Visible = false;
+            // 
+            // FPSlabel
+            // 
+            this.FPSlabel.AutoSize = true;
+            this.FPSlabel.Location = new System.Drawing.Point(5, 5);
+            this.FPSlabel.Name = "FPSlabel";
+            this.FPSlabel.Size = new System.Drawing.Size(38, 17);
+            this.FPSlabel.TabIndex = 10;
+            this.FPSlabel.Text = "FPS:";
+            // 
+            // FPSvalue
+            // 
+            this.FPSvalue.AutoSize = true;
+            this.FPSvalue.Location = new System.Drawing.Point(54, 5);
+            this.FPSvalue.Name = "FPSvalue";
+            this.FPSvalue.Size = new System.Drawing.Size(63, 17);
+            this.FPSvalue.TabIndex = 11;
+            this.FPSvalue.Text = "waiting...";
             // 
             // Display
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(982, 1000);
+            this.ClientSize = new System.Drawing.Size(982, 653);
+            this.Controls.Add(this.FPSvalue);
+            this.Controls.Add(this.FPSlabel);
             this.Controls.Add(this.PlayerMass);
             this.Controls.Add(this.MassLabel);
             this.Controls.Add(this.Statistics);
@@ -160,6 +184,8 @@
         private System.Windows.Forms.Label Statistics;
         private System.Windows.Forms.Label MassLabel;
         private System.Windows.Forms.Label PlayerMass;
+        private System.Windows.Forms.Label FPSlabel;
+        private System.Windows.Forms.Label FPSvalue;
     }
 }
 

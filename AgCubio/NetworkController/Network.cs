@@ -50,7 +50,6 @@ namespace AgCubio
             {
                 //Manage problems with a socket connection, return to above program.
                 state.socket.Close();
-                state.socket.Dispose();
                 state.callback_function.DynamicInvoke(state);
                 return;
             }

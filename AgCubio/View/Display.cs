@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
@@ -35,13 +36,11 @@ namespace AgCubio
 
         private int PrevMouseLoc_x, PrevMouseLoc_y;
 
-        HashSet<int> PlayerSplitID = new HashSet<int>();
+        private HashSet<int> PlayerSplitID = new HashSet<int>();
 
-        //Used to call the paint event.
-        Timer timer;
+        private Timer FPStimer;
 
-        //Used to tell if the socket is connected.
-        private bool Connected;
+        private int FramesElapsed;
 
         //Maximum player mass achieved.
         private double MaxMass;
@@ -55,8 +54,16 @@ namespace AgCubio
             World = new World(Width, Height);
             CubeData = new StringBuilder();
             InitializeComponent();
+            FPStimer = new Timer();
+            FPStimer.Interval = 1000; // Ticks every second
+            FPStimer.Tick += FPStimer_Tick;
             DoubleBuffered = true;
+        }
 
+        private void FPStimer_Tick(object sender, EventArgs e)
+        {
+            this.FPSvalue.Text = "" + FramesElapsed;
+            FramesElapsed = 0;
         }
 
 
@@ -83,37 +90,39 @@ namespace AgCubio
         /// <param name="e"></param>
         private void Display_Paint(object sender, PaintEventArgs e)
         {
-            if (Connected)
-                GetCubes();
-            else
+            if (!socket.Connected)
             {
+                FPStimer.Stop();
+
                 //Disconnection: proceed with this method call.
                 MessageBox.Show("You've been disconnected.");
                 ShowMainScreen();
+                
                 return;
             }
 
+            GetCubes();
+
             lock (World)
             {
-                int split = 0;
-
-                double Px = 0;
-                double Py = 0;
-
                 //TODO: ENDGAME if world.cubes.containskey(playerid) is false.
                 //DOes this even go here?
-                double totalMass = 0;
+
+
+                double totalMass = 0, Px = 0, Py = 0;
+
+                
                 foreach (int i in PlayerSplitID)
                 {
                     if (World.Cubes.ContainsKey(i))
                     {
-                        totalMass += World.Cubes[i].Mass;
-                        split++;
+                        Cube c = World.Cubes[i];
+                        totalMass += c.Mass;
 
                         //Some efforts to make perspective work when there are multiple cubes.
                         //Doesn't work yet.
-                        Px += World.Cubes[i].loc_x;
-                        Py += World.Cubes[i].loc_y;
+                        Px += c.Mass * c.loc_x;
+                        Py += c.Mass * c.loc_y;
                     }
                 }
 
@@ -123,38 +132,28 @@ namespace AgCubio
                     EndGame();
                     return;
                 }
+
                 else if (totalMass > MaxMass)
-                {
                     MaxMass = totalMass;
-                }
 
-                Px = Px / split;
-                Py = Py / split;
-
-                double scale = 5500 / (totalMass * (Math.Sqrt(split))); //Math.Sqrt(s);
+                Px /= totalMass;
+                Py /= totalMass;
 
                 double width = Math.Sqrt(totalMass);
-
+                double scale = 100 / width;
 
                 //Mouse location is slightly off.
-                PrevMouseLoc_x = (int)(Display.MousePosition.X + Px + width - Width / 2);
-                PrevMouseLoc_y = (int)(Display.MousePosition.Y + Py + width - Height / 2);
+                PrevMouseLoc_x = (int)((Control.MousePosition.X - Width / 2 )/scale + Px); // Display.MousePosition.X
+                PrevMouseLoc_y = (int)((Control.MousePosition.Y - Height / 2 )/scale + Py );
 
-                System.Diagnostics.Debug.WriteLine(PrevMouseLoc_x + " , " + PrevMouseLoc_y);
+                System.Diagnostics.Debug.WriteLine("MX: " + PrevMouseLoc_x + ", MY: " + PrevMouseLoc_y);
 
+                Brush brush;
+                RectangleF rectangle;
 
                 foreach (Cube c in World.Cubes.Values)
                 {
-                    Brush brush;
-                    RectangleF rectangle;
-                    //Food
-                    if (c.food)
-                    {
-                        brush = new SolidBrush(Color.FromArgb(c.argb_color));
-                        rectangle = new RectangleF((int)((c.loc_x - Px - c.width * scale * 2.5) * scale + Width / 2), (int)((c.loc_y - Py - c.width * scale * 2.5) * scale + Height / 2), (int)(c.width * scale * 5), (int)(c.width * scale * 5));
-                        e.Graphics.FillRectangle(brush, rectangle);
-                    }
-                    else if (c.uid == PlayerID)
+                    if (c.uid == PlayerID)
                     {
                         rectangle = new RectangleF((int)(Width / 2 - c.width / 2), (int)(Height / 2 - c.width / 2), (int)(c.width), (int)(c.width));
                         brush = new LinearGradientBrush(rectangle, Color.FromArgb(c.argb_color), Color.WhiteSmoke, LinearGradientMode.BackwardDiagonal);
@@ -167,36 +166,49 @@ namespace AgCubio
                         e.Graphics.DrawString(c.Name, new Font(FontFamily.GenericSerif, stringSize, FontStyle.Italic, GraphicsUnit.Pixel),
                             new SolidBrush(Color.Black), rectangle /*new Point((int)c.loc_x,(int)c.loc_y)*/, stringFormat);
                     }
-                    //Player
-                    //writing the player name. Sometimes, if the player is consumed, then the string is still written. Therefore, we only put a name if the mass is > 0
                     else if (c.Mass > 0)
                     {
-                        rectangle = new RectangleF((int)((c.loc_x - Px) * scale + Width / 2), (int)((c.loc_y - Py) * scale + Height / 2), (int)(c.width), (int)(c.width));
-                        brush = new LinearGradientBrush(rectangle, Color.FromArgb(c.argb_color), Color.WhiteSmoke, LinearGradientMode.BackwardDiagonal);
+                        rectangle = new RectangleF((int)((c.loc_x - Px - c.width * scale * 3) * scale + Width / 2),
+                            (int)((c.loc_y - Py - c.width * scale * 3) * scale + Height / 2), (int)(c.width * scale * 6), (int)(c.width * scale * 6));
+
+                        if (c.food)
+                            brush = new SolidBrush(Color.FromArgb(c.argb_color));
+                        else
+                            brush = new LinearGradientBrush(rectangle, Color.FromArgb(c.argb_color), Color.WhiteSmoke, LinearGradientMode.BackwardDiagonal);
+
                         e.Graphics.FillRectangle(brush, rectangle);
 
-                        StringFormat stringFormat = new StringFormat();
-                        stringFormat.Alignment = StringAlignment.Center;
-                        stringFormat.LineAlignment = StringAlignment.Center;
-                        int stringSize = (int)(c.width / (c.Name.Length + 1)) + 10;
-                        e.Graphics.DrawString(c.Name, new Font(FontFamily.GenericSerif, stringSize, FontStyle.Italic, GraphicsUnit.Pixel),
-                            new SolidBrush(Color.Black), rectangle /*new Point((int)c.loc_x,(int)c.loc_y)*/, stringFormat);
+                        if (!c.food)
+                        {
+                            StringFormat stringFormat = new StringFormat();
+                            stringFormat.Alignment = StringAlignment.Center;
+                            stringFormat.LineAlignment = StringAlignment.Center;
+                            int stringSize = (int)(c.width / (c.Name.Length + 1)) + 10;
+                            e.Graphics.DrawString(c.Name, new Font(FontFamily.GenericSerif, stringSize, FontStyle.Italic, GraphicsUnit.Pixel),
+                                new SolidBrush(Color.Black), rectangle /*new Point((int)c.loc_x,(int)c.loc_y)*/, stringFormat);
+                        }
+                    }
+                    //Player
+                    //writing the player name. Sometimes, if the player is consumed, then the string is still written. Therefore, we only put a name if the mass is > 0
+                    //else if (c.Mass > 0)
+                    //{
+                    //    rectangle = new RectangleF((int)((c.loc_x - Px - c.width / 2) * scale + Width / 2), 
+                    //        (int)((c.loc_y - Py - c.width / 2) * scale + Height / 2), (int)(c.width), (int)(c.width));
+                    //    brush = new LinearGradientBrush(rectangle, Color.FromArgb(c.argb_color), Color.WhiteSmoke, LinearGradientMode.BackwardDiagonal);
+                    //    e.Graphics.FillRectangle(brush, rectangle);
 
-                        if (c.Team_ID == PlayerID && !PlayerSplitID.Contains(c.uid))
-                        {
-                            PlayerSplitID.Add(c.uid);
-                        }
-                    }
-                    else//mass is 0.
-                    {
-                        if (PlayerSplitID.Contains(c.uid))
-                        {
-                            //Does this code run?
-                            PlayerSplitID.Remove(c.uid);
-                        }
-                    }
+                    //    StringFormat stringFormat = new StringFormat();
+                    //    stringFormat.Alignment = StringAlignment.Center;
+                    //    stringFormat.LineAlignment = StringAlignment.Center;
+                    //    int stringSize = (int)(c.width / (c.Name.Length + 1)) + 10;
+                    //    e.Graphics.DrawString(c.Name, new Font(FontFamily.GenericSerif, stringSize, FontStyle.Italic, GraphicsUnit.Pixel),
+                    //        new SolidBrush(Color.Black), rectangle /*new Point((int)c.loc_x,(int)c.loc_y)*/, stringFormat);
+                    //}
                 }
             }
+
+            FramesElapsed++;
+            this.Invalidate();
         }
 
 
@@ -210,10 +222,10 @@ namespace AgCubio
             this.Statistics.Show();
             this.Statistics.Left = Width / 2 - this.Statistics.Size.Width / 2;
             this.MassLabel.Show();
+            this.PlayerMass.Text = "" + (int)MaxMass;
             this.PlayerMass.Show();
-            this.PlayerMass.Text = MaxMass.ToString();
             this.MassLabel.Left = Width / 2 - (this.PlayerMass.Width + this.MassLabel.Width + 20) / 2;
-            this.PlayerMass.Left = this.MassLabel.Left + 20;
+            this.PlayerMass.Left = this.MassLabel.Right + 20;
         }
 
 
@@ -222,18 +234,6 @@ namespace AgCubio
         /// </summary>
         private void ShowMainScreen()
         {
-            timer.Stop();
-
-            //Make sure the socket is disconnected.
-            CleanSocket();
-
-            //Make sure program knows we are disconnected right now.
-            Connected = false;
-            
-            //Disconnects the paint method for now.
-            //For some reason just stopping the timer didn't stop this from repainting?
-            this.Paint -= new System.Windows.Forms.PaintEventHandler(this.Display_Paint);
-
             //Reset the world.
             World = new World(Width, Height);
 
@@ -241,6 +241,7 @@ namespace AgCubio
             this.connectButton.Show();
             this.textBoxName.Show();
             this.textBoxServer.Show();
+            this.textBoxServer.ReadOnly = false;
             this.nameLabel.Show();
             this.addressLabel.Show();
         }
@@ -288,39 +289,19 @@ namespace AgCubio
                 this.connectButton.Hide();
                 this.textBoxName.Hide();
                 this.textBoxServer.Hide();
+                this.textBoxServer.ReadOnly = true;
                 this.nameLabel.Hide();
                 this.addressLabel.Hide();
-                Connected = true;
+                this.PlayerMass.Hide();
+                this.MassLabel.Hide();
+                this.Statistics.Hide();
 
-                this.Invalidate();
-                if (timer == null)
-                {
-                    timer = new Timer();
-                    timer.Interval = 25;
-                    timer.Tick += new EventHandler(Timer_Tick);
-                    timer.Start();
-                }
-                else
-                {
-                    timer.Start();
-                }
+                FPStimer.Start();
             }
             catch (FormatException ex)
             {
                 MessageBox.Show(ex.Message); // TODO: MAKE THIS WORK
-                Connected = false;
             }
-        }
-
-
-        /// <summary>
-        /// Paints the screen at each timer click.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        public void Timer_Tick(Object sender, EventArgs e)
-        {
-            this.Invalidate();
         }
 
 
@@ -332,7 +313,6 @@ namespace AgCubio
         {
             if (!socket.Connected)
             {
-                Connected = false;
                 this.Invoke(new MainMenu(UnableToConnect));
                 return;
             }
@@ -353,6 +333,8 @@ namespace AgCubio
             PlayerID = c.uid;
             PlayerSplitID.Add(PlayerID);
 
+            MaxMass = c.Mass;
+
             lock (World)
             {
                 World.Cubes.Add(c.uid, c);
@@ -362,8 +344,8 @@ namespace AgCubio
             this.Invalidate();
 
             // Set the default move coordinates to the player block's starting location
-            PrevMouseLoc_x = (int)Width / 2;
-            PrevMouseLoc_y = (int)Height / 2;
+            PrevMouseLoc_x = (int)c.loc_x;
+            PrevMouseLoc_y = (int)c.loc_y;
 
             Network.I_Want_More_Data(state);
         }
@@ -394,10 +376,7 @@ namespace AgCubio
         private void GetCubes()
         {
             if (!socket.Connected)
-            {
-                Connected = false;
                 return;
-            }
 
             //run on another thread
             if (CubeData.Length < 1)
@@ -416,10 +395,14 @@ namespace AgCubio
                         Cube c = JsonConvert.DeserializeObject<Cube>(cubes[i]);
                         World.Cubes[c.uid] = c;
 
+                        if (c.Team_ID == PlayerID && !PlayerSplitID.Contains(c.uid))
+                            PlayerSplitID.Add(c.uid);
+
                         if (c.Mass == 0)
                         {
                             //TODO: ENDgame scenario if player dies, does not have any split off cubes.
                             World.Cubes.Remove(c.uid);
+                            PlayerSplitID.Remove(c.uid);
                         }
                     }
 
@@ -447,9 +430,6 @@ namespace AgCubio
         {
             ShowMainScreen();
             this.ExitToMainScreen.Hide();
-            this.PlayerMass.Hide();
-            this.MassLabel.Hide();
-            this.Statistics.Hide();
         }
 
 
