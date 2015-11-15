@@ -123,7 +123,7 @@ namespace AgCubio
                     EndGame();
                     return;
                 }
-                else if (totalMass > MaxMass && MaxMass != 0)
+                else if (totalMass > MaxMass)
                 {
                     MaxMass = totalMass;
                 }
@@ -251,7 +251,7 @@ namespace AgCubio
         /// </summary>
         private void CleanSocket()
         {
-            socket.Blocking = true;
+            //socket.Blocking = true;
 
             //Get rid of old data.
             CubeData = new StringBuilder();
@@ -449,6 +449,7 @@ namespace AgCubio
             this.ExitToMainScreen.Hide();
             this.PlayerMass.Hide();
             this.MassLabel.Hide();
+            this.Statistics.Hide();
         }
 
 
