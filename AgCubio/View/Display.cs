@@ -79,30 +79,27 @@ namespace AgCubio
         /// Needs to constantly repaint itself, because the view is constantly changing.
         /// The view is based on the player position and size.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void Display_Paint(object sender, PaintEventArgs e)
         {
-            if (Connected)
-                GetCubes();
-            else
+            if (!Connected)
             {
-                //Disconnection: proceed with this method call.
+                // Disconnection: proceed with this method call.
                 MessageBox.Show("You've been disconnected.");
                 ShowMainScreen();
                 return;
             }
 
+            GetCubes();
+
             lock (World)
             {
-                int split = 0;
-
-                double Px = 0;
-                double Py = 0;
-
                 //TODO: ENDGAME if world.cubes.containskey(playerid) is false.
-                //DOes this even go here?
-                double totalMass = 0;
+                //Does this even go here?
+
+
+                int split = 0;
+                double totalMass = 0, Px = 0, Py = 0;
+                
                 foreach (int i in PlayerSplitID)
                 {
                     if (World.Cubes.ContainsKey(i))
@@ -117,43 +114,42 @@ namespace AgCubio
                     }
                 }
 
-                //If the total mass of all of the player and else cubes is 0, it means that the game has ended.
+                //If the total mass of the player cube(s) is 0, it means that the game has ended.
                 if (totalMass == 0)
                 {
                     EndGame();
                     return;
                 }
-                else if (totalMass > MaxMass && MaxMass != 0)
-                {
+
+                else if (totalMass > MaxMass && MaxMass != 0) // second check?
                     MaxMass = totalMass;
-                }
 
                 Px = Px / split;
                 Py = Py / split;
 
                 double scale = 5500 / (totalMass * (Math.Sqrt(split))); //Math.Sqrt(s);
-
                 double width = Math.Sqrt(totalMass);
-
 
                 //Mouse location is slightly off.
                 PrevMouseLoc_x = (int)(Display.MousePosition.X + Px + width - Width / 2);
                 PrevMouseLoc_y = (int)(Display.MousePosition.Y + Py + width - Height / 2);
 
+                // DEBUG STUFF ---
                 System.Diagnostics.Debug.WriteLine(PrevMouseLoc_x + " , " + PrevMouseLoc_y);
-
+                // ---
 
                 foreach (Cube c in World.Cubes.Values)
                 {
                     Brush brush;
                     RectangleF rectangle;
-                    //Food
+                    // Draw food
                     if (c.food)
                     {
                         brush = new SolidBrush(Color.FromArgb(c.argb_color));
                         rectangle = new RectangleF((int)((c.loc_x - Px - c.width * scale * 2.5) * scale + Width / 2), (int)((c.loc_y - Py - c.width * scale * 2.5) * scale + Height / 2), (int)(c.width * scale * 5), (int)(c.width * scale * 5));
                         e.Graphics.FillRectangle(brush, rectangle);
                     }
+                    // Draw user
                     else if (c.uid == PlayerID)
                     {
                         rectangle = new RectangleF((int)(Width / 2 - c.width / 2), (int)(Height / 2 - c.width / 2), (int)(c.width), (int)(c.width));
@@ -167,8 +163,8 @@ namespace AgCubio
                         e.Graphics.DrawString(c.Name, new Font(FontFamily.GenericSerif, stringSize, FontStyle.Italic, GraphicsUnit.Pixel),
                             new SolidBrush(Color.Black), rectangle /*new Point((int)c.loc_x,(int)c.loc_y)*/, stringFormat);
                     }
-                    //Player
-                    //writing the player name. Sometimes, if the player is consumed, then the string is still written. Therefore, we only put a name if the mass is > 0
+                    // Draw other players
+                    // Writing the player name - sometimes, if the player is consumed, then the string is still written. Therefore, we only put a name if the mass is > 0
                     else if (c.Mass > 0)
                     {
                         rectangle = new RectangleF((int)((c.loc_x - Px) * scale + Width / 2), (int)((c.loc_y - Py) * scale + Height / 2), (int)(c.width), (int)(c.width));
@@ -336,6 +332,7 @@ namespace AgCubio
                 this.Invoke(new MainMenu(UnableToConnect));
                 return;
             }
+
             state.callback_function = new Callback(GetPlayerCube);
             Network.Send(state.socket, textBoxName.Text);
         }
@@ -455,12 +452,9 @@ namespace AgCubio
         /// <summary>
         /// Allows the space bar to work, send split requests.
         /// </summary>
-        /// <param name="msg"></param>
-        /// <param name="keyData"></param>
-        /// <returns></returns>
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            if (keyData == Keys.Space && socket != null)
+            if (keyData == Keys.Space && Connected)
             {
                 string split = "(split, " + PrevMouseLoc_x + ", " + PrevMouseLoc_y + ")\n";
                 Network.Send(socket, split);
@@ -468,6 +462,5 @@ namespace AgCubio
 
             return base.ProcessCmdKey(ref msg, keyData);
         }
-
     }
 }
