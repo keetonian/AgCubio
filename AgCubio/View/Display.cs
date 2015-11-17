@@ -16,6 +16,9 @@ using System.Windows.Forms;
 
 namespace AgCubio
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public partial class Display : Form
     {
         /// <summary>
@@ -29,21 +32,18 @@ namespace AgCubio
 
         private World World;
 
+        //Saved here so that the socket doesn't go out of scope
         private Socket socket;
 
         private Thread NetworkThread;
 
         private StringBuilder CubeData;
 
-        private int PlayerID;
-
-        private int PrevMouseLoc_x, PrevMouseLoc_y;
+        private int PrevMouseLoc_x, PrevMouseLoc_y, PlayerID, FramesElapsed;
 
         private HashSet<int> PlayerSplitID = new HashSet<int>();
 
         private System.Windows.Forms.Timer FPStimer;
-
-        private int FramesElapsed;
 
         //Maximum player mass achieved.
         private double MaxMass;
@@ -61,8 +61,15 @@ namespace AgCubio
             FPStimer.Interval = 1000; // Ticks every second
             FPStimer.Tick += FPStimer_Tick;
             DoubleBuffered = true;
+            Stopwatch timer = new Stopwatch();
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void FPStimer_Tick(object sender, EventArgs e)
         {
             this.FPSvalue.Text = "" + FramesElapsed;
@@ -193,6 +200,8 @@ namespace AgCubio
         /// </summary>
         private void EndGame()
         {
+            FPStimer.Stop();
+            
             this.ExitToMainScreen.Show();
             this.ExitToMainScreen.Left = Width / 2 - this.ExitToMainScreen.Size.Width / 2;
             this.Statistics.Show();

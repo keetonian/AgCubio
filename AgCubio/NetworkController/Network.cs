@@ -106,7 +106,7 @@ namespace AgCubio
         public static void Send(Socket socket, String data)
         {
             byte[] byteData = Encoding.UTF8.GetBytes(data);
-            socket.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, new AsyncCallback(SendCallBack), null);            
+            socket.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, new AsyncCallback(SendCallBack), socket);            
         }
 
 
@@ -115,13 +115,15 @@ namespace AgCubio
         /// </summary>
         public static void SendCallBack(IAsyncResult state)
         {
+            //System.Diagnostics.Debug.WriteLine("SendCallBack!");
+
             /*
             This function "assists" the Send function. If all the data has been sent, then life is good and nothing needs to be done 
             (note: you may, when first prototyping your program, put a WriteLine in here to see when data goes out).
 
             If there is more data to send, the SendCallBack needs to arrange to send this data (see the ChatClient example program).
             */
-
+            Socket socket = (Socket)state.AsyncState;
         }
     }
 
