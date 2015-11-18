@@ -275,7 +275,8 @@ namespace AgCubio
                 World = new World(Width, Height);
 
             // Get rid of the network thread so it isn't updating while no work is being done
-            NetworkThread.Abort();
+            if (NetworkThread != null)
+                NetworkThread.Abort();
 
             // Close the socket, not being used until player signs in again.
             socket.Close();
