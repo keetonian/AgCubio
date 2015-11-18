@@ -84,6 +84,9 @@ namespace AgCubio
 
             // Resize GUI components
             this.Resize += Display_Resize;
+
+            // Background color. May be cool to have player control this.
+            this.BackColor = Color.WhiteSmoke;
         }
 
 
@@ -333,7 +336,7 @@ namespace AgCubio
                 this.MaxMassLabel.Hide();
                 this.PlaytimeLabel.Hide();
                 this.PlaytimeVal.Hide();
-
+                
                 // Start the game timer
                 FPStimer.Start();
                 Playtime = 0;
