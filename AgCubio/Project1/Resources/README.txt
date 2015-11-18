@@ -6,13 +6,13 @@
 November 13, 2015:
 Problems to still work on:
 	// 1. Exiting gracefully when connection is lost
-	/2. Getting the correct mouse position in the resized screen when the cube has split
-	/3. Draw things on a scale that looks good.
-	/4. Status values (, smooth things over.) (FPS, mass, scoreboard - top 3, etc)
+	// 2. Getting the correct mouse position in the resized screen when the cube has split
+	// 3. Draw things on a scale that looks good.
+	// 4. Status values (, smooth things over.) (FPS, mass, scoreboard - top 3, etc)
 	// 5. Allow to retry connecting after a failed connection.
-	//6. Endgame scenario: provide some statistics, allow for player to play again
-	//7. Update only when the scene changes- our scene is constantly changing because of scaling, attrition.
-	8. NETWORK: SendCallBack needs to be implemented.
+	// 6. Endgame scenario: provide some statistics, allow for player to play again
+	// 7. Update only when the scene changes- our scene is constantly changing because of scaling, attrition.
+	// 8. NETWORK: SendCallBack needs to be implemented.
 
 	November 14, 2015:
 	Problems fixed:
@@ -24,3 +24,17 @@ Problems to still work on:
 	Tasks:
 		1. Add in a play time counter for how long a player survives.
 		2. Keeton - center everything/make look nice/background/consistency when window is resized, game over, etc
+
+------------
+
+Bugs(/Features!):
+	Mouse coordinates are a little off for non-fullscreen window and split cubes
+	Split cubes focus on one cube instead of center of mass
+	Splitting does not resize the screen, and some player cubes may go offscreen
+	Food may sometimes be left onscreen after being eaten
+	Split cubes not always drawn correctly, may overlap food
+
+Design decisions:
+	Have player cube follow previous mouse coordinates when the mouse leaves the window
+	Give food an extra scaling factor so it is always visible
+

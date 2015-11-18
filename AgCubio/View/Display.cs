@@ -1,63 +1,60 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Threading;
 using System.Windows.Forms;
 
 namespace AgCubio
 {
     /// <summary>
-    /// 
+    /// GUI client controller for AgCubio
     /// </summary>
     public partial class Display : Form
     {
         /// <summary>
-        /// 
+        /// Callback delegate for networking
         /// </summary>
         private delegate void Callback(Preserved_State_Object state);
 
         /// <summary>
-        /// 
+        /// World model storing all the cubes
         /// </summary>
         private World World;
 
         /// <summary>
-        /// Saved here so that the socket doesn't go out of scope
+        /// Our networking socket, saved so that it doesn't go out of scope
         /// </summary>
         private Socket socket;
 
         /// <summary>
-        /// 
+        /// Thread running networking code
         /// </summary>
         private Thread NetworkThread;
 
         /// <summary>
-        /// 
+        /// Stores data received from the server
         /// </summary>
         private StringBuilder CubeData;
 
         /// <summary>
-        /// 
+        /// Previous mouse locations (for when mouse goes offscreen), player cube id, frames elapsed in the last second, and playtime count (in seconds) -
+        /// If a game lasts over ~64 years we may be in trouble
         /// </summary>
         private int PrevMouseLoc_x, PrevMouseLoc_y, PlayerID, FramesElapsed, Playtime;
 
         /// <summary>
-        /// 
+        /// Set containing uid's of split player cubes
         /// </summary>
         private HashSet<int> PlayerSplitID = new HashSet<int>();
 
         /// <summary>
-        /// 
+        /// Game timer
         /// </summary>
         private System.Windows.Forms.Timer FPStimer;
 
