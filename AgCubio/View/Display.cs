@@ -24,68 +24,89 @@ namespace AgCubio
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="state"></param>
-        public delegate void Callback(Preserved_State_Object state);
+        private delegate void Callback(Preserved_State_Object state);
 
-        //Used to call void functions out of another thread.
-        private delegate void MainMenu();
-
+        /// <summary>
+        /// 
+        /// </summary>
         private World World;
 
-        //Saved here so that the socket doesn't go out of scope
+        /// <summary>
+        /// Saved here so that the socket doesn't go out of scope
+        /// </summary>
         private Socket socket;
 
+        /// <summary>
+        /// 
+        /// </summary>
         private Thread NetworkThread;
 
+        /// <summary>
+        /// 
+        /// </summary>
         private StringBuilder CubeData;
 
-        private int PrevMouseLoc_x, PrevMouseLoc_y, PlayerID, FramesElapsed;
+        /// <summary>
+        /// 
+        /// </summary>
+        private int PrevMouseLoc_x, PrevMouseLoc_y, PlayerID, FramesElapsed, Playtime;
 
+        /// <summary>
+        /// 
+        /// </summary>
         private HashSet<int> PlayerSplitID = new HashSet<int>();
 
+        /// <summary>
+        /// 
+        /// </summary>
         private System.Windows.Forms.Timer FPStimer;
 
-        //Maximum player mass achieved.
+        /// <summary>
+        /// Maximum player mass achieved
+        /// </summary>
         private double MaxMass;
 
 
         /// <summary>
-        /// 
+        /// Constructor to handle initial setup of the view
         /// </summary>
         public Display()
         {
+            // Initialize the world model with display size, setup up a StringBuilder for getting data from server
             World = new World(Width, Height);
             CubeData = new StringBuilder();
-            InitializeComponent();
+
+            // Set up the timer with a tick event that triggers every second (for FPS)
             FPStimer = new System.Windows.Forms.Timer();
-            FPStimer.Interval = 1000; // Ticks every second
+            FPStimer.Interval = 1000;
             FPStimer.Tick += FPStimer_Tick;
+
+            // Prevent 'flickering' issue and initialize the form
             DoubleBuffered = true;
-            Stopwatch timer = new Stopwatch();
+            InitializeComponent();
         }
 
 
         /// <summary>
-        /// 
+        /// Timer tick handler - prints the elapsed frames in the last second (FPS), resets elapsed frames, and increments playtime
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void FPStimer_Tick(object sender, EventArgs e)
         {
             this.FPSvalue.Text = "" + FramesElapsed;
             FramesElapsed = 0;
+            Playtime++;
         }
 
 
         /// <summary>
-        /// Used to set controls on the initial text boxes.
+        /// Allows text values to be prioritized and refreshed when repainting
         /// </summary>
         protected override CreateParams CreateParams
         {
             get
             {
                 CreateParams cp = base.CreateParams;
-                cp.ExStyle |= 0x02000000;  // Turn on WS_EX_COMPOSITED
+                cp.ExStyle |= 0x02000000;
                 return cp;
             }
         }
@@ -96,8 +117,6 @@ namespace AgCubio
         /// Needs to constantly repaint itself, because the view is constantly changing.
         /// The view is based on the player position and size.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void Display_Paint(object sender, PaintEventArgs e)
         {
             if (!socket.Connected)
@@ -115,70 +134,62 @@ namespace AgCubio
 
             lock (World)
             {
-                //TODO: ENDGAME if world.cubes.containskey(playerid) is false.
-                //DOes this even go here?
+                // Initialize total player mass to 0, get player x and y coordinates
+                double totalMass = 0;
 
-
-                double totalMass = 0, Px = 0, Py = 0;
-
+                // Iterate over split player cubes in the world and increment total player mass
                 foreach (int i in PlayerSplitID)
-                {
-                    Cube c = World.Cubes[i];
-                    totalMass += c.Mass;
+                    totalMass += World.Cubes[i].Mass;
 
-                    // Calculate center of mass coordinates
-                    Px += c.Mass * c.loc_x;
-                    Py += c.Mass * c.loc_y;
-                }
-
-                //If the total mass of the player cube(s) is 0, it means that the game has ended.
+                // If the total mass of the player cube(s) is 0, it means that the game has ended
                 if (totalMass == 0)
                 {
                     EndGame();
                     return;
                 }
-
                 else if (totalMass > MaxMass)
-                    MaxMass = totalMass;
+                    this.MassValue.Text = "" + (int)(MaxMass = totalMass);
 
-                this.MassValue.Text = "" + (int)totalMass;
+                // Set the scale, based on the (virtual) width of the player
+                double scale = 100 / Math.Sqrt(totalMass);
 
-                Px = World.Cubes[PlayerID].loc_x;//= totalMass;
-                Py = World.Cubes[PlayerID].loc_y;//= totalMass;
+                // Get player coordinates, use to calculate actual mouse position
+                double Px = World.Cubes[PlayerID].loc_x, Py = World.Cubes[PlayerID].loc_y;
 
-                double width = Math.Sqrt(totalMass);
-                double scale = 100 / width;
-
-                //Mouse location is slightly off.
-                PrevMouseLoc_x = (int)((Control.MousePosition.X - Width / 2 )/scale + Px); // Display.MousePosition.X
-                PrevMouseLoc_y = (int)((Control.MousePosition.Y - Height / 2 )/scale + Py );
-
-                System.Diagnostics.Debug.WriteLine("MX: " + PrevMouseLoc_x + ", MY: " + PrevMouseLoc_y);
+                PrevMouseLoc_x = (int)((Display.MousePosition.X - Width / 2 )/scale + Px);
+                PrevMouseLoc_y = (int)((Display.MousePosition.Y - Height / 2 )/scale + Py );
 
                 Brush brush;
                 RectangleF rectangle;
 
                 foreach (Cube c in World.Cubes.Values)
                 {
-                    if (c.Mass > 0)
+                    if (c.Mass > 0) // Avoid painting if mass is 0 - also solves an issue where names are still displayed after some cubes are 'eaten'
                     {
+                        // Painting food
                         if (c.food)
                         {
+                            // Food is scaled, and has an extra scaling factor (so we can see it at larger cube sizes - temporary design decision to deal with a faulty server)
                             rectangle = new RectangleF((int)((c.loc_x - Px - c.width * scale * 3) * scale + Width / 2),
                             (int)((c.loc_y - Py - c.width * scale * 3) * scale + Height / 2), (int)(c.width * scale * 6), (int)(c.width * scale * 6));
 
+                            // Food is painted with solid colors
                             brush = new SolidBrush(Color.FromArgb(c.argb_color));
                             e.Graphics.FillRectangle(brush, rectangle);
                         }
 
+                        // Painting player cubes
                         else
                         {
+                            // Location is calculated differently for user and other players - user is centered, other players' coordinates are scaled
                             rectangle = (c.uid == PlayerID) ? new RectangleF((int)(Width / 2 - c.width / 2), (int)(Height / 2 - c.width / 2), (int)(c.width), (int)(c.width)) :
                                 new RectangleF((int)((c.loc_x - Px - c.width/4) * scale + Width / 2), (int)((c.loc_y - Py - c.width/4) * scale + Height / 2), (int)(c.width), (int)(c.width));
 
+                            // Players are painted with a diagonal gradient, ranging from the actual (server-defined) color to its negative
                             brush = new LinearGradientBrush(rectangle, Color.FromArgb(c.argb_color), Color.FromArgb(c.argb_color^0xFFFFFF), 225);
                             e.Graphics.FillRectangle(brush, rectangle);
 
+                            // Players also have their names printed on them, centered
                             StringFormat stringFormat = new StringFormat();
                             stringFormat.Alignment = StringAlignment.Center;
                             stringFormat.LineAlignment = StringAlignment.Center;
@@ -190,75 +201,98 @@ namespace AgCubio
                 }
             }
 
+            // Increment the number of frames (used in showing FPS) before repainting
             FramesElapsed++;
             this.Invalidate();
         }
 
 
         /// <summary>
-        /// Shows player stats at the end and a button to replay the game.
+        /// Show endgame player stats and replay button
         /// </summary>
         private void EndGame()
         {
+            // Stop the game timer
             FPStimer.Stop();
-            
-            this.ExitToMainScreen.Show();
+
+            // Show endgame statistics
+
+            // Exit button
             this.ExitToMainScreen.Left = Width / 2 - this.ExitToMainScreen.Size.Width / 2;
-            this.Statistics.Show();
+            this.ExitToMainScreen.Show();
+
+            // Statistics label
             this.Statistics.Left = Width / 2 - this.Statistics.Size.Width / 2;
+            this.Statistics.Show();
+
+            // Greatest mass achieved
+            this.MaxMassLabel.Left = Width / 2 - (this.MaxPlayerMass.Width + this.MaxMassLabel.Width + 20) / 2;
             this.MaxMassLabel.Show();
             this.MaxPlayerMass.Text = "" + (int)MaxMass;
-            this.MaxPlayerMass.Show();
-            this.MaxMassLabel.Left = Width / 2 - (this.MaxPlayerMass.Width + this.MaxMassLabel.Width + 20) / 2;
             this.MaxPlayerMass.Left = this.MaxMassLabel.Right + 20;
+            this.MaxPlayerMass.Show();
+
+            // Playtime
+            this.PlaytimeLabel.Left = Width / 2 - (this.PlaytimeVal.Width + this.PlaytimeLabel.Width + 20) / 2;
+            this.PlaytimeLabel.Show();
+            this.PlaytimeVal.Text = "" + Playtime / 3600 + "h " + (Playtime % 3600) / 60 + "m " + Playtime % 60 + "s";
+            this.PlaytimeVal.Show();
         }
 
 
         /// <summary>
-        /// Shows the main screen again.
+        /// Resets the world and shows the main screen
         /// </summary>
         private void ShowMainScreen()
         {
-            //Reset the world.
+            // Reset the world
             lock(World)
                 World = new World(Width, Height);
 
-            //Get rid of the network thread so it isn't updating while no work is being done.
+            // Get rid of the network thread so it isn't updating while no work is being done
             NetworkThread.Abort();
 
-            //Close the socket, not being used until player signs in again.
+            // Close the socket, not being used until player signs in again.
             socket.Close();
-            socket.Dispose();
+            
+            // Prevent further painting (would be bad when there is no socket connection)
+            this.Paint -= this.Display_Paint;
 
-            //Show the normal labels and everything.
+            // Show the original items
+
+            // Player name
             this.nameLabel.Left = Width / 2 - (this.connectButton.Width + this.textBoxName.Width + this.textBoxServer.Width + this.nameLabel.Width + this.addressLabel.Width + 20) / 2;
             this.nameLabel.Show();
             this.textBoxName.Left = this.nameLabel.Right + 5;
             this.textBoxName.Show();
+
+            // Server address
             this.addressLabel.Left = this.textBoxName.Right + 5;
             this.addressLabel.Show();
             this.textBoxServer.Left = this.addressLabel.Right + 5;
             this.textBoxServer.Show();
+            this.textBoxServer.ReadOnly = false; // Allow editing again
+
+            // Connect button
             this.connectButton.Left = this.textBoxServer.Right + 5;
             this.connectButton.Show();
-            this.textBoxServer.ReadOnly = false;
-            
-
-            this.Paint -= this.Display_Paint;
         }
 
 
         /// <summary>
-        /// Is called if the program is unable to connect to a server.
+        /// Shows a dialog box for handling server connection issues
         /// </summary>
         private void UnableToConnect()
         {
-            DialogResult result = MessageBox.Show("Unable to connect", "Connection Error", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1);
+            DialogResult result = MessageBox.Show("Unable to connect to server", "Connection Error",
+                MessageBoxButtons.RetryCancel, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1);
+
             if (result == DialogResult.Retry)
             {
                 Connect_Click(null, null);
                 return;
             }
+
             ShowMainScreen();
         }
 
@@ -266,78 +300,81 @@ namespace AgCubio
         /// <summary>
         /// Event for clicking the connect button.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void Connect_Click(object sender, EventArgs e)
         {
             try
             {
-                //save the socket so that it doesn't go out of scope or get garbage collected (happened a few times).
+                // Save the socket so that it doesn't go out of scope or get garbage collected (happened a few times)
                 socket = Network.Connect_to_Server(new Callback(SendName), textBoxServer.Text);
                 
+                // Hide menu (and stat) items
                 this.connectButton.Hide();
                 this.textBoxName.Hide();
                 this.textBoxServer.Hide();
                 this.textBoxServer.ReadOnly = true;
                 this.nameLabel.Hide();
                 this.addressLabel.Hide();
+                this.Statistics.Hide();
                 this.MaxPlayerMass.Hide();
                 this.MaxMassLabel.Hide();
-                this.Statistics.Hide();
+                this.PlaytimeLabel.Hide();
+                this.PlaytimeVal.Hide();
 
-                lock(CubeData)
-                    CubeData = new StringBuilder();
-
+                // Start the game timer
                 FPStimer.Start();
+                Playtime = 0;
             }
+            // Catch any errors that might occur in connecting (like if an invalid IP address is supplied)
             catch (FormatException ex)
             {
-                MessageBox.Show(ex.Message); // TODO: MAKE THIS WORK
+                MessageBox.Show(ex.Message);
             }
         }
 
 
         /// <summary>
-        /// Sends the player name to the server. Callback method.
+        /// Callback method - sends the player name to the server
         /// </summary>
-        /// <param name="state"></param>
         private void SendName(Preserved_State_Object state)
         {
-            NetworkThread = Thread.CurrentThread;
+            // Pop a dialog box if the connection is not established
             if (!socket.Connected)
             {
-                this.Invoke(new MainMenu(UnableToConnect));
+                this.Invoke(new Action(UnableToConnect));
                 return;
             }
 
-            state.callback_function = new Callback(GetPlayerCube);
+            // Save the network thread to a private member in the GUI (for deactivation later)
+            NetworkThread = Thread.CurrentThread;
+
+            // Prevent network from getting upset over empty string names
             string name = (textBoxName.Text == "") ? " " : textBoxName.Text;
+
+            // Provide the next callback and send the player name to the server
+            state.callback_function = new Callback(GetPlayerCube);
             Network.Send(state.socket, name);
         }
 
 
         /// <summary>
-        /// Gets the player cube from the server. Callback method.
+        /// Callback method - gets the player cube from the server
         /// </summary>
-        /// <param name="state"></param>
         private void GetPlayerCube(Preserved_State_Object state)
         {
-            state.callback_function = new Callback(SendMoveReceiveData);
-
+            // Get the player cube (and add its uid to the set of split player cubes)
             Cube c = JsonConvert.DeserializeObject<Cube>(state.cubedata);
-            PlayerID = c.uid;
-            PlayerSplitID.Add(PlayerID);
+            PlayerSplitID.Add(PlayerID = c.uid);
 
+            // Set the max mass to the initial player mass
             MaxMass = c.Mass;
 
+            // Add the player cube to the world
             lock (World)
             {
                 World.Cubes.Add(c.uid, c);
             }
 
-            lock(CubeData)
-                CubeData = new StringBuilder();
-
+            // Begin painting the world
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.Display_Paint);
             this.Invalidate();
 
@@ -345,24 +382,25 @@ namespace AgCubio
             PrevMouseLoc_x = (int)c.loc_x;
             PrevMouseLoc_y = (int)c.loc_y;
 
+            // Provide the next callback and start getting game data from the server
+            state.callback_function = new Callback(SendReceiveData);
             Network.I_Want_More_Data(state);
         }
 
         /// <summary>
-        /// Sends and receives data from the server. Callback method.
+        /// Callback method - sends moves, receives data from the server
         /// </summary>
-        /// <param name="state"></param>
-        private void SendMoveReceiveData(Preserved_State_Object state)
+        private void SendReceiveData(Preserved_State_Object state)
         {
             if (socket.Connected)
             {
                 lock (CubeData)
                 {
+                    // Use the StringBuilder to append the string received from the server
                     CubeData.Append(state.cubedata);
                 }
 
-                // Send a move request following the convention: '(move, dest_x, dest_y)\n';
-
+                // Send a move request, following the convention: '(move, dest_x, dest_y)\n'
                 string move = "(move, " + PrevMouseLoc_x + ", " + PrevMouseLoc_y + ")\n";
                 Network.Send(socket, move);
 
@@ -373,19 +411,17 @@ namespace AgCubio
 
 
         /// <summary>
-        /// Deserializes cubes. Threadsafe.
+        /// Deserializes cubes and adds them to the world
         /// </summary>
         private void GetCubes()
         {
-            if (!socket.Connected)
-                return;
-
-            //run on another thread
+            // Short circuit if client has received no new cube data
             if (CubeData.Length < 1)
                 return;
 
             lock (CubeData)
             {
+                // Obtain each cube string
                 String[] cubes = Regex.Split(CubeData.ToString(), "\n");
                 string lastCube;
 
@@ -397,12 +433,13 @@ namespace AgCubio
                         Cube c = JsonConvert.DeserializeObject<Cube>(cubes[i]);
                         World.Cubes[c.uid] = c;
 
+                        // Keep track of split player cubes
                         if (c.Team_ID == PlayerID && !PlayerSplitID.Contains(c.uid))
                             PlayerSplitID.Add(c.uid);
 
+                        // Remove cubes of zero mass from the world
                         if (c.Mass == 0)
                         {
-                            //TODO: ENDgame scenario if player dies, does not have any split off cubes.
                             World.Cubes.Remove(c.uid);
                             PlayerSplitID.Remove(c.uid);
                         }
@@ -410,6 +447,7 @@ namespace AgCubio
 
                     // Parse the last cube into the world only if it is complete
                     lastCube = cubes[cubes.Length - 1];
+
                     if (lastCube.Length > 0 && lastCube.Last() == '}')
                     {
                         Cube c = JsonConvert.DeserializeObject<Cube>(lastCube);
@@ -418,16 +456,15 @@ namespace AgCubio
                     }
                 }
 
+                // Reset the StringBuilder, but retain any partial string from the last cube
                 CubeData = new StringBuilder(lastCube);
             }
         }
 
 
         /// <summary>
-        /// Button to click to exit to the main screen after a game-over scenario.
+        /// Button to click to exit to the main screen after a game-over scenario
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void ExitToMainScreen_Click(object sender, EventArgs e)
         {
             ShowMainScreen();
@@ -438,19 +475,16 @@ namespace AgCubio
         /// <summary>
         /// Allows the space bar to work, send split requests.
         /// </summary>
-        /// <param name="msg"></param>
-        /// <param name="keyData"></param>
-        /// <returns></returns>
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             if (keyData == Keys.Space && socket != null)
             {
+                // Send a split request, following the convention: '(split, dest_x, dest_y)\n'
                 string split = "(split, " + PrevMouseLoc_x + ", " + PrevMouseLoc_y + ")\n";
                 Network.Send(socket, split);
             }
 
             return base.ProcessCmdKey(ref msg, keyData);
         }
-
     }
 }
