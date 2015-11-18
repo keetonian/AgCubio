@@ -1,7 +1,41 @@
-﻿Server Problems:
+﻿
+
+Bugs(!Features!):
+	Mouse coordinates are a little off for non-fullscreen window and split cubes, but for fullscreen it is fine.
+	Split cubes focus on one cube instead of center of mass
+	Splitting does not resize the screen, and some player cubes may go off the screen
+	Food may sometimes be left onscreen after being eaten (rare bug)
+	Split cubes and cubes of other players not always drawn correctly, may overlap food (offset too far down and to the right)
+	Sometimes get a big red X through screen, not sure what that error means (very rare)
+	Sometimes get a disposed object exception that the server thread can’t access the socket after a player restarts a game after he dies.
+	JSON parse errors after a player dies: Sometimes happens, but hasn't for a while. Perhaps we fixed the bug.
+
+
+
+
+Design decisions:
+	Have player cube follow previous mouse coordinates when the mouse leaves the window
+	Give food an extra scaling factor so it is always visible- may need to change when we create our own server.
+	FPS- as fast as possible, because of our scaling algorithm: we are constantly scaling, and we like the look of how the food 
+		shimmers and changes size according to player size, which is constantly changing due to attrition
+	Labels and text automatically center themselves.
+	Names of cubes wrap inside of the cube, are centered, and the font size resizes depending on string length and cube size. 
+		Thus, single letters are very big, and sentences are small, but all is usually displayed.
+	Cubes: colored with the supplied color and its inverse, looks cool.
+	Network: SendCallBack method wasn't needed to send extra data, all data was well managed in the original Send method.
+	Gives pop-up option to retry connecting if a connection to a valid IP address fails.
+
+
+
+
+Server Problems:
 1. Defines cube size as being too big, therefore, our resizing and drawing does not look optimal. We will need to fix the server code.
 2. Movements: can be jerky, way too fast. Server controls speed, so the speed on that side needs to be lessened.
 3. Player starting size is much too big.
+
+
+------------
+Some final work notes:
 
 November 13, 2015:
 Problems to still work on:
@@ -22,19 +56,6 @@ Problems to still work on:
 
 	November 16
 	Tasks:
-		1. Add in a play time counter for how long a player survives.
-		2. Keeton - center everything/make look nice/background/consistency when window is resized, game over, etc
-
-------------
-
-Bugs(/Features!):
-	Mouse coordinates are a little off for non-fullscreen window and split cubes
-	Split cubes focus on one cube instead of center of mass
-	Splitting does not resize the screen, and some player cubes may go offscreen
-	Food may sometimes be left onscreen after being eaten
-	Split cubes not always drawn correctly, may overlap food
-
-Design decisions:
-	Have player cube follow previous mouse coordinates when the mouse leaves the window
-	Give food an extra scaling factor so it is always visible
+		1. Add in a play time counter for how long a player survives- Complete.
+		2. Center everything/make look nice/background/consistency when window is resized, game over, etc
 

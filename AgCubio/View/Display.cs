@@ -82,9 +82,14 @@ namespace AgCubio
             DoubleBuffered = true;
             InitializeComponent();
 
+            // Resize GUI components
             this.Resize += Display_Resize;
         }
 
+
+        /// <summary>
+        /// Centers GUI elements when the window is resized.
+        /// </summary>
         private void Display_Resize(object sender, EventArgs e)
         {
             // Resize main screen
