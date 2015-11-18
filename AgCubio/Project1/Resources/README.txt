@@ -14,6 +14,7 @@ Bugs(/Features!):
 	Split cubes and cubes of other players not always drawn correctly, may overlap food (offset too far down and to the right)
 	Sometimes get a big red X through screen, not sure what that error means (very rare)
 	Sometimes get a disposed object exception that the server thread can’t access the socket after a player restarts a game after he dies.
+		This error only happens when we don't expect it to, but the code works fine if it is run again after that. We are working on fixing it.
 	JSON parse errors after a player dies: Sometimes happens, but hasn't for a while. Perhaps we fixed the bug.
 
 
