@@ -36,6 +36,8 @@ Design decisions:
 		The buffer dumps the data into a string
 		The callback function appends the string into a stringbuilder, then parses it at the newline characters
 		This implementation gets rid of partial data or unfinished strings that cause JSON deserialization errors.
+	Background: Went with a neutral, almost unnoticeable color. Made a custom background, but did not figure out how to change it to play the game.
+		We could implement it to where the player could choose a background color.
 
 
 Server Problems:
