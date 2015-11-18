@@ -1,6 +1,12 @@
-﻿
+﻿AgCubio Client
 
-Bugs(!Features!):
+By:
+Daniel Avery
+Keeton Hodgson
+
+Current state of the project:
+
+Bugs(/Features!):
 	Mouse coordinates are a little off for non-fullscreen window and split cubes, but for fullscreen it is fine.
 	Split cubes focus on one cube instead of center of mass
 	Splitting does not resize the screen, and some player cubes may go off the screen
@@ -11,27 +17,34 @@ Bugs(!Features!):
 	JSON parse errors after a player dies: Sometimes happens, but hasn't for a while. Perhaps we fixed the bug.
 
 
-
-
 Design decisions:
-	Have player cube follow previous mouse coordinates when the mouse leaves the window
+	Have player cube follow previous mouse coordinates when the mouse leaves the window.
+	Player stats at the end: we decided to only show the mass and the play time.
 	Give food an extra scaling factor so it is always visible- may need to change when we create our own server.
 	FPS- as fast as possible, because of our scaling algorithm: we are constantly scaling, and we like the look of how the food 
-		shimmers and changes size according to player size, which is constantly changing due to attrition
+		shimmers and changes size according to player size, which is constantly changing due to attrition. We may slow it down later,
+		but for now, the frames are working well and look cool as they refresh between 50-120 fps. It is shown in the upper-left
+		hand side of the play window with the current player mass.
 	Labels and text automatically center themselves.
 	Names of cubes wrap inside of the cube, are centered, and the font size resizes depending on string length and cube size. 
 		Thus, single letters are very big, and sentences are small, but all is usually displayed.
 	Cubes: colored with the supplied color and its inverse, looks cool.
-	Network: SendCallBack method wasn't needed to send extra data, all data was well managed in the original Send method.
 	Gives pop-up option to retry connecting if a connection to a valid IP address fails.
-
-
+	The World class doesn't do much yet beyond store cube data, but I believe we will find more use for it in the next assignment.
+	Network: SendCallBack method wasn't needed to send extra data, all data was well managed in the original Send method.
+	Network: Buffer size: we used a big buffer size to allow us to read a lot of data all at once.
+		The buffer dumps the data into a string
+		The callback function appends the string into a stringbuilder, then parses it at the newline characters
+		This implementation gets rid of partial data or unfinished strings that cause JSON deserialization errors.
 
 
 Server Problems:
-1. Defines cube size as being too big, therefore, our resizing and drawing does not look optimal. We will need to fix the server code.
-2. Movements: can be jerky, way too fast. Server controls speed, so the speed on that side needs to be lessened.
-3. Player starting size is much too big.
+	1. Defines cube size as being too big, therefore, our resizing and drawing does not look optimal. We will need to fix the server code.
+	2. Movements: can be jerky, way too fast. Server controls speed, so the speed on that side needs to be lessened.
+	3. Player starting size is much too big.
+	4. World size is probably too small.
+
+
 
 
 ------------
@@ -59,3 +72,4 @@ Problems to still work on:
 		1. Add in a play time counter for how long a player survives- Complete.
 		2. Center everything/make look nice/background/consistency when window is resized, game over, etc
 
+------------
