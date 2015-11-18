@@ -81,6 +81,26 @@ namespace AgCubio
             // Prevent 'flickering' issue and initialize the form
             DoubleBuffered = true;
             InitializeComponent();
+
+            this.Resize += Display_Resize;
+        }
+
+        private void Display_Resize(object sender, EventArgs e)
+        {
+            // Resize main screen
+            this.nameLabel.Left = Width / 2 - (this.connectButton.Width + this.textBoxName.Width + this.textBoxServer.Width + this.nameLabel.Width + this.addressLabel.Width + 20) / 2;
+            this.textBoxName.Left = this.nameLabel.Right + 5;
+            this.addressLabel.Left = this.textBoxName.Right + 5;
+            this.textBoxServer.Left = this.addressLabel.Right + 5;
+            this.connectButton.Left = this.textBoxServer.Right + 5;
+
+            // Resize statistics screen
+            this.ExitToMainScreen.Left = Width / 2 - this.ExitToMainScreen.Size.Width / 2;
+            this.Statistics.Left = Width / 2 - this.Statistics.Size.Width / 2;
+            this.MaxMassLabel.Left = Width / 2 - (this.MaxPlayerMass.Width + this.MaxMassLabel.Width + 20) / 2;
+            this.MaxPlayerMass.Left = this.MaxMassLabel.Right + 20;
+            this.PlaytimeLabel.Left = Width / 2 - (this.PlaytimeVal.Width + this.PlaytimeLabel.Width + 20) / 2;
+            this.PlaytimeVal.Left = this.PlaytimeLabel.Right + 20;
         }
 
 
@@ -145,7 +165,9 @@ namespace AgCubio
                     return;
                 }
                 else if (totalMass > MaxMass)
-                    this.MassValue.Text = "" + (int)(MaxMass = totalMass);
+                    MaxMass = totalMass;
+                this.MassValue.Text = "" + (int)totalMass;
+
 
                 // Set the scale, based on the (virtual) width of the player
                 double scale = 100 / Math.Sqrt(totalMass);
@@ -215,22 +237,17 @@ namespace AgCubio
             // Show endgame statistics
 
             // Exit button
-            this.ExitToMainScreen.Left = Width / 2 - this.ExitToMainScreen.Size.Width / 2;
             this.ExitToMainScreen.Show();
 
             // Statistics label
-            this.Statistics.Left = Width / 2 - this.Statistics.Size.Width / 2;
             this.Statistics.Show();
 
             // Greatest mass achieved
-            this.MaxMassLabel.Left = Width / 2 - (this.MaxPlayerMass.Width + this.MaxMassLabel.Width + 20) / 2;
             this.MaxMassLabel.Show();
             this.MaxPlayerMass.Text = "" + (int)MaxMass;
-            this.MaxPlayerMass.Left = this.MaxMassLabel.Right + 20;
             this.MaxPlayerMass.Show();
 
             // Playtime
-            this.PlaytimeLabel.Left = Width / 2 - (this.PlaytimeVal.Width + this.PlaytimeLabel.Width + 20) / 2;
             this.PlaytimeLabel.Show();
             this.PlaytimeVal.Text = "" + Playtime / 3600 + "h " + (Playtime % 3600) / 60 + "m " + Playtime % 60 + "s";
             this.PlaytimeVal.Show();
@@ -258,20 +275,15 @@ namespace AgCubio
             // Show the original items
 
             // Player name
-            this.nameLabel.Left = Width / 2 - (this.connectButton.Width + this.textBoxName.Width + this.textBoxServer.Width + this.nameLabel.Width + this.addressLabel.Width + 20) / 2;
             this.nameLabel.Show();
-            this.textBoxName.Left = this.nameLabel.Right + 5;
             this.textBoxName.Show();
 
             // Server address
-            this.addressLabel.Left = this.textBoxName.Right + 5;
             this.addressLabel.Show();
-            this.textBoxServer.Left = this.addressLabel.Right + 5;
             this.textBoxServer.Show();
             this.textBoxServer.ReadOnly = false; // Allow editing again
 
             // Connect button
-            this.connectButton.Left = this.textBoxServer.Right + 5;
             this.connectButton.Show();
         }
 
