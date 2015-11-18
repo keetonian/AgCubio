@@ -28,10 +28,6 @@ namespace UnitTestProject1
             Cube cube = JsonConvert.DeserializeObject<Cube>(json);
             Assert.AreEqual(true, cube.food);
             Assert.AreEqual(1.0, cube.width);
-            Assert.AreEqual(115.5, cube.left);
-            Assert.AreEqual(116.5, cube.right);
-            Assert.AreEqual(349.5, cube.bottom);
-            Assert.AreEqual(350.5, cube.top);
         }
 
         [TestMethod]
