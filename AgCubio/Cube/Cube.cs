@@ -1,19 +1,13 @@
-﻿// Cube.cs
-// Created by Daniel Avery and Keeton Hodgson
-// November 7th, 2015
+﻿// Created by Daniel Avery and Keeton Hodgson
+// November 2015
 
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AgCubio
 {
-
     /// <summary>
-    /// A cube.
+    /// A cube
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class Cube
@@ -72,61 +66,18 @@ namespace AgCubio
         public int argb_color { get; private set; }
 
         /// <summary>
-        /// Width, derived as the square root of the width
+        /// Width, derived as the (almost) square root of the width (adjusted slightly to deal with a temporary faulty server)
         /// </summary>
         public double width
         {
-            get { return Math.Pow(Mass,0.65)/*Math.Sqrt(Mass)*/; } // return Mass/2;
-            private set { }
-        }
-
-        /// <summary>
-        /// Coordinate (X) of the left side of the cube
-        /// </summary>
-        public double left
-        {
-            get { return loc_x - (width / 2); }
-            private set { }
-        }
-
-        /// <summary>
-        /// Coordinate (X) of the right side of the cube
-        /// </summary>
-        public double right
-        {
-            get { return loc_x + (width / 2); }
-            private set { }
-        }
-
-        /// <summary>
-        /// Coordinate (Y) of the top of the cube
-        /// </summary>
-        public double top
-        {
-            get { return loc_y - (width / 2); }
-            private set { }
-        }
-
-        /// <summary>
-        /// Coordinate (Y) of the bottom of the cube
-        /// </summary>
-        public double bottom
-        {
-            get { return loc_y + (width / 2); }
+            get { return Math.Pow(Mass,0.65); }
             private set { }
         }
 
 
         /// <summary>
-        /// 
+        /// Constructs a Cube
         /// </summary>
-        /// <param name="x">x coordinate</param>
-        /// <param name="y">y coordinate</param>
-        /// <param name="uid">cube id</param>
-        /// <param name="food">True if this is a food item, false if it is a player</param>
-        /// <param name="name">Name of the cube. "" is for food</param>
-        /// <param name="mass">Cube mass</param>
-        /// <param name="color">Cube color</param>
         [JsonConstructor]
         public Cube(double x, double y, int uid, bool food, string name, double mass, int color, int team_id)
         {
@@ -139,8 +90,5 @@ namespace AgCubio
             argb_color = color;
             Team_ID = team_id;
         }
-
-
-
     }
 }

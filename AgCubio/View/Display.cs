@@ -1,4 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿// Created by Daniel Avery and Keeton Hodgson
+// November 2015
+
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Drawing;

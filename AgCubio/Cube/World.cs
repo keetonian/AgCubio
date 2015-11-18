@@ -1,8 +1,7 @@
-﻿using System;
+﻿// Created by Daniel Avery and Keeton Hodgson
+// November 2015
+
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AgCubio
 {
@@ -11,19 +10,18 @@ namespace AgCubio
     /// </summary>
     public class World
     {
-
+        /// <summary>
+        /// Width of the world
+        /// </summary>
         readonly int Width;
 
+        /// <summary>
+        /// Height of the world
+        /// </summary>
         readonly int Height;
 
-        public double playerX { get; set; }
-
-        public double playerY { get; set; }
-
-        public double scale { get; set; }
-
         /// <summary>
-        /// Need to decide how to track all of these, delete them, and create them on a screen.
+        /// Dictionary for storing all the cubes. Uid's map to cubes
         /// </summary>
         public Dictionary<int,Cube> Cubes
         {
@@ -31,39 +29,15 @@ namespace AgCubio
             set;
         }
 
+
+        /// <summary>
+        /// Constructs a new world of the specified dimensions
+        /// </summary>
         public World(int width, int height)
         {
             Width = width;
             Height = height;
             Cubes = new Dictionary<int,Cube>();
         }
-
-
-        //OK THIS ISN"T WORKING HERE. LEAVING ALL LOGIC IN PAINT METHOD FOR NOW.
-
-//        public double getX(this Cube cube)
-//        {
-//            //rectangle = new RectangleF((int)((c.loc_x - Px - c.width * scale * 2.5) * scale + Width / 2), (int)((c.loc_y - Py - c.width * scale * 2.5) * scale + Height / 2), 
-//              //  (int)(c.width * scale * 5), (int)(c.width * scale * 5));
-
-
-////            rectangle = new RectangleF((int)((c.loc_x - Px) * scale + Width / 2), (int)((c.loc_y - Py) * scale + Height / 2), (int)(c.width), (int)(c.width));
-
-
-//            return (cube.loc_x - playerX - (cube.width/2) * scale + Width/2);
-//        }
-
-//        public double getY(this Cube cube)
-//        {
-//            return (cube.loc_x - playerX - (cube.width/2) * scale + Height/2);
-//        }
-        /*
-
-        The World Class
-
-The world represents the "state" of the simulation.This class is responsible for tracking at least the following data: 
-the world Width and Height(please use read only 'constants'), all the cubes in the game.You may of course store additional information.
-
-    */
     }
 }
