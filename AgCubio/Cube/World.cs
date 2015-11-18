@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace AgCubio
 {
     /// <summary>
-    /// 
+    /// The world for storing all the cube objects in the game
     /// </summary>
     public class World
     {
