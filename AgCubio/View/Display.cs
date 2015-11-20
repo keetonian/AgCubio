@@ -68,7 +68,7 @@ namespace AgCubio
         public Display()
         {
             // Initialize the world model with display size, setup up a StringBuilder for getting data from server
-            World = new World(Width, Height);
+            World = new World();
             CubeData = new StringBuilder();
 
             // Set up the timer with a tick event that triggers every second (for FPS)
@@ -267,7 +267,7 @@ namespace AgCubio
         {
             // Reset the world
             lock(World)
-                World = new World(Width, Height);
+                World = new World();
 
             // Get rid of the network thread so it isn't updating while no work is being done
             NetworkThread.Abort();
