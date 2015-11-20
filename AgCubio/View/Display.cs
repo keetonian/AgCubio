@@ -21,11 +21,6 @@ namespace AgCubio
     public partial class Display : Form
     {
         /// <summary>
-        /// Callback delegate for networking
-        /// </summary>
-        private delegate void Callback(Preserved_State_Object state);
-
-        /// <summary>
         /// World model storing all the cubes
         /// </summary>
         private World World;
@@ -325,7 +320,7 @@ namespace AgCubio
             try
             {
                 // Save the socket so that it doesn't go out of scope or get garbage collected (happened a few times)
-                socket = Network.Connect_to_Server(new Callback(SendName), textBoxServer.Text);
+                socket = Network.Connect_to_Server(new Network.Callback(SendName), textBoxServer.Text);
                 
                 // Hide menu (and stat) items
                 this.connectButton.Hide();
@@ -371,7 +366,7 @@ namespace AgCubio
             string name = (textBoxName.Text == "") ? " " : textBoxName.Text;
 
             // Provide the next callback and send the player name to the server
-            state.callback_function = new Callback(GetPlayerCube);
+            state.callback = new Network.Callback(GetPlayerCube);
             Network.Send(state.socket, name);
         }
 
@@ -382,7 +377,7 @@ namespace AgCubio
         private void GetPlayerCube(Preserved_State_Object state)
         {
             // Get the player cube (and add its uid to the set of split player cubes)
-            Cube c = JsonConvert.DeserializeObject<Cube>(state.cubedata);
+            Cube c = JsonConvert.DeserializeObject<Cube>(state.data);
             PlayerSplitID.Add(PlayerID = c.uid);
 
             // Set the max mass to the initial player mass
@@ -403,7 +398,7 @@ namespace AgCubio
             PrevMouseLoc_y = (int)c.loc_y;
 
             // Provide the next callback and start getting game data from the server
-            state.callback_function = new Callback(SendReceiveData);
+            state.callback = new Network.Callback(SendReceiveData);
             Network.I_Want_More_Data(state);
         }
 
@@ -417,7 +412,7 @@ namespace AgCubio
                 lock (CubeData)
                 {
                     // Use the StringBuilder to append the string received from the server
-                    CubeData.Append(state.cubedata);
+                    CubeData.Append(state.data);
                 }
 
                 // Send a move request, following the convention: '(move, dest_x, dest_y)\n'
