@@ -67,6 +67,7 @@
   <ItemGroup>
     <Content Include="Resources\AgCubioPic.png" />
     <Content Include="Resources\README.txt" />
+    <Content Include="Resources\World_Params.xml" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5">
