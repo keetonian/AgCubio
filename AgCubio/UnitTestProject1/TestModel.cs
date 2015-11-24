@@ -5,6 +5,7 @@ using AgCubio;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Drawing;
 
 namespace UnitTestProject1
 {
@@ -98,6 +99,17 @@ namespace UnitTestProject1
             }
 
             //Assert.IsTrue(cubes.SetEquals(s));
+        }
+
+        [TestMethod]
+        public void testColor()
+        {
+            Random RandomColor = new Random();
+            for (int i = 0; i < 10000000; i++)
+            {
+                Color c = Color.FromArgb(RandomColor.Next(Int32.MinValue, Int32.MaxValue));
+            }
+
         }
     }
 }

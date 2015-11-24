@@ -1,6 +1,7 @@
 ﻿// Created by Daniel Avery and Keeton Hodgson
 // November 2015
 
+using System;
 using System.Collections.Generic;
 using System.Xml;
 
@@ -75,6 +76,11 @@ namespace AgCubio
         /// Percent overlap before a larger cube eats a smaller
         /// </summary>
         public readonly double ABSORB_PERCENT_COVERAGE;
+
+        /// <summary>
+        /// Starting width of players
+        /// </summary>
+        public readonly double PLAYER_START_WIDTH;
 
         /// <summary>
         /// Dictionary for storing all the cubes. Uid's map to cubes
@@ -165,6 +171,8 @@ namespace AgCubio
                     }
                 }
             }
+
+            this.PLAYER_START_WIDTH = Math.Sqrt(this.PLAYER_START_MASS);
         }
 
 
@@ -186,6 +194,7 @@ namespace AgCubio
             this.MIN_SPEED = 1;
             this.MIN_SPLIT_MASS = 25;
             this.PLAYER_START_MASS = 10;
+            this.PLAYER_START_WIDTH = Math.Sqrt(this.PLAYER_START_MASS);
         }
     }
 }
