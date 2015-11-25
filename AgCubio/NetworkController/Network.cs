@@ -97,6 +97,9 @@ namespace AgCubio
                 // Otherwise we are disconnected - close the socket
                 else
                 {
+                    //TODO: do these have to stay commented out for it to work, or does it work now?
+                    //Needs to be tested again.
+
                     //state.socket.Shutdown(SocketShutdown.Both);
                     //state.socket.Close();
                 }
@@ -132,7 +135,7 @@ namespace AgCubio
             }
             catch(Exception)
             {
-                // When socket is closed
+                //TODO: fix this for if a socket is closed, say, in the upper level check for a connection?
             }
         }
 
@@ -159,7 +162,8 @@ namespace AgCubio
             }
             catch(Exception)
             {
-                //do something
+                //TODO: Was throwing exceptions here and in send because of sockets closing
+                //Need to have a good way of taking care of this.
             }
         }
 
@@ -167,25 +171,23 @@ namespace AgCubio
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="callback"></param>
         public static void Server_Awaiting_Client_Loop(Delegate callback)
         {
-            IPAddress IP = IPAddress.Parse("127.0.0.1");
             TcpListener server = new TcpListener(IPAddress.Any, 11000);
             server.Start();
             Preserved_State_Object state = new Preserved_State_Object(server, callback);
+
+            //This is the callback that I don't know if we need anymore.
+            //All it does is toss the server out to the server and save it there.
             state.callback.DynamicInvoke(state);
 
-            // Probably don't need another thread, just trying things.
-            //new Thread(() => server.BeginAcceptSocket(new AsyncCallback(Accept_a_New_Client), state));
             server.BeginAcceptSocket(new AsyncCallback(Accept_a_New_Client), state);
-            //server.BeginAcceptTcpClient(new AsyncCallback(Accept_a_New_Client), state);
-            //server.Pending()?
-
 
             System.Diagnostics.Debug.WriteLine("Server Awaiting client");
 
             /*
+            Class webpage:
+
             This is the heart of the server code. It should ask the OS to listen for a connection and save the callback function with that request. 
             Upon a connection request coming in the OS should invoke the Accept_a_New_Client method (see below).
 

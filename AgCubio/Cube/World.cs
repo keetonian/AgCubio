@@ -238,5 +238,17 @@ namespace AgCubio
             }
             return players.ToString();
         }
+
+
+        /// <summary>
+        /// Atrophy! Players decrease in size
+        /// </summary>
+        public void PlayerAttrition()
+        {
+            foreach(Cube c in Cubes.Values)
+            {
+                c.Mass = c.Mass - c.Mass * this.ATTRITION_RATE_SCALER;
+            }
+        }
     }
 }

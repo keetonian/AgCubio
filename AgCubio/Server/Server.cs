@@ -11,22 +11,33 @@ namespace AgCubio
 {
     class Server
     {
+        // This doesn't work: doesn't allow multiple people with the same name.
+        // Would it be better to use a hashset? Do we even need the name anymore? It's saved in our cubes
+        // I'd argue for a hashset.
         private Dictionary<string, Socket> NamesSockets;
 
-        TcpListener TcpServer;
+        //Do we need to save this here? Needs investigation.
+        private TcpListener TcpServer;
 
+        // Cool. We own the world.
         private World World;
 
+        // Our Uid counter
         private int Uid;
 
+        //Previously used Uid's that can now be reused (cubes were deleted)
         private Stack<int> Uids;
 
-        Random RandomNumber;
+        //Random number generator
+        private Random RandomNumber;
 
+        //Timer that controls updates
         private Timer Heartbeat;
 
+        //Do we need this?
         private StringBuilder DataReceived;
 
+        //Do we need this?
         private StringBuilder DataSent;
 
 
@@ -36,19 +47,23 @@ namespace AgCubio
             Console.ReadLine();
         }
 
+
+        /// <summary>
+        /// Constructor. Sets up the server
+        /// </summary>
         public Server()
         {
             World = new World(); //Use the file path later.
             NamesSockets = new Dictionary<string, Socket>();
+
+            //Start the client loop
             //new Thread(() => Network.Server_Awaiting_Client_Loop(new Network.Callback(SaveServer)));
             Network.Server_Awaiting_Client_Loop(new Network.Callback(SaveServer));
-            System.Diagnostics.Debug.WriteLine("Hello from the server constructor.");
 
 
+
+            //Initialize many of our member variables.
             Heartbeat = new Timer(HeartBeatTick, null, 0, 1000 / World.HEARTBEATS_PER_SECOND);
-
-            //more work location
-
             Uids = new Stack<int>();
             RandomNumber = new Random();
             DataSent = new StringBuilder();
@@ -56,12 +71,21 @@ namespace AgCubio
         }
 
 
+        /// <summary>
+        /// Callback method- do we even need this to save the server? I think we don't.
+        /// </summary>
+        /// <param name="state"></param>
         private void SaveServer(Preserved_State_Object state)
         {
             this.TcpServer = state.server;
             state.callback = new Network.Callback(SetUpClient);
         }
 
+
+        /// <summary>
+        /// Main callback method for setting up a client.
+        /// </summary>
+        /// <param name="state"></param>
         private void SetUpClient(Preserved_State_Object state)
         {
             lock(NamesSockets)
@@ -88,22 +112,19 @@ namespace AgCubio
             }
 
             state.callback = new Network.Callback(ManageData);
+
+            //Sends the client's cube and then all of the world data.
             Network.Send(state.socket, JsonConvert.SerializeObject(cube) + "\n");
             Network.Send(state.socket, worldData);
 
-
-            // Compute, create strings of all world data,
-            //send all datat.
-
-            //Network.Send(state.socket, )
-
+            //Asks for more data from client.
             Network.I_Want_More_Data(state);
-            //Flow: Get name, send cube, then send all world info, then start the flow back and forth as you receive and send information and requests.
         }
 
 
         /// <summary>
-        /// 
+        /// Method to send and receive data from client
+        /// NOTE: SERVER IS CURRENTLY SENDING ALL DATA FROM THE HeartBeatTick function. should this change to here? (Concern: threading is here, but is it there?)
         /// </summary>
         /// <param name="state"></param>
         private void ManageData(Preserved_State_Object state)
@@ -154,34 +175,48 @@ namespace AgCubio
         }
 
 
+        /// <summary>
+        /// Every timer tick:
+        ///     Updates the world (adds food, etc)
+        ///     Sends updates to the clients
+        /// </summary>
         private void HeartBeatTick(object state)
         {
+            //TODO: Process move requests, split requests, and make the game mechanics (eating, etc) work.
+
+
+            //Data to send to all of the clients
             StringBuilder data = new StringBuilder();
 
             lock (World)
             {
+                // Players get a little smaller each tick
+                World.PlayerAttrition();
+
                 if (World.MAX_FOOD_COUNT > World.Food.Count)
                 {
                     double x, y;
                     FindStartingCoords(out x, out y);
                     Cube c = new Cube(x, y, GetUid(), true, "", World.FOOD_MASS, GetColor(), 0);
                     World.Food.Add(c);
+
                     data.Append(JsonConvert.SerializeObject(c) + "\n");
-
                 }
-
+                //Appends all of the player cube data- 
+                //They should be constantly changing, therefore, we send them every time.
                 data.Append(World.SerializePlayers());
                 
             }
 
-            //Needs a way to send all cubes that were destroyed with a mass of 0
+            //Needs a way to send all cubes that were destroyed with a mass of 0, which is a more advanced game mechanic.
 
-            //Needs to send all player cubes: they should be constantly changing (either mass or position).
 
+            //Would this be where we send the data? It's easy to do it here, granted, but shouldn't it be in the callback?
             lock(NamesSockets)
             {
                 foreach (Socket s in NamesSockets.Values)
                 {
+                    //Do we need to thread this, or is it automatically threaded by virtue of just using sockets?
                     Network.Send(s, data.ToString());
                 }
             }
