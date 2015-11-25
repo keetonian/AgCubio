@@ -466,7 +466,7 @@ namespace AgCubio
                     if (lastCube.Length > 0 && lastCube.Last() == '}')
                     {
                         Cube c = JsonConvert.DeserializeObject<Cube>(lastCube);
-                        World.Cubes.Add(c.uid, c);
+                        World.Cubes[c.uid] = c;
                         lastCube = "";
                     }
                 }
