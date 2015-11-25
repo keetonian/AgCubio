@@ -87,6 +87,11 @@ namespace AgCubio
         /// </summary>
         public Dictionary<int,Cube> Cubes { get; set; }
 
+        /// <summary>
+        /// Keeps track of all food.
+        /// </summary>
+        public HashSet<Cube> Food { get; set; }
+
 
         /// <summary>
         /// Constructs a new world of the specified dimensions in the xml file
@@ -94,6 +99,7 @@ namespace AgCubio
         public World(string filename)
         {
             Cubes = new Dictionary<int,Cube>();
+            Food = new HashSet<Cube>();
             using (XmlReader reader = XmlReader.Create(filename))
             {
                 //TODO: implement xml file stuff.
@@ -181,6 +187,8 @@ namespace AgCubio
         /// </summary>
         public World()
         {
+            Cubes = new Dictionary<int, Cube>();
+            Food = new HashSet<Cube>();
             this.ABSORB_PERCENT_COVERAGE = .25;
             this.ATTRITION_RATE_SCALER = .005;
             this.FOOD_MASS = 1;

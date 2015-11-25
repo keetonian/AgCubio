@@ -23,6 +23,12 @@ namespace AgCubio
 
         Random RandomNumber;
 
+        private Timer Heartbeat;
+
+        private StringBuilder DataReceived;
+
+        private StringBuilder DataSent;
+
 
         static void Main(string[] args)
         {
@@ -39,8 +45,14 @@ namespace AgCubio
             System.Diagnostics.Debug.WriteLine("Hello from the server constructor.");
 
 
+            Heartbeat = new Timer(HeartBeatTick, null, 0, 1000 / World.HEARTBEATS_PER_SECOND);
+
+            //more work location
+
             Uids = new Stack<int>();
             RandomNumber = new Random();
+            DataSent = new StringBuilder();
+            DataReceived = new StringBuilder();
         }
 
 
@@ -66,7 +78,7 @@ namespace AgCubio
             Cube cube = new Cube(x, y, GetUid(), false, state.data, World.PLAYER_START_MASS, GetColor(), 0);
 
             state.callback = new Network.Callback(ManageData);
-            Network.Send(state.socket, JsonConvert.SerializeObject(cube));
+            Network.Send(state.server.Server, JsonConvert.SerializeObject(cube));
 
             // Compute, create strings of all world data,
             //send all datat.
@@ -84,7 +96,12 @@ namespace AgCubio
         /// <param name="state"></param>
         private void ManageData(Preserved_State_Object state)
         {
+            DataReceived.Append(state.data);
 
+            //Network.Send(state.socket, DataSent.ToString());
+            double x, y;
+            FindStartingCoords(out x, out y);
+            Network.Send(state.server.Server, JsonConvert.SerializeObject(new Cube(x, y, GetUid(), true, "", World.FOOD_MASS, GetColor(), 0)));
         }
 
 
@@ -122,6 +139,17 @@ namespace AgCubio
         private int GetColor()
         {
             return RandomNumber.Next(Int32.MinValue, Int32.MaxValue);
+        }
+
+
+        private void HeartBeatTick(object state)
+        {
+            if(World.MAX_FOOD_COUNT > World.Food.Count)
+            {
+                double x, y;
+                FindStartingCoords(out x, out y);
+                World.Food.Add(new Cube(x, y, GetUid(), true, "", World.FOOD_MASS, GetColor(), 0));
+            }
         }
 
 

@@ -90,5 +90,15 @@ namespace AgCubio
             argb_color = color;
             Team_ID = team_id;
         }
+
+
+        /// <summary>
+        /// Overrides hash code- gets the uid instead.
+        /// </summary>
+        /// <returns></returns>
+        public override int GetHashCode()
+        {
+            return this.uid;
+        }
     }
 }

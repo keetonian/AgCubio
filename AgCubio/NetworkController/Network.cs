@@ -196,7 +196,6 @@ namespace AgCubio
             state.socket.BeginReceive(state.buffer, 0, Preserved_State_Object.BufferSize, 0, new AsyncCallback(ReceiveCallback), state); //Get the name, then give them their cube.
             state.server.BeginAcceptSocket(new AsyncCallback(Accept_a_New_Client), new Preserved_State_Object(state.server, state.callback));
 
-
             /*
             This code should be invoked by the OS when a connection request comes in. It should:
             1.Create a new socket
