@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 
 namespace AgCubio
 {
@@ -95,13 +96,16 @@ namespace AgCubio
                 }
                 // Otherwise we are disconnected - close the socket
                 else
-                    state.socket.Close(); // TODO: ##! FIGURE OUT HOW THIS ACTUALLY WORKS
+                {
+                    state.socket.Shutdown(SocketShutdown.Both);
+                    state.socket.Close();
+                }
             }
             catch (Exception)
             {
                 // If there is a problem with the socket, close it, then let the above program find the closure, try again.
+                state.socket.Shutdown(SocketShutdown.Both);
                 state.socket.Close();
-                state.socket.Dispose();
             }
         }
 
@@ -121,25 +125,51 @@ namespace AgCubio
         public static void Send(Socket socket, String data)
         {
             byte[] byteData = Encoding.UTF8.GetBytes(data);
-            socket.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, new AsyncCallback(SendCallBack), socket);
+            Tuple<Socket, byte[]> state = new Tuple<Socket, byte[]>(socket, byteData);
+            socket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallBack), state);
         }
 
 
         /// <summary>
-        /// Does nothing...
+        /// Helper method for Send - arranges for any leftover data to be sent
         /// </summary>
-        public static void SendCallBack(IAsyncResult state)
+        public static void SendCallBack(IAsyncResult state_in_an_ar_object)
         {
-            ((Socket)state.AsyncState).EndSend(state);
+            Tuple<Socket, byte[]> state = (Tuple<Socket, byte[]>)state_in_an_ar_object.AsyncState;
+            int bytesSent = state.Item1.EndSend(state_in_an_ar_object);
 
-            // We found this method unnecessary - we never ran into a problem with our send having leftover data
+            if (bytesSent == state.Item2.Length)
+                return;
+            else
+            {
+                byte[] bytes = new byte[state.Item2.Length - bytesSent];
+                Array.ConstrainedCopy(state.Item2, bytesSent, bytes, 0, bytes.Length);
+                Tuple<Socket, byte[]> newState = new Tuple<Socket, byte[]>(state.Item1, bytes);
+                state.Item1.BeginSend(state.Item2, bytesSent, state.Item2.Length, 0, new AsyncCallback(SendCallBack), newState);
+            }
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="callback"></param>
         public static void Server_Awaiting_Client_Loop(Delegate callback)
         {
-            TcpListener server = new TcpListener(IPAddress.Any, Port);
+            IPAddress IP = IPAddress.Parse("127.0.0.1");
+            TcpListener server = new TcpListener(IPAddress.Any, 11000);
             server.Start();
-            server.BeginAcceptSocket(new AsyncCallback(Accept_a_New_Client), new Preserved_State_Object(server, callback));
+            Preserved_State_Object state = new Preserved_State_Object(server, callback);
+            state.callback.DynamicInvoke(state);
+
+            // Probably don't need another thread, just trying things.
+            //new Thread(() => server.BeginAcceptSocket(new AsyncCallback(Accept_a_New_Client), state));
+            server.BeginAcceptTcpClient(new AsyncCallback(Accept_a_New_Client), state);
+            //server.Pending()?
+            
+
+            System.Diagnostics.Debug.WriteLine("Server Awaiting client");
+
             /*
             This is the heart of the server code. It should ask the OS to listen for a connection and save the callback function with that request. 
             Upon a connection request coming in the OS should invoke the Accept_a_New_Client method (see below).
@@ -150,13 +180,21 @@ namespace AgCubio
             */
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ar"></param>
         public static void Accept_a_New_Client(IAsyncResult ar)
         {
+            System.Diagnostics.Debug.WriteLine("Server Accept Client");
+
             Preserved_State_Object state = (Preserved_State_Object)ar.AsyncState;
             state.socket = state.server.EndAcceptSocket(ar);
 
             state.socket.BeginReceive(state.buffer, 0, Preserved_State_Object.BufferSize, 0, new AsyncCallback(ReceiveCallback), state); //Get the name, then give them their cube.
             state.server.BeginAcceptSocket(new AsyncCallback(Accept_a_New_Client), new Preserved_State_Object(state.server, state.callback));
+
 
             /*
             This code should be invoked by the OS when a connection request comes in. It should:
@@ -205,9 +243,9 @@ namespace AgCubio
         public Delegate callback;
 
         /// <summary>
-        /// Buffer size of 2^15
+        /// Buffer size of 2^10
         /// </summary>
-        public const int BufferSize = 32768;
+        public const int BufferSize = 1024;
 
         /// <summary>
         /// Byte array for reading bytes from the server

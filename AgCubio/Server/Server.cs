@@ -3,13 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace AgCubio
 {
     class Server
     {
         private Dictionary<string, Socket> NamesSockets;
+
+        TcpListener TcpServer;
 
         private World World;
 
@@ -23,17 +27,27 @@ namespace AgCubio
         static void Main(string[] args)
         {
             new Server();
-            Console.Read();
+            Console.ReadLine();
         }
 
         public Server()
         {
             World = new World(); //Use the file path later.
             NamesSockets = new Dictionary<string, Socket>();
-            Network.Server_Awaiting_Client_Loop(new Network.Callback(SetUpClient));
+            //new Thread(() => Network.Server_Awaiting_Client_Loop(new Network.Callback(SaveServer)));
+            Network.Server_Awaiting_Client_Loop(new Network.Callback(SaveServer));
+            System.Diagnostics.Debug.WriteLine("Hello from the server constructor.");
+
 
             Uids = new Stack<int>();
             RandomNumber = new Random();
+        }
+
+
+        private void SaveServer(Preserved_State_Object state)
+        {
+            this.TcpServer = state.server;
+            state.callback = new Network.Callback(SetUpClient);
         }
 
         private void SetUpClient(Preserved_State_Object state)
@@ -49,15 +63,28 @@ namespace AgCubio
             // Generate 2 random starting coords within our world, check if other players are there, then send if player won't get eaten immediately. (helper method)
             double x, y;
             FindStartingCoords(out x, out y);
-            Cube cube = new Cube(x,y,GetUid(),false,state.data,World.PLAYER_START_MASS,GetColor(),0);
+            Cube cube = new Cube(x, y, GetUid(), false, state.data, World.PLAYER_START_MASS, GetColor(), 0);
 
-            //Network.Send();
-            
+            state.callback = new Network.Callback(ManageData);
+            Network.Send(state.socket, JsonConvert.SerializeObject(cube));
 
+            // Compute, create strings of all world data,
+            //send all datat.
+
+            //Network.Send(state.socket, )
+
+            Network.I_Want_More_Data(state);
             //Flow: Get name, send cube, then send all world info, then start the flow back and forth as you receive and send information and requests.
-            //Reset the callback
+        }
 
-            //NEXT SEND CUBE TO CLIENT
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="state"></param>
+        private void ManageData(Preserved_State_Object state)
+        {
+
         }
 
 
