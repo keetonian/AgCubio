@@ -80,17 +80,16 @@ namespace AgCubio
             FindStartingCoords(out x, out y);
             Cube cube = new Cube(x, y, GetUid(), false, state.data, World.PLAYER_START_MASS, GetColor(), 0);
 
+            string worldData;
             lock(World)
             {
                 World.Cubes.Add(cube.uid, cube);
+                worldData = World.SerializeAllCubes();
             }
 
             state.callback = new Network.Callback(ManageData);
             Network.Send(state.socket, JsonConvert.SerializeObject(cube) + "\n");
-
-            //Testing code
-            for(int i = 0; i < 500; i++)
-                Network.Send(state.socket, JsonConvert.SerializeObject(new Cube(x, y, GetUid(), true, "", World.FOOD_MASS, GetColor(), 0)) + "\n");
+            Network.Send(state.socket, worldData);
 
 
             // Compute, create strings of all world data,
@@ -114,7 +113,7 @@ namespace AgCubio
             //Network.Send(state.socket, DataSent.ToString());
             double x, y;
             FindStartingCoords(out x, out y);
-            Network.Send(state.socket, JsonConvert.SerializeObject(new Cube(x, y, GetUid(), true, "", World.FOOD_MASS, GetColor(), 0)));
+            //Network.Send(state.socket, JsonConvert.SerializeObject(new Cube(x, y, GetUid(), true, "", World.FOOD_MASS, GetColor(), 0)));
         }
 
 
@@ -157,7 +156,7 @@ namespace AgCubio
 
         private void HeartBeatTick(object state)
         {
-            string data;
+            StringBuilder data = new StringBuilder();
 
             lock (World)
             {
@@ -165,18 +164,25 @@ namespace AgCubio
                 {
                     double x, y;
                     FindStartingCoords(out x, out y);
-                    World.Food.Add(new Cube(x, y, GetUid(), true, "", World.FOOD_MASS, GetColor(), 0));
+                    Cube c = new Cube(x, y, GetUid(), true, "", World.FOOD_MASS, GetColor(), 0);
+                    World.Food.Add(c);
+                    data.Append(JsonConvert.SerializeObject(c) + "\n");
+
                 }
 
-                data = World.SerializeAllCubes();
+                data.Append(World.SerializePlayers());
                 
             }
+
+            //Needs a way to send all cubes that were destroyed with a mass of 0
+
+            //Needs to send all player cubes: they should be constantly changing (either mass or position).
 
             lock(NamesSockets)
             {
                 foreach (Socket s in NamesSockets.Values)
                 {
-                    Network.Send(s, data);
+                    Network.Send(s, data.ToString());
                 }
             }
 

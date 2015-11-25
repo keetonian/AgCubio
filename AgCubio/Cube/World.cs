@@ -219,12 +219,24 @@ namespace AgCubio
                 info.Append(JsonConvert.SerializeObject(c) + "\n");
             }
 
-            foreach(Cube c in Cubes.Values)
-            {
-                info.Append(JsonConvert.SerializeObject(c) + "\n");
-            }
+            info.Append(SerializePlayers());
 
             return info.ToString();
+        }
+
+
+        /// <summary>
+        /// Serializes all players.
+        /// </summary>
+        /// <returns></returns>
+        public string SerializePlayers()
+        {
+            StringBuilder players = new StringBuilder();
+            foreach (Cube c in Cubes.Values)
+            {
+                players.Append(JsonConvert.SerializeObject(c) + "\n");
+            }
+            return players.ToString();
         }
     }
 }
