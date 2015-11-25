@@ -78,9 +78,9 @@ namespace AgCubio
             Cube cube = new Cube(x, y, GetUid(), false, state.data, World.PLAYER_START_MASS, GetColor(), 0);
 
             state.callback = new Network.Callback(ManageData);
-            Network.Send(state.socket, JsonConvert.SerializeObject(cube));
+            Network.Send(state.socket, JsonConvert.SerializeObject(cube) + "\n");
             for(int i = 0; i < 500; i++)
-                Network.Send(state.socket, JsonConvert.SerializeObject(new Cube(x, y, GetUid(), true, "", World.FOOD_MASS, GetColor(), 0)));
+                Network.Send(state.socket, JsonConvert.SerializeObject(new Cube(x, y, GetUid(), true, "", World.FOOD_MASS, GetColor(), 0)) + "\n");
 
 
             // Compute, create strings of all world data,
