@@ -164,9 +164,10 @@ namespace AgCubio
 
             // Probably don't need another thread, just trying things.
             //new Thread(() => server.BeginAcceptSocket(new AsyncCallback(Accept_a_New_Client), state));
-            server.BeginAcceptTcpClient(new AsyncCallback(Accept_a_New_Client), state);
+            server.BeginAcceptSocket(new AsyncCallback(Accept_a_New_Client), state);
+            //server.BeginAcceptTcpClient(new AsyncCallback(Accept_a_New_Client), state);
             //server.Pending()?
-            
+
 
             System.Diagnostics.Debug.WriteLine("Server Awaiting client");
 
