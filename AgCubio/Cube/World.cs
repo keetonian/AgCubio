@@ -3,7 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Xml;
+using Newtonsoft.Json;
 
 namespace AgCubio
 {
@@ -203,6 +205,26 @@ namespace AgCubio
             this.MIN_SPLIT_MASS = 25;
             this.PLAYER_START_MASS = 10;
             this.PLAYER_START_WIDTH = Math.Sqrt(this.PLAYER_START_MASS);
+        }
+
+
+        /// <summary>
+        /// Serializes all cubes in the world to send them to a new player.
+        /// </summary>
+        public string SerializeAllCubes()
+        {
+            StringBuilder info = new StringBuilder();
+            foreach(Cube c in Food)
+            {
+                info.Append(JsonConvert.SerializeObject(c) + "\n");
+            }
+
+            foreach(Cube c in Cubes.Values)
+            {
+                info.Append(JsonConvert.SerializeObject(c) + "\n");
+            }
+
+            return info.ToString();
         }
     }
 }

@@ -97,8 +97,8 @@ namespace AgCubio
                 // Otherwise we are disconnected - close the socket
                 else
                 {
-                    state.socket.Shutdown(SocketShutdown.Both);
-                    state.socket.Close();
+                    //state.socket.Shutdown(SocketShutdown.Both);
+                    //state.socket.Close();
                 }
             }
             catch (Exception)
@@ -126,7 +126,14 @@ namespace AgCubio
         {
             byte[] byteData = Encoding.UTF8.GetBytes(data);
             Tuple<Socket, byte[]> state = new Tuple<Socket, byte[]>(socket, byteData);
-            socket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallBack), state);
+            try
+            {
+                socket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallBack), state);
+            }
+            catch(Exception)
+            {
+                // When socket is closed
+            }
         }
 
 
@@ -136,16 +143,23 @@ namespace AgCubio
         public static void SendCallBack(IAsyncResult state_in_an_ar_object)
         {
             Tuple<Socket, byte[]> state = (Tuple<Socket, byte[]>)state_in_an_ar_object.AsyncState;
-            int bytesSent = state.Item1.EndSend(state_in_an_ar_object);
-
-            if (bytesSent == state.Item2.Length)
-                return;
-            else
+            try
             {
-                byte[] bytes = new byte[state.Item2.Length - bytesSent];
-                Array.ConstrainedCopy(state.Item2, bytesSent, bytes, 0, bytes.Length);
-                Tuple<Socket, byte[]> newState = new Tuple<Socket, byte[]>(state.Item1, bytes);
-                state.Item1.BeginSend(state.Item2, bytesSent, state.Item2.Length, 0, new AsyncCallback(SendCallBack), newState);
+                int bytesSent = state.Item1.EndSend(state_in_an_ar_object);
+
+                if (bytesSent == state.Item2.Length)
+                    return;
+                else
+                {
+                    byte[] bytes = new byte[state.Item2.Length - bytesSent];
+                    Array.ConstrainedCopy(state.Item2, bytesSent, bytes, 0, bytes.Length);
+                    Tuple<Socket, byte[]> newState = new Tuple<Socket, byte[]>(state.Item1, bytes);
+                    state.Item1.BeginSend(state.Item2, bytesSent, state.Item2.Length, 0, new AsyncCallback(SendCallBack), newState);
+                }
+            }
+            catch(Exception)
+            {
+                //do something
             }
         }
 

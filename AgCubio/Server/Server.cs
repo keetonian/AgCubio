@@ -64,7 +64,10 @@ namespace AgCubio
 
         private void SetUpClient(Preserved_State_Object state)
         {
-            NamesSockets.Add(state.data, state.socket);
+            lock(NamesSockets)
+            {
+                NamesSockets.Add(state.data, state.socket);
+            }
 
             //For original UID's: have a counter that counts up and gives unique uid's
             //When a cube is removed, store the uid in a stack to be reused.
@@ -77,8 +80,15 @@ namespace AgCubio
             FindStartingCoords(out x, out y);
             Cube cube = new Cube(x, y, GetUid(), false, state.data, World.PLAYER_START_MASS, GetColor(), 0);
 
+            lock(World)
+            {
+                World.Cubes.Add(cube.uid, cube);
+            }
+
             state.callback = new Network.Callback(ManageData);
             Network.Send(state.socket, JsonConvert.SerializeObject(cube) + "\n");
+
+            //Testing code
             for(int i = 0; i < 500; i++)
                 Network.Send(state.socket, JsonConvert.SerializeObject(new Cube(x, y, GetUid(), true, "", World.FOOD_MASS, GetColor(), 0)) + "\n");
 
@@ -147,12 +157,30 @@ namespace AgCubio
 
         private void HeartBeatTick(object state)
         {
-            if(World.MAX_FOOD_COUNT > World.Food.Count)
+            string data;
+
+            lock (World)
             {
-                double x, y;
-                FindStartingCoords(out x, out y);
-                World.Food.Add(new Cube(x, y, GetUid(), true, "", World.FOOD_MASS, GetColor(), 0));
+                if (World.MAX_FOOD_COUNT > World.Food.Count)
+                {
+                    double x, y;
+                    FindStartingCoords(out x, out y);
+                    World.Food.Add(new Cube(x, y, GetUid(), true, "", World.FOOD_MASS, GetColor(), 0));
+                }
+
+                data = World.SerializeAllCubes();
+                
             }
+
+            lock(NamesSockets)
+            {
+                foreach (Socket s in NamesSockets.Values)
+                {
+                    Network.Send(s, data);
+                }
+            }
+
+
         }
 
 
