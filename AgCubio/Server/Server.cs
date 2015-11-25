@@ -78,7 +78,7 @@ namespace AgCubio
             Cube cube = new Cube(x, y, GetUid(), false, state.data, World.PLAYER_START_MASS, GetColor(), 0);
 
             state.callback = new Network.Callback(ManageData);
-            Network.Send(state.server.Server, JsonConvert.SerializeObject(cube));
+            Network.Send(state.socket, JsonConvert.SerializeObject(cube));
 
             // Compute, create strings of all world data,
             //send all datat.
@@ -101,7 +101,7 @@ namespace AgCubio
             //Network.Send(state.socket, DataSent.ToString());
             double x, y;
             FindStartingCoords(out x, out y);
-            Network.Send(state.server.Server, JsonConvert.SerializeObject(new Cube(x, y, GetUid(), true, "", World.FOOD_MASS, GetColor(), 0)));
+            Network.Send(state.socket, JsonConvert.SerializeObject(new Cube(x, y, GetUid(), true, "", World.FOOD_MASS, GetColor(), 0)));
         }
 
 
