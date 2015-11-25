@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using System.Net;
 
 namespace AgCubio
 {
@@ -21,7 +22,12 @@ namespace AgCubio
 
         private Stack<int> Uids;
 
-        Random RandomNumber;
+        private Random RandomNumber;
+
+        /// <summary>
+        /// Timer that updates the state of the world
+        /// </summary>
+        private Timer Heartbeat;
 
 
         static void Main(string[] args)
@@ -34,9 +40,17 @@ namespace AgCubio
         {
             World = new World(); //Use the file path later.
             NamesSockets = new Dictionary<string, Socket>();
+            Heartbeat = new Timer(new TimerCallback(HeartBeatTick), null, 0, 1000 / World.HEARTBEATS_PER_SECOND);
+
+
+            /*
+            2.start - populate the initial world (with food), set up the heartbeat of the program, and await network client connections. 
+            (Note: I suggest using a timer object for the heartbeat.)
+            */
+
             //new Thread(() => Network.Server_Awaiting_Client_Loop(new Network.Callback(SaveServer)));
-            Network.Server_Awaiting_Client_Loop(new Network.Callback(SaveServer));
-            System.Diagnostics.Debug.WriteLine("Hello from the server constructor.");
+            //Network.Server_Awaiting_Client_Loop(new Network.Callback(SaveServer));
+            //System.Diagnostics.Debug.WriteLine("Hello from the server constructor.");
 
 
             Uids = new Stack<int>();
@@ -122,6 +136,15 @@ namespace AgCubio
         private int GetColor()
         {
             return RandomNumber.Next(Int32.MinValue, Int32.MaxValue);
+        }
+
+
+
+
+
+        private void HeartBeatTick(object state)
+        {
+
         }
 
 
