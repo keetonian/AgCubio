@@ -126,15 +126,14 @@ namespace AgCubio
         /// </summary>
         private void ManageData(Preserved_State_Object state)
         {
-            DataReceived.Append(state.data);
-
-            Console.WriteLine(state.data);
-            //"(move, " + PrevMouseLoc_x + ", " + PrevMouseLoc_y + ")\n";
+            DataReceived.Append(state.data); //Doesn't really work- one stringbuilder in this class vs many clients?
+            // The state needs to have its own stringbuilder in this implementation
+            // THat string builder would have the partial json strings still in it.
 
             string[] actions = Regex.Split(state.data, @"\n");
             foreach(string s in actions)
             {
-                if(s.ToUpper().Contains("MOVE"))
+                if (s.ToUpper().Contains("MOVE"))
                 {
                     try
                     {
@@ -146,6 +145,8 @@ namespace AgCubio
                     { }
 
                 }
+                else
+                { }// Here manage split requests
             }
 
             //Network.Send(state.socket, DataSent.ToString());
@@ -207,7 +208,7 @@ namespace AgCubio
             lock (World)
             {
                 // Players get a little smaller each tick
-                World.PlayerAttrition();
+                //World.PlayerAttrition();
 
 
                 //Check for collisions, eat some food.
