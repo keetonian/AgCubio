@@ -27,7 +27,7 @@ namespace AgCubio
         private Stack<int> Uids;
 
         //Random number generator
-        private Random RandomNumber;
+        private Random Rand;
 
         //Timer that controls updates
         private Timer Heartbeat;
@@ -37,6 +37,9 @@ namespace AgCubio
 
         //Do we need this?
         private StringBuilder DataSent;
+
+        //Queue to hold all the eaten food, to be sent and deleted
+        private Queue<Cube> Deceased;
 
 
         static void Main(string[] args)
@@ -57,9 +60,12 @@ namespace AgCubio
             //Initialize many of our member variables.
             Heartbeat = new Timer(HeartBeatTick, null, 0, 1000 / World.HEARTBEATS_PER_SECOND);
             Uids = new Stack<int>();
-            RandomNumber = new Random();
+            Rand = new Random();
             DataSent = new StringBuilder();
             DataReceived = new StringBuilder();
+
+            while (World.Food.Count < World.MAX_FOOD_COUNT)
+                GenerateFood();
 
             //Start the client loop
             Network.Server_Awaiting_Client_Loop(new Network.Callback(SetUpClient));
@@ -128,8 +134,8 @@ namespace AgCubio
         private void FindStartingCoords(out double x, out double y)
         {
             //Implement this
-            x = RandomNumber.Next((int)World.PLAYER_START_WIDTH, World.WIDTH - (int)World.PLAYER_START_WIDTH);
-            y = RandomNumber.Next((int)World.PLAYER_START_WIDTH, World.HEIGHT - (int)World.PLAYER_START_WIDTH);
+            x = Rand.Next((int)World.PLAYER_START_WIDTH, World.WIDTH - (int)World.PLAYER_START_WIDTH);
+            y = Rand.Next((int)World.PLAYER_START_WIDTH, World.HEIGHT - (int)World.PLAYER_START_WIDTH);
 
             //More complicated stuff looking at other players and what not. Recursion?
             if (true)
@@ -155,7 +161,7 @@ namespace AgCubio
         /// <returns></returns>
         private int GetColor()
         {
-            return RandomNumber.Next(Int32.MinValue, Int32.MaxValue);
+            return Rand.Next(Int32.MinValue, Int32.MaxValue);
         }
 
 
@@ -177,24 +183,25 @@ namespace AgCubio
                 // Players get a little smaller each tick
                 World.PlayerAttrition();
 
-                if (World.MAX_FOOD_COUNT > World.Food.Count)
+                // Add food to the world if necessary and append it to the data stream
+                if (World.Food.Count < World.MAX_FOOD_COUNT)
                 {
-                    double x, y;
-                    FindStartingCoords(out x, out y);
-                    Cube c = new Cube(x, y, GetUid(), true, "", World.FOOD_MASS, GetColor(), 0);
-                    World.Food.Add(c);
-
-                    data.Append(JsonConvert.SerializeObject(c) + "\n");
+                    Cube food = GenerateFood();
+                    data.Append(JsonConvert.SerializeObject(food) + "\n");
                 }
-                //Appends all of the player cube data- 
-                //They should be constantly changing, therefore, we send them every time.
+
+                // Arrange for eaten food to be sent and then removed
+                while(this.Deceased.Count > 0)
+                {
+                    Cube fatality = Deceased.Dequeue();
+                    data.Append(JsonConvert.SerializeObject(fatality) + "\n");
+                    World.Food.Remove(fatality);
+                }
+
+                //Appends all of the player cube data - they should be constantly changing, therefore, we send them every time
                 data.Append(World.SerializePlayers());
-                
             }
-
-            //Needs a way to send all cubes that were destroyed with a mass of 0, which is a more advanced game mechanic.
-
-
+            
             //Would this be where we send the data? It's easy to do it here, granted, but shouldn't it be in the callback?
             lock(Sockets)
             {
@@ -203,7 +210,23 @@ namespace AgCubio
                     //Do we need to thread this, or is it automatically threaded by virtue of just using sockets?
                     Network.Send(s, data.ToString());
                 }
+
+                // Alternative Route?
+                //Parallel.ForEach<Socket>(Sockets, s => { Network.Send(s, data.ToString()); });
             }
+
+            //Needs a way to send all cubes that were destroyed with a mass of 0, which is a more advanced game mechanic.
+        }
+
+
+        /// <summary>
+        /// Adds a new food cube to the world
+        /// </summary>
+        public Cube GenerateFood()
+        {
+            Cube food = new Cube(Rand.Next(World.WIDTH), Rand.Next(World.HEIGHT), GetUid(), true, "", World.FOOD_MASS, GetColor(), 0);
+            World.Food.Add(food);
+            return food;
         }
     }
 }
