@@ -6,6 +6,17 @@ Keeton Hodgson
 
 Current state of the project:
 
+
+-----Server-----
+Current most up-to-date server is in the MoreWork branch.
+
+
+
+
+
+
+
+
 Bugs(/Features!):
 	Mouse coordinates are a little off for non-fullscreen window and split cubes, but for fullscreen it is fine.
 	Split cubes focus on one cube instead of center of mass
