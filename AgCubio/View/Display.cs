@@ -195,8 +195,8 @@ namespace AgCubio
                         if (c.food)
                         {
                             // Food is scaled, and has an extra scaling factor (so we can see it at larger cube sizes - temporary design decision to deal with a faulty server)
-                            rectangle = new RectangleF((int)((c.loc_x - Px - c.width * scale / 2) * scale + Width / 2),
-                            (int)((c.loc_y - Py - c.width * scale / 2) * scale + Height / 2), (int)(c.width * scale), (int)(c.width * scale));
+                            rectangle = new RectangleF((int)((c.loc_x - Px - c.width / 2) * scale + Width / 2),
+                            (int)((c.loc_y - Py - c.width / 2) * scale + Height / 2), (int)(c.width * scale), (int)(c.width * scale));
 
                             // Food is painted with solid colors
                             brush = new SolidBrush(Color.FromArgb(c.argb_color));
@@ -207,7 +207,7 @@ namespace AgCubio
                         else
                         {
                             // Location is calculated differently for user and other players - user is centered, other players' coordinates are scaled
-                            rectangle = (c.uid == PlayerID) ? new RectangleF((int)(Width / 2 - c.width*scale / 2), (int)(Height / 2 - c.width * scale / 2), (int)(c.width * scale), (int)(c.width* scale)) :
+                            rectangle = (c.uid == PlayerID) ? new RectangleF((int)(Width / 2 - c.width * scale / 2), (int)(Height / 2 - c.width * scale / 2), (int)(c.width * scale), (int)(c.width* scale)) :
                                 new RectangleF((int)((c.loc_x - Px - c.width * scale / 2) * scale + Width / 2), (int)((c.loc_y - Py - c.width * scale / 2) * scale + Height / 2), (int)(c.width* scale), (int)(c.width* scale));
 
                             // Players are painted with a diagonal gradient, ranging from the actual (server-defined) color to its negative
