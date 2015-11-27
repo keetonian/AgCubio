@@ -275,6 +275,11 @@ namespace AgCubio
         /// </summary>
         public String data;
 
+        /// <summary>
+        /// ID for this player's cube. Used in the server
+        /// </summary>
+        public int CubeID;
+
         // FOR SERVER USE:
 
         /// <summary>
