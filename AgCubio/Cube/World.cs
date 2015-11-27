@@ -228,7 +228,6 @@ namespace AgCubio
         /// <summary>
         /// Serializes all players.
         /// </summary>
-        /// <returns></returns>
         public string SerializePlayers()
         {
             StringBuilder players = new StringBuilder();
@@ -247,7 +246,8 @@ namespace AgCubio
         {
             foreach(Cube c in Cubes.Values)
             {
-                c.Mass = c.Mass - c.Mass * this.ATTRITION_RATE_SCALER;
+                if (c.Mass > this.PLAYER_START_MASS)
+                    c.Mass *= (1 - this.ATTRITION_RATE_SCALER);
             }
         }
     }

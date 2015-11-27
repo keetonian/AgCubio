@@ -9,15 +9,13 @@ using Newtonsoft.Json;
 
 namespace AgCubio
 {
+    /// <summary>
+    /// 
+    /// </summary>
     class Server
     {
-        // This doesn't work: doesn't allow multiple people with the same name.
-        // Would it be better to use a hashset? Do we even need the name anymore? It's saved in our cubes
         // I'd argue for a hashset.
-        private Dictionary<string, Socket> NamesSockets;
-
-        //Do we need to save this here? Needs investigation.
-        private TcpListener TcpServer;
+        private HashSet<Socket> Sockets;
 
         // Cool. We own the world.
         private World World;
@@ -54,13 +52,7 @@ namespace AgCubio
         public Server()
         {
             World = new World(); //Use the file path later.
-            NamesSockets = new Dictionary<string, Socket>();
-
-            //Start the client loop
-            //new Thread(() => Network.Server_Awaiting_Client_Loop(new Network.Callback(SaveServer)));
-            Network.Server_Awaiting_Client_Loop(new Network.Callback(SaveServer));
-
-
+            Sockets = new HashSet<Socket>();
 
             //Initialize many of our member variables.
             Heartbeat = new Timer(HeartBeatTick, null, 0, 1000 / World.HEARTBEATS_PER_SECOND);
@@ -68,29 +60,20 @@ namespace AgCubio
             RandomNumber = new Random();
             DataSent = new StringBuilder();
             DataReceived = new StringBuilder();
-        }
 
-
-        /// <summary>
-        /// Callback method- do we even need this to save the server? I think we don't.
-        /// </summary>
-        /// <param name="state"></param>
-        private void SaveServer(Preserved_State_Object state)
-        {
-            this.TcpServer = state.server;
-            state.callback = new Network.Callback(SetUpClient);
+            //Start the client loop
+            Network.Server_Awaiting_Client_Loop(new Network.Callback(SetUpClient));
         }
 
 
         /// <summary>
         /// Main callback method for setting up a client.
         /// </summary>
-        /// <param name="state"></param>
         private void SetUpClient(Preserved_State_Object state)
         {
-            lock(NamesSockets)
+            lock(Sockets)
             {
-                NamesSockets.Add(state.data, state.socket);
+                Sockets.Add(state.socket);
             }
 
             //For original UID's: have a counter that counts up and gives unique uid's
@@ -115,6 +98,8 @@ namespace AgCubio
 
             //Sends the client's cube and then all of the world data.
             Network.Send(state.socket, JsonConvert.SerializeObject(cube) + "\n");
+            Thread.Sleep(1000); // Temporary fix... Maybe. Do we even need this?
+
             Network.Send(state.socket, worldData);
 
             //Asks for more data from client.
@@ -126,7 +111,6 @@ namespace AgCubio
         /// Method to send and receive data from client
         /// NOTE: SERVER IS CURRENTLY SENDING ALL DATA FROM THE HeartBeatTick function. should this change to here? (Concern: threading is here, but is it there?)
         /// </summary>
-        /// <param name="state"></param>
         private void ManageData(Preserved_State_Object state)
         {
             DataReceived.Append(state.data);
@@ -212,18 +196,14 @@ namespace AgCubio
 
 
             //Would this be where we send the data? It's easy to do it here, granted, but shouldn't it be in the callback?
-            lock(NamesSockets)
+            lock(Sockets)
             {
-                foreach (Socket s in NamesSockets.Values)
+                foreach (Socket s in Sockets)
                 {
                     //Do we need to thread this, or is it automatically threaded by virtue of just using sockets?
                     Network.Send(s, data.ToString());
                 }
             }
-
-
         }
-
-
     }
 }

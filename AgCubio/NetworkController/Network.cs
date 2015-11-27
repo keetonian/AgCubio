@@ -82,11 +82,10 @@ namespace AgCubio
         {
             // Get the state from the parameter, declare a variable for holding count of received bytes
             Preserved_State_Object state = (Preserved_State_Object)state_in_an_ar_object.AsyncState;
-            int bytesRead;
 
             try
             {
-                bytesRead = state.socket.EndReceive(state_in_an_ar_object);
+                int bytesRead = state.socket.EndReceive(state_in_an_ar_object);
 
                 // If bytes were read, save the decoded string and invoke the callback
                 if (bytesRead > 0)
@@ -176,10 +175,6 @@ namespace AgCubio
             TcpListener server = new TcpListener(IPAddress.Any, 11000);
             server.Start();
             Preserved_State_Object state = new Preserved_State_Object(server, callback);
-
-            //This is the callback that I don't know if we need anymore.
-            //All it does is toss the server out to the server and save it there.
-            state.callback.DynamicInvoke(state);
 
             server.BeginAcceptSocket(new AsyncCallback(Accept_a_New_Client), state);
 
