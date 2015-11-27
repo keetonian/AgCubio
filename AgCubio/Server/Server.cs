@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using System.Text.RegularExpressions;
 
 namespace AgCubio
 {
@@ -66,6 +67,7 @@ namespace AgCubio
             Rand = new Random();
             DataSent = new StringBuilder();
             DataReceived = new StringBuilder();
+            Deceased = new Queue<Cube>();
 
             while (World.Food.Count < World.MAX_FOOD_COUNT)
                 GenerateFood();
@@ -95,6 +97,7 @@ namespace AgCubio
             double x, y;
             FindStartingCoords(out x, out y);
             Cube cube = new Cube(x, y, GetUid(), false, state.data, World.PLAYER_START_MASS, GetColor(), 0);
+            state.CubeID = cube.uid;
 
             string worldData;
             lock(World)
@@ -125,12 +128,26 @@ namespace AgCubio
             DataReceived.Append(state.data);
 
             Console.WriteLine(state.data);
+            //"(move, " + PrevMouseLoc_x + ", " + PrevMouseLoc_y + ")\n";
 
+            string[] actions = Regex.Split(state.data, @"\n");
+            foreach(string s in actions)
+            {
+                if(s.ToUpper().Contains("MOVE"))
+                {
+                    try {
+                        int x, y;
+                        MatchCollection values = Regex.Matches(s, @"\d+");
+                        Move(state.CubeID, double.Parse(values[0].Value), double.Parse(values[1].Value)); }
+                    catch (Exception)
+                    { }
+
+                }
+            }
 
             //Network.Send(state.socket, DataSent.ToString());
-            double x, y;
-            FindStartingCoords(out x, out y);
-            //Network.Send(state.socket, JsonConvert.SerializeObject(new Cube(x, y, GetUid(), true, "", World.FOOD_MASS, GetColor(), 0)));
+
+            Network.I_Want_More_Data(state);
         }
 
 
@@ -236,6 +253,29 @@ namespace AgCubio
             Cube food = new Cube(Rand.Next(World.WIDTH), Rand.Next(World.HEIGHT), GetUid(), true, "", World.FOOD_MASS, GetColor(), 0);
             World.Food.Add(food);
             return food;
+        }
+
+
+        /// <summary>
+        /// Controls a cube's movements
+        /// </summary>
+        public void Move(int CubeUid, double x, double y)
+        {
+            //Normalize the vector:
+            x = x - World.Cubes[CubeUid].loc_x;
+            y = y - World.Cubes[CubeUid].loc_y;
+
+            if (Math.Abs(x) < 1 && Math.Abs(y) < 1)
+                return;
+
+            double scale = Math.Sqrt(Math.Pow(x, 2) + Math.Pow(y, 2));
+            double newX = x / scale;
+            double newY = y / scale;
+
+            //add normalized values to the cube's location. 
+            //TODO: add in updates according to the heartbeat, and add in a speed scalar.
+            World.Cubes[CubeUid].loc_x += newX;
+            World.Cubes[CubeUid].loc_y += newY;
         }
     }
 }
