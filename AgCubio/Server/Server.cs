@@ -230,6 +230,9 @@ namespace AgCubio
         /// </summary>
         public Cube GenerateFood()
         {
+            // On a random scale needs to create viruses too
+            // Cool thought: viruses can move, become npc's that can try to chase players, or just move erratically
+
             Cube food = new Cube(Rand.Next(World.WIDTH), Rand.Next(World.HEIGHT), GetUid(), true, "", World.FOOD_MASS, GetColor(), 0);
             World.Food.Add(food);
             return food;
