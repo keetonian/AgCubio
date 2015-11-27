@@ -15,6 +15,9 @@ namespace AgCubio
     class Server
     {
         // I'd argue for a hashset.
+        // Another option: dictionary, where the socket is the Key, a stringbuilder the value, 
+        // and we can just constantly put stuff into it and in the networking loop it automatically sends what we want.
+        // This way we won't need to send stuff in other places in this code.
         private HashSet<Socket> Sockets;
 
         // Cool. We own the world.
@@ -120,6 +123,9 @@ namespace AgCubio
         private void ManageData(Preserved_State_Object state)
         {
             DataReceived.Append(state.data);
+
+            Console.WriteLine(state.data);
+
 
             //Network.Send(state.socket, DataSent.ToString());
             double x, y;
