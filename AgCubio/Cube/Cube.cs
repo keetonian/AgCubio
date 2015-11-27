@@ -74,6 +74,30 @@ namespace AgCubio
             private set { }
         }
 
+        public double right
+        {
+            get { return this.loc_x + this.width / 2; }
+            private set { }
+        }
+
+        public double left
+        {
+            get { return this.loc_x - this.width / 2; }
+            private set { }
+        }
+
+        public double top
+        {
+            get { return this.loc_y - this.width / 2; }
+            private set { }
+        }
+
+        public double bottom
+        {
+            get { return this.loc_y + this.width / 2; }
+            private set { }
+        }
+
 
         /// <summary>
         /// Constructs a Cube

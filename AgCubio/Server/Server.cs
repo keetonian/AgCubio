@@ -209,6 +209,11 @@ namespace AgCubio
                 // Players get a little smaller each tick
                 World.PlayerAttrition();
 
+
+                //Check for collisions, eat some food.
+                data.Append(World.ManageCollisions(ref Uids));
+
+
                 // Add food to the world if necessary and append it to the data stream
                 if (World.Food.Count < World.MAX_FOOD_COUNT)
                 {
@@ -247,6 +252,7 @@ namespace AgCubio
 
         /// <summary>
         /// Adds a new food cube to the world
+        /// NOTE: this method could easily be in the world class.
         /// </summary>
         public Cube GenerateFood()
         {
@@ -262,6 +268,7 @@ namespace AgCubio
 
         /// <summary>
         /// Controls a cube's movements
+        /// NOTE: This method could easily be in the World class.
         /// </summary>
         public void Move(int CubeUid, double x, double y)
         {

@@ -250,5 +250,36 @@ namespace AgCubio
                     c.Mass *= (1 - this.ATTRITION_RATE_SCALER);
             }
         }
+
+
+        /// <summary>
+        /// Manages cubes colliding against each other
+        /// </summary>
+        public StringBuilder ManageCollisions(ref Stack<int> UsedUid)
+        {
+            StringBuilder destroyed = new StringBuilder();
+            // 3 Parts:
+            // Players and Food
+            // Players and Players
+            // Players and Viruses
+
+            // There has to be a faster way of doing this, as this is very slow and costly.
+            // Use a different storing method for food? Store food by location on the screen, then we just check local areas?
+            // Or is there a different solution? Paralell foreach? Other?
+            foreach(Cube player in Cubes.Values)
+            {
+                foreach(Cube food in Food)
+                {
+                    if(food.loc_x > player.left && food.loc_x < player.right && food.loc_y > player.top && food.loc_y < player.bottom)
+                    {
+                        player.Mass += food.Mass;
+                        food.Mass = 0;
+                        destroyed.Append(JsonConvert.SerializeObject(food) + "\n");
+                        UsedUid.Push(food.uid);
+                    }
+                }
+            }
+            return destroyed;
+        }
     }
 }
