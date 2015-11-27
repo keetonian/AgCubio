@@ -15,7 +15,6 @@ namespace AgCubio
     /// </summary>
     class Server
     {
-        // I'd argue for a hashset.
         // Another option: dictionary, where the socket is the Key, a stringbuilder the value, 
         // and we can just constantly put stuff into it and in the networking loop it automatically sends what we want.
         // This way we won't need to send stuff in other places in this code.
@@ -87,6 +86,8 @@ namespace AgCubio
                 Sockets.Add(state.socket);
             }
 
+            Console.WriteLine("User " + state.data + " has connected to the server");
+
             //For original UID's: have a counter that counts up and gives unique uid's
             //When a cube is removed, store the uid in a stack to be reused.
             //If there is nothing on the stack, increment the counter and use that UID.
@@ -135,10 +136,12 @@ namespace AgCubio
             {
                 if(s.ToUpper().Contains("MOVE"))
                 {
-                    try {
+                    try
+                    {
                         int x, y;
                         MatchCollection values = Regex.Matches(s, @"\d+");
-                        Move(state.CubeID, double.Parse(values[0].Value), double.Parse(values[1].Value)); }
+                        Move(state.CubeID, double.Parse(values[0].Value), double.Parse(values[1].Value));
+                    }
                     catch (Exception)
                     { }
 
@@ -247,7 +250,8 @@ namespace AgCubio
         /// </summary>
         public Cube GenerateFood()
         {
-            // On a random scale needs to create viruses too
+            // On a random scale needs to create viruses too (5% of total food? Less?)
+            // Viruses: specific color, specific size or size range. I'd say a size of ~100 or so.
             // Cool thought: viruses can move, become npc's that can try to chase players, or just move erratically
 
             Cube food = new Cube(Rand.Next(World.WIDTH), Rand.Next(World.HEIGHT), GetUid(), true, "", World.FOOD_MASS, GetColor(), 0);
@@ -261,19 +265,21 @@ namespace AgCubio
         /// </summary>
         public void Move(int CubeUid, double x, double y)
         {
-            //Normalize the vector:
+            // Get the relative mouse position:
             x = x - World.Cubes[CubeUid].loc_x;
             y = y - World.Cubes[CubeUid].loc_y;
 
+            // If the mouse is in the very center of the cube, then don't do anything.
             if (Math.Abs(x) < 1 && Math.Abs(y) < 1)
                 return;
 
+            // Normalize the vector:
             double scale = Math.Sqrt(Math.Pow(x, 2) + Math.Pow(y, 2));
             double newX = x / scale;
             double newY = y / scale;
 
-            //add normalized values to the cube's location. 
-            //TODO: add in updates according to the heartbeat, and add in a speed scalar.
+            // Add normalized values to the cube's location. 
+            // TODO: add in updates according to the heartbeat, and add in a speed scalar.
             World.Cubes[CubeUid].loc_x += newX;
             World.Cubes[CubeUid].loc_y += newY;
         }
