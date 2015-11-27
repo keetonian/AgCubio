@@ -174,7 +174,6 @@ namespace AgCubio
         /// <summary>
         /// Helper method: creates a unique uid to give a cube
         /// </summary>
-        /// <returns></returns>
         private int GetUid()
         {
             return (Uids.Count > 0) ? Uids.Pop() : Uid++;

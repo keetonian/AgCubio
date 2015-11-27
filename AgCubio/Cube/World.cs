@@ -197,7 +197,7 @@ namespace AgCubio
             this.HEARTBEATS_PER_SECOND = 30;
             this.HEIGHT = 1000;
             this.WIDTH = 1000;
-            this.MAX_FOOD_COUNT = 5000;
+            this.MAX_FOOD_COUNT = 50000;
             this.MAX_SPEED = 10;
             this.MAX_SPLIT_COUNT = 15;
             this.MAX_SPLIT_DISTANCE = 30;
