@@ -192,7 +192,7 @@ namespace AgCubio
             Cubes = new Dictionary<int, Cube>();
             Food = new HashSet<Cube>();
             this.ABSORB_PERCENT_COVERAGE = .25;
-            this.ATTRITION_RATE_SCALER = .005;
+            this.ATTRITION_RATE_SCALER = .00005;
             this.FOOD_MASS = 1;
             this.HEARTBEATS_PER_SECOND = 30;
             this.HEIGHT = 1000;
@@ -255,7 +255,7 @@ namespace AgCubio
         /// <summary>
         /// Manages cubes colliding against each other
         /// </summary>
-        public StringBuilder ManageCollisions(ref Stack<int> UsedUid)
+        public string ManageCollisions(ref Stack<int> UsedUid)
         {
             StringBuilder destroyed = new StringBuilder();
             // 3 Parts:
@@ -279,7 +279,7 @@ namespace AgCubio
                     }
                 }
             }
-            return destroyed;
+            return destroyed.ToString();
         }
     }
 }
