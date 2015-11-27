@@ -103,7 +103,7 @@ namespace AgCubio
             string worldData;
             lock(World)
             {
-                World.Cubes.Add(cube.uid, cube);
+                World.Cubes[cube.uid] = cube;
                 worldData = World.SerializeAllCubes();
             }
 

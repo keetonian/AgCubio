@@ -197,7 +197,7 @@ namespace AgCubio
             this.HEARTBEATS_PER_SECOND = 30;
             this.HEIGHT = 1000;
             this.WIDTH = 1000;
-            this.MAX_FOOD_COUNT = 50000;
+            this.MAX_FOOD_COUNT = 5000;
             this.MAX_SPEED = 10;
             this.MAX_SPLIT_COUNT = 15;
             this.MAX_SPLIT_DISTANCE = 30;
@@ -276,6 +276,8 @@ namespace AgCubio
                         food.Mass = 0;
                         destroyed.Append(JsonConvert.SerializeObject(food) + "\n");
                         UsedUid.Push(food.uid);
+
+                        System.Diagnostics.Debug.WriteLine("Player: " + player.loc_x + "," + player.loc_y + " Food: " + food.loc_x + "," + food.loc_y);
                     }
                 }
             }
