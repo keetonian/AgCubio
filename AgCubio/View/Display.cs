@@ -415,6 +415,8 @@ namespace AgCubio
                     CubeData.Append(state.data);
                 }
 
+                state.data.Clear();
+
                 // Send a move request, following the convention: '(move, dest_x, dest_y)\n'
                 string move = "(move, " + PrevMouseLoc_x + ", " + PrevMouseLoc_y + ")\n";
                 Network.Send(socket, move);
