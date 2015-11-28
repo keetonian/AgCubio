@@ -23,14 +23,6 @@ namespace AgCubio
         // Cool. We own the world.
         private World World;
 
-        // Our Uid counter
-        private int Uid;
-
-        //Previously used Uid's that can now be reused (cubes were deleted)
-        private Stack<int> Uids;
-
-        //Random number generator
-        private Random Rand;
 
         //Timer that controls updates
         private Timer Heartbeat;
@@ -40,9 +32,6 @@ namespace AgCubio
 
         //Do we need this?
         private StringBuilder DataSent;
-
-        //Queue to hold all the eaten food, to be sent and deleted
-        private Queue<Cube> Deceased;
 
 
         static void Main(string[] args)
@@ -62,14 +51,12 @@ namespace AgCubio
 
             //Initialize many of our member variables.
             Heartbeat = new Timer(HeartBeatTick, null, 0, 1000 / World.HEARTBEATS_PER_SECOND);
-            Uids = new Stack<int>();
-            Rand = new Random();
+           
             DataSent = new StringBuilder();
             DataReceived = new StringBuilder();
-            Deceased = new Queue<Cube>();
 
             while (World.Food.Count < World.MAX_FOOD_COUNT)
-                GenerateFood();
+                World.GenerateFood();
 
             //Start the client loop
             Network.Server_Awaiting_Client_Loop(new Network.Callback(SetUpClient));
@@ -96,8 +83,8 @@ namespace AgCubio
 
             // Generate 2 random starting coords within our world, check if other players are there, then send if player won't get eaten immediately. (helper method)
             double x, y;
-            FindStartingCoords(out x, out y);
-            Cube cube = new Cube(x, y, GetUid(), false, state.data.ToString(), World.PLAYER_START_MASS, GetColor(), 0);
+            World.FindStartingCoords(out x, out y);
+            Cube cube = new Cube(x, y, World.GetUid(), false, state.data.ToString(), World.PLAYER_START_MASS, World.GetColor(), 0);
             state.CubeID = cube.uid;
 
             string worldData;
@@ -138,7 +125,7 @@ namespace AgCubio
                 if (actions[i].ToUpper().Contains("MOVE"))
                 {
                         MatchCollection values = Regex.Matches(actions[i], @"\d+");
-                        Move(state.CubeID, double.Parse(values[0].Value), double.Parse(values[1].Value));
+                        World.Move(state.CubeID, double.Parse(values[0].Value), double.Parse(values[1].Value));
                 }
                 else
                 {
@@ -151,7 +138,7 @@ namespace AgCubio
                 if (lastAction.ToUpper().Contains("MOVE"))
                 {
                     MatchCollection values = Regex.Matches(lastAction, @"\d+");
-                    Move(state.CubeID, double.Parse(values[0].Value), double.Parse(values[1].Value));
+                    World.Move(state.CubeID, double.Parse(values[0].Value), double.Parse(values[1].Value));
                 }
                 else
                 {
@@ -165,54 +152,6 @@ namespace AgCubio
             Network.I_Want_More_Data(state);
         }
 
-
-        /// <summary>
-        /// Finds starting coordinates for a new player cube so that it isn't immediately consumed
-        /// NOTE: Move this to world?
-        /// </summary>
-        private void FindStartingCoords(out double x, out double y)
-        {
-            //Implement this
-            x = Rand.Next((int)World.PLAYER_START_WIDTH, World.WIDTH - (int)World.PLAYER_START_WIDTH);
-            y = Rand.Next((int)World.PLAYER_START_WIDTH, World.HEIGHT - (int)World.PLAYER_START_WIDTH);
-
-            //More complicated stuff looking at other players and what not. Recursion?
-
-            //-----
-            // What do you think about this:
-            // 1 Hashset of lists that contain player x's or y's
-            // Each list is for a 50 (or so) - pixel block and lists all players there.
-            // We just check and make sure that either x (or y) is empty, then start the player there.
-            // If it isn't empty, grab another random value for x (or y, if we choose y) and check that.
-
-            //Alternatively, we could check points (both x's and y's), but that requires a few more resources.
-            //-----
-            if (true)
-                return;
-            else
-                FindStartingCoords(out x, out y);
-        }
-
-
-        /// <summary>
-        /// Helper method: creates a unique uid to give a cube
-        /// NOTE: Move this to world?
-        /// </summary>
-        private int GetUid()
-        {
-            return (Uids.Count > 0) ? Uids.Pop() : Uid++;
-        }
-
-
-        /// <summary>
-        /// Gives the cube a color
-        /// NOTE: Move this to World?
-        /// </summary>
-        /// <returns></returns>
-        private int GetColor()
-        {
-            return Rand.Next(Int32.MinValue, Int32.MaxValue);
-        }
 
 
         /// <summary>
@@ -235,22 +174,12 @@ namespace AgCubio
 
 
                 //Check for collisions, eat some food.
-                data.Append(World.ManageCollisions(ref Uids));
-
-                //NOTE: The above code does about the same thing (ManageCollisions in the world class).
-                // Arrange for eaten food to be sent and then removed
-                while (this.Deceased.Count > 0)
-                {
-                    Cube fatality = Deceased.Dequeue();
-                    data.Append(JsonConvert.SerializeObject(fatality) + "\n");
-                    World.Food.Remove(fatality);
-                }
-
+                data.Append(World.ManageCollisions());
 
                 // Add food to the world if necessary and append it to the data stream
                 if (World.Food.Count < World.MAX_FOOD_COUNT)
                 {
-                    Cube food = GenerateFood();
+                    Cube food = World.GenerateFood();
                     data.Append(JsonConvert.SerializeObject(food) + "\n");
                 }
 
@@ -263,6 +192,8 @@ namespace AgCubio
             {
                 foreach (Socket s in Sockets)
                 {
+                    if (!s.Connected) // We need some way of getting rid of unconnected sockets.
+                        continue;
                     //Do we need to thread this, or is it automatically threaded by virtue of just using sockets?
                     Network.Send(s, data.ToString());
                 }
@@ -273,48 +204,6 @@ namespace AgCubio
         }
 
 
-        /// <summary>
-        /// Adds a new food cube to the world
-        /// NOTE: this method could easily be in the world class
-        /// NOTE: To move it there, we would need to pass in (or, just have there!) random coords, uid functionality, and GetColor.
-        /// All of these methods could well just be in the world class.
-        /// </summary>
-        public Cube GenerateFood()
-        {
-            // On a random scale needs to create viruses too (5% of total food? Less?)
-            // Viruses: specific color, specific size or size range. I'd say a size of ~100 or so.
-            // Cool thought: viruses can move, become npc's that can try to chase players, or just move erratically
-
-            Cube food = new Cube(Rand.Next(World.WIDTH), Rand.Next(World.HEIGHT), GetUid(), true, "", World.FOOD_MASS, GetColor(), 0);
-            World.Food.Add(food);
-            return food;
-        }
-
-
-        /// <summary>
-        /// Controls a cube's movements
-        /// NOTE: This method could easily be in the World class.
-        /// NOTE: This method needs to be controlled by the heartbeat.
-        /// </summary>
-        public void Move(int CubeUid, double x, double y)
-        {
-            // Get the relative mouse position:
-            x = x - World.Cubes[CubeUid].loc_x;
-            y = y - World.Cubes[CubeUid].loc_y;
-
-            // If the mouse is in the very center of the cube, then don't do anything.
-            if (Math.Abs(x) < 1 && Math.Abs(y) < 1)
-                return;
-
-            // Normalize the vector:
-            double scale = Math.Sqrt(Math.Pow(x, 2) + Math.Pow(y, 2));
-            double newX = x / scale;
-            double newY = y / scale;
-
-            // Add normalized values to the cube's location. 
-            // TODO: add in updates according to the heartbeat, and add in a speed scalar.
-            World.Cubes[CubeUid].loc_x += newX;
-            World.Cubes[CubeUid].loc_y += newY;
-        }
+       
     }
 }

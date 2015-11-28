@@ -402,6 +402,12 @@ namespace AgCubio
             Network.I_Want_More_Data(state);
         }
 
+        private void Display_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            this.socket.Shutdown(SocketShutdown.Both);
+            this.socket.Close();
+        }
+
         /// <summary>
         /// Callback method - sends moves, receives data from the server
         /// </summary>
@@ -505,5 +511,6 @@ namespace AgCubio
 
             return base.ProcessCmdKey(ref msg, keyData);
         }
+
     }
 }
