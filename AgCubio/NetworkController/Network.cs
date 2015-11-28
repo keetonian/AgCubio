@@ -32,7 +32,7 @@ namespace AgCubio
         {
             // Store the server IP address and remote endpoint
             //   MSDN: localhost can be found with the "" string.
-            IPAddress ipAddress = (hostname.ToUpper() == "LOCALHOST") ? Dns.GetHostEntry("").AddressList[0] : IPAddress.Parse(hostname);
+            IPAddress ipAddress = (hostname.ToUpper() == "LOCALHOST") ? IPAddress.Parse("127.0.0.1") : IPAddress.Parse(hostname);
             IPEndPoint remoteEP = new IPEndPoint(ipAddress, Port);
 
             // Make a new socket and preserved state object and begin connecting
