@@ -107,6 +107,8 @@ namespace AgCubio
                 worldData = World.SerializeAllCubes();
             }
 
+            state.data.Clear();
+
             state.callback = new Network.Callback(ManageData);
 
             //Sends the client's cube and then all of the world data.
@@ -144,7 +146,7 @@ namespace AgCubio
                 }
             }
             string lastAction = actions.Last();
-            if(lastAction.Last() == ')')
+            if(lastAction.Length > 1 && lastAction?.Last() == ')')
             {
                 if (lastAction.ToUpper().Contains("MOVE"))
                 {
