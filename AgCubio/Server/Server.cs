@@ -168,6 +168,7 @@ namespace AgCubio
 
         /// <summary>
         /// Finds starting coordinates for a new player cube so that it isn't immediately consumed
+        /// NOTE: Move this to world?
         /// </summary>
         private void FindStartingCoords(out double x, out double y)
         {
@@ -195,6 +196,7 @@ namespace AgCubio
 
         /// <summary>
         /// Helper method: creates a unique uid to give a cube
+        /// NOTE: Move this to world?
         /// </summary>
         private int GetUid()
         {
@@ -204,6 +206,7 @@ namespace AgCubio
 
         /// <summary>
         /// Gives the cube a color
+        /// NOTE: Move this to World?
         /// </summary>
         /// <returns></returns>
         private int GetColor()
@@ -272,7 +275,9 @@ namespace AgCubio
 
         /// <summary>
         /// Adds a new food cube to the world
-        /// NOTE: this method could easily be in the world class.
+        /// NOTE: this method could easily be in the world class
+        /// NOTE: To move it there, we would need to pass in (or, just have there!) random coords, uid functionality, and GetColor.
+        /// All of these methods could well just be in the world class.
         /// </summary>
         public Cube GenerateFood()
         {
@@ -289,6 +294,7 @@ namespace AgCubio
         /// <summary>
         /// Controls a cube's movements
         /// NOTE: This method could easily be in the World class.
+        /// NOTE: This method needs to be controlled by the heartbeat.
         /// </summary>
         public void Move(int CubeUid, double x, double y)
         {
