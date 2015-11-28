@@ -90,7 +90,7 @@ namespace AgCubio
                 // If bytes were read, save the decoded string and invoke the callback
                 if (bytesRead > 0)
                 {
-                    state.data = Encoding.UTF8.GetString(state.buffer, 0, bytesRead);
+                    state.data.Append(Encoding.UTF8.GetString(state.buffer, 0, bytesRead));
                     state.callback.DynamicInvoke(state);
                 }
                 // Otherwise we are disconnected - close the socket
@@ -236,6 +236,7 @@ namespace AgCubio
         {
             this.socket = socket;
             this.callback = callback;
+            this.data = new StringBuilder();
         }
 
 
@@ -246,6 +247,7 @@ namespace AgCubio
         {
             this.server = server;
             this.callback = callback;
+            this.data = new StringBuilder();
         }
 
         /// <summary>
@@ -273,7 +275,7 @@ namespace AgCubio
         /// <summary>
         /// String for storing cube data received from the server
         /// </summary>
-        public String data;
+        public StringBuilder data;
 
         /// <summary>
         /// ID for this player's cube. Used in the server

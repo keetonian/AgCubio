@@ -97,7 +97,7 @@ namespace AgCubio
             // Generate 2 random starting coords within our world, check if other players are there, then send if player won't get eaten immediately. (helper method)
             double x, y;
             FindStartingCoords(out x, out y);
-            Cube cube = new Cube(x, y, GetUid(), false, state.data, World.PLAYER_START_MASS, GetColor(), 0);
+            Cube cube = new Cube(x, y, GetUid(), false, state.data.ToString(), World.PLAYER_START_MASS, GetColor(), 0);
             state.CubeID = cube.uid;
 
             string worldData;
@@ -130,25 +130,34 @@ namespace AgCubio
             // The state needs to have its own stringbuilder in this implementation
             // THat string builder would have the partial json strings still in it.
 
-            string[] actions = Regex.Split(state.data, @"\n");
-            foreach(string s in actions)
+            string[] actions = Regex.Split(state.data.ToString(), @"\n");
+            for(int i = 0; i < actions.Length - 1; i++)
             {
-                if (s.ToUpper().Contains("MOVE"))
+                if (actions[i].ToUpper().Contains("MOVE"))
                 {
-                    try
-                    {
-                        int x, y;
-                        MatchCollection values = Regex.Matches(s, @"\d+");
+                        MatchCollection values = Regex.Matches(actions[i], @"\d+");
                         Move(state.CubeID, double.Parse(values[0].Value), double.Parse(values[1].Value));
-                    }
-                    catch (Exception)
-                    { }
-
                 }
                 else
-                { }// Here manage split requests
+                {
+                    // Here manage split requests
+                }
             }
-
+            string lastAction = actions.Last();
+            if(lastAction.Last() == ')')
+            {
+                if (lastAction.ToUpper().Contains("MOVE"))
+                {
+                    MatchCollection values = Regex.Matches(lastAction, @"\d+");
+                    Move(state.CubeID, double.Parse(values[0].Value), double.Parse(values[1].Value));
+                }
+                else
+                {
+                    // Here manage split requests
+                }
+            }
+            else
+                state.data = new StringBuilder(lastAction);
             //Network.Send(state.socket, DataSent.ToString());
 
             Network.I_Want_More_Data(state);
@@ -165,6 +174,16 @@ namespace AgCubio
             y = Rand.Next((int)World.PLAYER_START_WIDTH, World.HEIGHT - (int)World.PLAYER_START_WIDTH);
 
             //More complicated stuff looking at other players and what not. Recursion?
+
+            //-----
+            // What do you think about this:
+            // 1 Hashset of lists that contain player x's or y's
+            // Each list is for a 50 (or so) - pixel block and lists all players there.
+            // We just check and make sure that either x (or y) is empty, then start the player there.
+            // If it isn't empty, grab another random value for x (or y, if we choose y) and check that.
+
+            //Alternatively, we could check points (both x's and y's), but that requires a few more resources.
+            //-----
             if (true)
                 return;
             else
@@ -213,6 +232,15 @@ namespace AgCubio
                 //Check for collisions, eat some food.
                 data.Append(World.ManageCollisions(ref Uids));
 
+                //NOTE: The above code does about the same thing (ManageCollisions in the world class).
+                // Arrange for eaten food to be sent and then removed
+                while (this.Deceased.Count > 0)
+                {
+                    Cube fatality = Deceased.Dequeue();
+                    data.Append(JsonConvert.SerializeObject(fatality) + "\n");
+                    World.Food.Remove(fatality);
+                }
+
 
                 // Add food to the world if necessary and append it to the data stream
                 if (World.Food.Count < World.MAX_FOOD_COUNT)
@@ -221,15 +249,7 @@ namespace AgCubio
                     data.Append(JsonConvert.SerializeObject(food) + "\n");
                 }
 
-                // Arrange for eaten food to be sent and then removed
-                while(this.Deceased.Count > 0)
-                {
-                    Cube fatality = Deceased.Dequeue();
-                    data.Append(JsonConvert.SerializeObject(fatality) + "\n");
-                    World.Food.Remove(fatality);
-                }
-
-                //Appends all of the player cube data - they should be constantly changing, therefore, we send them every time
+                //Appends all of the player cube data - they should be constantly changing (mass, position, or both), therefore, we send them every time
                 data.Append(World.SerializePlayers());
             }
             
@@ -245,8 +265,6 @@ namespace AgCubio
                 // Alternative Route?
                 //Parallel.ForEach<Socket>(Sockets, s => { Network.Send(s, data.ToString()); });
             }
-
-            //Needs a way to send all cubes that were destroyed with a mass of 0, which is a more advanced game mechanic.
         }
 
 
