@@ -377,7 +377,7 @@ namespace AgCubio
         private void GetPlayerCube(Preserved_State_Object state)
         {
             // Get the player cube (and add its uid to the set of split player cubes)
-            Cube c = JsonConvert.DeserializeObject<Cube>(state.data);
+            Cube c = JsonConvert.DeserializeObject<Cube>(state.data.ToString());
             PlayerSplitID.Add(PlayerID = c.uid);
 
             // Set the max mass to the initial player mass
