@@ -276,8 +276,9 @@ namespace AgCubio
             StringBuilder destroyed = new StringBuilder();
             List<Cube> eatenFood;
             // 3 Parts:
-            // Players and Food
+            // Players and Food (Check!)
             // Players and Players
+            //  -- If a split cube of a player dies, and it is the one with that player's uid as its' uid, then we need to assign another one of that player's cubes to that players uid.
             // Players and Viruses
 
             // There has to be a faster way of doing this, as this is very slow and costly.
@@ -303,6 +304,10 @@ namespace AgCubio
         }
 
 
+        /// <summary>
+        /// Removes food that was eaten. This isn't done in place because we use a foreach loop when iterating through food.
+        /// </summary>
+        /// <param name="foodEaten"></param>
         public void RemoveEatenFood(IEnumerable<Cube> foodEaten)
         {
             foreach(Cube c in foodEaten)
@@ -377,6 +382,8 @@ namespace AgCubio
             // Viruses: specific color, specific size or size range. I'd say a size of ~100 or so.
             // Cool thought: viruses can move, become npc's that can try to chase players, or just move erratically
 
+            //Another thought: randomly allow a food piece to get 1 size bigger (mass++) each time this is called.
+
             Cube food = new Cube(Rand.Next(WIDTH), Rand.Next(HEIGHT), GetUid(), true, "", FOOD_MASS, GetColor(), 0);
             Food.Add(food);
             return food;
@@ -388,8 +395,8 @@ namespace AgCubio
 
         /// <summary>
         /// Controls a cube's movements
-        /// NOTE: This method could easily be in the World class.
         /// NOTE: This method needs to be controlled by the heartbeat.
+        /// NOTE: THis method needs to have bounds (so player can't go outside of the world).
         /// </summary>
         public void Move(int CubeUid, double x, double y)
         {
@@ -413,5 +420,37 @@ namespace AgCubio
         }
 
 
+        /// <summary>
+        /// Manages split requests
+        /// </summary>
+        /// <param name="CubeUid"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        public void Split(int CubeUid, double x, double y)
+        {
+            // Assign a teamid- that is the original uid
+            // Still have a cube with original uid
+            // 
+            // Needs another data structure that keeps track of all of this player's cubes
+            // These cubes need to be able to split again if they can, all of them.
+            // Somehow needs to be able to merge back together as well at some point.
+            // Perhaps in some data structure, have a stopwatch with each new cube? After the stopwatch hits some amount, that specific cube can merge back in if it is touching another cube?
+
+            /*From Website:
+            Timer: When a cube splits it should have a time set. 
+            The cube should be marked as not being allowed to merge until the time elapses.
+
+            Momentum: When a cube splits, it should not immediately jump to the final "split point", 
+            but should instead have a momentum that moves it smoothly toward that spot for a short period of time.
+            */
+
+            if (Cubes[CubeUid].Mass > this.MIN_SPLIT_MASS) // && PlayerSplitCubes.Count < this.MAX_SPLIT_COUNT
+            {
+                //do something
+            }
+            else
+                return;
+
+        }
     }
 }

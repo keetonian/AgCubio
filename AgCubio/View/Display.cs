@@ -1,6 +1,16 @@
 ﻿// Created by Daniel Avery and Keeton Hodgson
 // November 2015
 
+/*FROM WEBSITE:
+As stated above, the Client GUI should not be changed for this project. 
+The one exception you may want to make is the following: 
+
+Allow the Client to press a magic key (the '!') and turn off the view scaling, allowing you to see the entire world. 
+This will allow the server developer to have a visual on what is happening. 
+
+Additionally, you could instrument your server so that if you send the magic name: "observer", no player cube is created.
+*/
+
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
