@@ -96,10 +96,6 @@
       <Project>{c456668d-96a7-4218-9406-de1ff66fcbf3}</Project>
       <Name>NetworkController</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Server\Server.csproj">
-      <Project>{558b77cc-47c4-4235-ba78-76c74d0744a8}</Project>
-      <Name>Server</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AgCubioPic.png" />

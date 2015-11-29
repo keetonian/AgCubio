@@ -117,7 +117,15 @@ namespace AgCubio
         /// </summary>
         public static void I_Want_More_Data(Preserved_State_Object state)
         {
-            state.socket.BeginReceive(state.buffer, 0, Preserved_State_Object.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
+            try
+            {
+                state.socket.BeginReceive(state.buffer, 0, Preserved_State_Object.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
+            }
+            catch(Exception)
+            {
+                //Do something? Exception was thrown when I opened lots of windows, connected them all, then closed them all, then opened another one to connect and it didn't like it.
+                //I was running server code at the time.
+            }
         }
 
 

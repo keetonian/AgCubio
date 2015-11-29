@@ -13,7 +13,7 @@ namespace AgCubio
     /// <summary>
     /// 
     /// </summary>
-    class Server
+    public class Server
     {
         // Another option: dictionary, where the socket is the Key, a stringbuilder the value, 
         // and we can just constantly put stuff into it and in the networking loop it automatically sends what we want.
@@ -34,7 +34,7 @@ namespace AgCubio
         private StringBuilder DataSent;
 
 
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             new Server();
             Console.ReadLine();
