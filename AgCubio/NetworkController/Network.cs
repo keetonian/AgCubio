@@ -99,8 +99,8 @@ namespace AgCubio
                     //TODO: do these have to stay commented out for it to work, or does it work now?
                     //Needs to be tested again.
 
-                    //state.socket.Shutdown(SocketShutdown.Both);
-                    //state.socket.Close();
+                    state.socket.Shutdown(SocketShutdown.Both);
+                    state.socket.Close();
                 }
             }
             catch (Exception)
