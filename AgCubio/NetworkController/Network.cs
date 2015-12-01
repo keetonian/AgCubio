@@ -208,6 +208,9 @@ namespace AgCubio
         public static void Accept_a_New_Client(IAsyncResult ar)
         {
             System.Diagnostics.Debug.WriteLine("Server Accept Client");
+            //NOTE: sometimes when several clients are connected, then one experiences an error, then
+            // the code goes to this point then does not actually completely connect the client to server.
+            // More study of this bug is needed.
 
             Preserved_State_Object state = (Preserved_State_Object)ar.AsyncState;
             state.socket = state.server.EndAcceptSocket(ar);

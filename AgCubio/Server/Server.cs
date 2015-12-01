@@ -100,7 +100,7 @@ namespace AgCubio
 
             //Sends the client's cube and then all of the world data.
             Network.Send(state.socket, JsonConvert.SerializeObject(cube) + "\n");
-            Thread.Sleep(1000); // Temporary fix... Maybe. Do we even need this?
+           // Thread.Sleep(1000); // Temporary fix... Maybe. Do we even need this?
 
             Network.Send(state.socket, worldData);
 
