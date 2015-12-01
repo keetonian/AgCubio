@@ -100,7 +100,7 @@ namespace AgCubio
 
             //Sends the client's cube and then all of the world data.
             Network.Send(state.socket, JsonConvert.SerializeObject(cube) + "\n");
-           // Thread.Sleep(1000); // Temporary fix... Maybe. Do we even need this?
+            //Thread.Sleep(1000); // Temporary fix... Maybe. Do we even need this?
 
             Network.Send(state.socket, worldData);
 
@@ -119,34 +119,29 @@ namespace AgCubio
             // The state needs to have its own stringbuilder in this implementation
             // THat string builder would have the partial json strings still in it.
 
-            string[] actions = Regex.Split(state.data.ToString(), @"\n");
-            for(int i = 0; i < actions.Length - 1; i++)
+            Action<String> TryMoveOrSplit = new Action<String>((str) =>
             {
-                if (actions[i].ToUpper().Contains("MOVE"))
+                if (str[1] == 'm')
                 {
-                        MatchCollection values = Regex.Matches(actions[i], @"\d+");
-                        World.Move(state.CubeID, double.Parse(values[0].Value), double.Parse(values[1].Value));
-                }
-                else
-                {
-                    // Here manage split requests
-                }
-            }
-            string lastAction = actions.Last();
-            if(lastAction.Length > 1 && lastAction?.Last() == ')')
-            {
-                if (lastAction.ToUpper().Contains("MOVE"))
-                {
-                    MatchCollection values = Regex.Matches(lastAction, @"\d+");
+                    MatchCollection values = Regex.Matches(str, @"\d+");
                     World.Move(state.CubeID, double.Parse(values[0].Value), double.Parse(values[1].Value));
                 }
-                else
+                else if (str[1] == 's')
                 {
                     // Here manage split requests
                 }
-            }
+            });
+
+            string[] actions = Regex.Split(state.data.ToString(), @"\n");
+            for (int i = 0; i < actions.Length - 1; i++)
+                TryMoveOrSplit(actions[i]);
+
+            string lastAction = actions.Last();
+            if (lastAction.Length > 1 && lastAction?.Last() == ')')
+                TryMoveOrSplit(lastAction);
             else
                 state.data = new StringBuilder(lastAction);
+
             //Network.Send(state.socket, DataSent.ToString());
 
             Network.I_Want_More_Data(state);
