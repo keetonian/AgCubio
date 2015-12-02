@@ -32,7 +32,7 @@ namespace AgCubio
         {
             // Store the server IP address and remote endpoint
             //   MSDN: localhost can be found with the "" string.
-            IPAddress ipAddress = (hostname.ToUpper() == "LOCALHOST") ? Dns.GetHostEntry("").AddressList[0] : IPAddress.Parse(hostname);
+            IPAddress ipAddress = (hostname.ToUpper() == "LOCALHOST") ? IPAddress.Parse("127.0.0.1") : IPAddress.Parse(hostname);
             IPEndPoint remoteEP = new IPEndPoint(ipAddress, Port);
 
             // Make a new socket and preserved state object and begin connecting
@@ -82,21 +82,23 @@ namespace AgCubio
         {
             // Get the state from the parameter, declare a variable for holding count of received bytes
             Preserved_State_Object state = (Preserved_State_Object)state_in_an_ar_object.AsyncState;
-            int bytesRead;
 
             try
             {
-                bytesRead = state.socket.EndReceive(state_in_an_ar_object);
+                int bytesRead = state.socket.EndReceive(state_in_an_ar_object);
 
                 // If bytes were read, save the decoded string and invoke the callback
                 if (bytesRead > 0)
                 {
-                    state.data = Encoding.UTF8.GetString(state.buffer, 0, bytesRead);
+                    state.data.Append(Encoding.UTF8.GetString(state.buffer, 0, bytesRead));
                     state.callback.DynamicInvoke(state);
                 }
                 // Otherwise we are disconnected - close the socket
                 else
                 {
+                    //TODO: do these have to stay commented out for it to work, or does it work now?
+                    //Needs to be tested again.
+
                     state.socket.Shutdown(SocketShutdown.Both);
                     state.socket.Close();
                 }
@@ -115,7 +117,15 @@ namespace AgCubio
         /// </summary>
         public static void I_Want_More_Data(Preserved_State_Object state)
         {
-            state.socket.BeginReceive(state.buffer, 0, Preserved_State_Object.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
+            try
+            {
+                state.socket.BeginReceive(state.buffer, 0, Preserved_State_Object.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
+            }
+            catch(Exception)
+            {
+                //Do something? Exception was thrown when I opened lots of windows, connected them all, then closed them all, then opened another one to connect and it didn't like it.
+                //I was running server code at the time.
+            }
         }
 
 
@@ -126,7 +136,14 @@ namespace AgCubio
         {
             byte[] byteData = Encoding.UTF8.GetBytes(data);
             Tuple<Socket, byte[]> state = new Tuple<Socket, byte[]>(socket, byteData);
-            socket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallBack), state);
+            try
+            {
+                socket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallBack), state);
+            }
+            catch(Exception)
+            {
+                //TODO: fix this for if a socket is closed, say, in the upper level check for a connection?
+            }
         }
 
 
@@ -136,16 +153,24 @@ namespace AgCubio
         public static void SendCallBack(IAsyncResult state_in_an_ar_object)
         {
             Tuple<Socket, byte[]> state = (Tuple<Socket, byte[]>)state_in_an_ar_object.AsyncState;
-            int bytesSent = state.Item1.EndSend(state_in_an_ar_object);
-
-            if (bytesSent == state.Item2.Length)
-                return;
-            else
+            try
             {
-                byte[] bytes = new byte[state.Item2.Length - bytesSent];
-                Array.ConstrainedCopy(state.Item2, bytesSent, bytes, 0, bytes.Length);
-                Tuple<Socket, byte[]> newState = new Tuple<Socket, byte[]>(state.Item1, bytes);
-                state.Item1.BeginSend(state.Item2, bytesSent, state.Item2.Length, 0, new AsyncCallback(SendCallBack), newState);
+                int bytesSent = state.Item1.EndSend(state_in_an_ar_object);
+
+                if (bytesSent == state.Item2.Length)
+                    return;
+                else
+                {
+                    byte[] bytes = new byte[state.Item2.Length - bytesSent];
+                    Array.ConstrainedCopy(state.Item2, bytesSent, bytes, 0, bytes.Length);
+                    Tuple<Socket, byte[]> newState = new Tuple<Socket, byte[]>(state.Item1, bytes);
+                    state.Item1.BeginSend(state.Item2, bytesSent, state.Item2.Length, 0, new AsyncCallback(SendCallBack), newState);
+                }
+            }
+            catch(Exception)
+            {
+                //TODO: Was throwing exceptions here and in send because of sockets closing
+                //Need to have a good way of taking care of this.
             }
         }
 
@@ -153,25 +178,23 @@ namespace AgCubio
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="callback"></param>
         public static void Server_Awaiting_Client_Loop(Delegate callback)
         {
-            IPAddress IP = IPAddress.Parse("127.0.0.1");
-            TcpListener server = new TcpListener(IPAddress.Any, 11000);
+            TcpListener server = new TcpListener(IPAddress.Any,11000);
+            // NOTE:
+            // Sample client code works when IPAddress.IPv6Any is used, out client code doesn't when it is used
+            // Our client works with (11000) (just the port #) or IPAddress.Any.
+
             server.Start();
             Preserved_State_Object state = new Preserved_State_Object(server, callback);
-            state.callback.DynamicInvoke(state);
 
-            // Probably don't need another thread, just trying things.
-            //new Thread(() => server.BeginAcceptSocket(new AsyncCallback(Accept_a_New_Client), state));
             server.BeginAcceptSocket(new AsyncCallback(Accept_a_New_Client), state);
-            //server.BeginAcceptTcpClient(new AsyncCallback(Accept_a_New_Client), state);
-            //server.Pending()?
-
 
             System.Diagnostics.Debug.WriteLine("Server Awaiting client");
 
             /*
+            Class webpage:
+
             This is the heart of the server code. It should ask the OS to listen for a connection and save the callback function with that request. 
             Upon a connection request coming in the OS should invoke the Accept_a_New_Client method (see below).
 
@@ -189,13 +212,15 @@ namespace AgCubio
         public static void Accept_a_New_Client(IAsyncResult ar)
         {
             System.Diagnostics.Debug.WriteLine("Server Accept Client");
+            //NOTE: sometimes when several clients are connected, then one experiences an error, then
+            // the code goes to this point then does not actually completely connect the client to server.
+            // More study of this bug is needed.
 
             Preserved_State_Object state = (Preserved_State_Object)ar.AsyncState;
             state.socket = state.server.EndAcceptSocket(ar);
 
             state.socket.BeginReceive(state.buffer, 0, Preserved_State_Object.BufferSize, 0, new AsyncCallback(ReceiveCallback), state); //Get the name, then give them their cube.
             state.server.BeginAcceptSocket(new AsyncCallback(Accept_a_New_Client), new Preserved_State_Object(state.server, state.callback));
-
 
             /*
             This code should be invoked by the OS when a connection request comes in. It should:
@@ -226,6 +251,7 @@ namespace AgCubio
         {
             this.socket = socket;
             this.callback = callback;
+            this.data = new StringBuilder();
         }
 
 
@@ -236,6 +262,7 @@ namespace AgCubio
         {
             this.server = server;
             this.callback = callback;
+            this.data = new StringBuilder();
         }
 
         /// <summary>
@@ -263,7 +290,12 @@ namespace AgCubio
         /// <summary>
         /// String for storing cube data received from the server
         /// </summary>
-        public String data;
+        public StringBuilder data;
+
+        /// <summary>
+        /// ID for this player's cube. Used in the server
+        /// </summary>
+        public int CubeID;
 
         // FOR SERVER USE:
 

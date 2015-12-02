@@ -1,6 +1,16 @@
 ﻿// Created by Daniel Avery and Keeton Hodgson
 // November 2015
 
+/*FROM WEBSITE:
+As stated above, the Client GUI should not be changed for this project. 
+The one exception you may want to make is the following: 
+
+Allow the Client to press a magic key (the '!') and turn off the view scaling, allowing you to see the entire world. 
+This will allow the server developer to have a visual on what is happening. 
+
+Additionally, you could instrument your server so that if you send the magic name: "observer", no player cube is created.
+*/
+
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -195,8 +205,8 @@ namespace AgCubio
                         if (c.food)
                         {
                             // Food is scaled, and has an extra scaling factor (so we can see it at larger cube sizes - temporary design decision to deal with a faulty server)
-                            rectangle = new RectangleF((int)((c.loc_x - Px - c.width * scale * 3) * scale + Width / 2),
-                            (int)((c.loc_y - Py - c.width * scale * 3) * scale + Height / 2), (int)(c.width * scale * 6), (int)(c.width * scale * 6));
+                            rectangle = new RectangleF((int)((c.loc_x - Px - c.width / 2) * scale + Width / 2),
+                            (int)((c.loc_y - Py - c.width / 2) * scale + Height / 2), (int)(c.width * scale), (int)(c.width * scale));
 
                             // Food is painted with solid colors
                             brush = new SolidBrush(Color.FromArgb(c.argb_color));
@@ -207,8 +217,8 @@ namespace AgCubio
                         else
                         {
                             // Location is calculated differently for user and other players - user is centered, other players' coordinates are scaled
-                            rectangle = (c.uid == PlayerID) ? new RectangleF((int)(Width / 2 - c.width / 2), (int)(Height / 2 - c.width / 2), (int)(c.width), (int)(c.width)) :
-                                new RectangleF((int)((c.loc_x - Px - c.width/4) * scale + Width / 2), (int)((c.loc_y - Py - c.width/4) * scale + Height / 2), (int)(c.width), (int)(c.width));
+                            rectangle = (c.uid == PlayerID) ? new RectangleF((int)(Width / 2 - c.width * scale / 2), (int)(Height / 2 - c.width * scale / 2), (int)(c.width * scale), (int)(c.width* scale)) :
+                                new RectangleF((int)((c.loc_x - Px - c.width * scale / 2) * scale + Width / 2), (int)((c.loc_y - Py - c.width * scale / 2) * scale + Height / 2), (int)(c.width* scale), (int)(c.width* scale));
 
                             // Players are painted with a diagonal gradient, ranging from the actual (server-defined) color to its negative
                             brush = new LinearGradientBrush(rectangle, Color.FromArgb(c.argb_color), Color.FromArgb(c.argb_color^0xFFFFFF), 225);
@@ -270,7 +280,7 @@ namespace AgCubio
                 World = new World();
 
             // Get rid of the network thread so it isn't updating while no work is being done
-            NetworkThread.Abort();
+            //NetworkThread.Abort();
 
             // Close the socket, not being used until player signs in again.
             socket.Close();
@@ -377,7 +387,7 @@ namespace AgCubio
         private void GetPlayerCube(Preserved_State_Object state)
         {
             // Get the player cube (and add its uid to the set of split player cubes)
-            Cube c = JsonConvert.DeserializeObject<Cube>(state.data);
+            Cube c = JsonConvert.DeserializeObject<Cube>(state.data.ToString());
             PlayerSplitID.Add(PlayerID = c.uid);
 
             // Set the max mass to the initial player mass
@@ -402,6 +412,12 @@ namespace AgCubio
             Network.I_Want_More_Data(state);
         }
 
+        private void Display_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            this.socket.Shutdown(SocketShutdown.Both);
+            this.socket.Close();
+        }
+
         /// <summary>
         /// Callback method - sends moves, receives data from the server
         /// </summary>
@@ -414,6 +430,8 @@ namespace AgCubio
                     // Use the StringBuilder to append the string received from the server
                     CubeData.Append(state.data);
                 }
+
+                state.data.Clear();
 
                 // Send a move request, following the convention: '(move, dest_x, dest_y)\n'
                 string move = "(move, " + PrevMouseLoc_x + ", " + PrevMouseLoc_y + ")\n";
@@ -445,6 +463,8 @@ namespace AgCubio
                     // Parse all cubes into the world except the last one
                     for (int i = 0; i < cubes.Length - 1; i++)
                     {
+                        if (cubes[i] == "") //Quick fix- sometimes gets a blank string. Needs to be fixed in server.
+                            continue;
                         Cube c = JsonConvert.DeserializeObject<Cube>(cubes[i]);
                         World.Cubes[c.uid] = c;
 
@@ -466,7 +486,7 @@ namespace AgCubio
                     if (lastCube.Length > 0 && lastCube.Last() == '}')
                     {
                         Cube c = JsonConvert.DeserializeObject<Cube>(lastCube);
-                        World.Cubes.Add(c.uid, c);
+                        World.Cubes[c.uid] = c;
                         lastCube = "";
                     }
                 }
@@ -501,5 +521,6 @@ namespace AgCubio
 
             return base.ProcessCmdKey(ref msg, keyData);
         }
+
     }
 }

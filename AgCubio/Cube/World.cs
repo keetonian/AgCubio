@@ -3,7 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Xml;
+using Newtonsoft.Json;
 
 namespace AgCubio
 {
@@ -12,6 +14,17 @@ namespace AgCubio
     /// </summary>
     public class World
     {
+
+
+        // Our Uid counter
+        private int Uid;
+
+        //Previously used Uid's that can now be reused (cubes were deleted)
+        private Stack<int> Uids;
+
+        //Random number generator
+        private Random Rand;
+
         /// <summary>
         /// Width of the world
         /// </summary>
@@ -87,6 +100,11 @@ namespace AgCubio
         /// </summary>
         public Dictionary<int,Cube> Cubes { get; set; }
 
+        /// <summary>
+        /// Keeps track of all food.
+        /// </summary>
+        public HashSet<Cube> Food { get; set; }
+
 
         /// <summary>
         /// Constructs a new world of the specified dimensions in the xml file
@@ -94,6 +112,9 @@ namespace AgCubio
         public World(string filename)
         {
             Cubes = new Dictionary<int,Cube>();
+            Food = new HashSet<Cube>();
+            Rand = new Random();
+            Uids = new Stack<int>();
             using (XmlReader reader = XmlReader.Create(filename))
             {
                 //TODO: implement xml file stuff.
@@ -181,8 +202,10 @@ namespace AgCubio
         /// </summary>
         public World()
         {
+            Cubes = new Dictionary<int, Cube>();
+            Food = new HashSet<Cube>();
             this.ABSORB_PERCENT_COVERAGE = .25;
-            this.ATTRITION_RATE_SCALER = .005;
+            this.ATTRITION_RATE_SCALER = .001;
             this.FOOD_MASS = 1;
             this.HEARTBEATS_PER_SECOND = 30;
             this.HEIGHT = 1000;
@@ -195,6 +218,239 @@ namespace AgCubio
             this.MIN_SPLIT_MASS = 25;
             this.PLAYER_START_MASS = 10;
             this.PLAYER_START_WIDTH = Math.Sqrt(this.PLAYER_START_MASS);
+            Rand = new Random();
+            Uids = new Stack<int>();
+
+        }
+
+
+        /// <summary>
+        /// Serializes all cubes in the world to send them to a new player.
+        /// </summary>
+        public string SerializeAllCubes()
+        {
+            StringBuilder info = new StringBuilder();
+            foreach(Cube c in Food)
+            {
+                info.Append(JsonConvert.SerializeObject(c) + "\n");
+            }
+
+            info.Append(SerializePlayers());
+
+            return info.ToString();
+        }
+
+
+        /// <summary>
+        /// Serializes all players.
+        /// </summary>
+        public string SerializePlayers()
+        {
+            StringBuilder players = new StringBuilder();
+            foreach (Cube c in Cubes.Values)
+            {
+                players.Append(JsonConvert.SerializeObject(c) + "\n");
+            }
+            return players.ToString();
+        }
+
+
+        /// <summary>
+        /// Atrophy! Players decrease in size
+        /// </summary>
+        public void PlayerAttrition()
+        {
+            foreach(Cube c in Cubes.Values)
+            {
+                if (c.Mass > this.PLAYER_START_MASS)
+                    c.Mass *= (1 - this.ATTRITION_RATE_SCALER);
+            }
+        }
+
+
+        /// <summary>
+        /// Manages cubes colliding against each other
+        /// </summary>
+        public string ManageCollisions()
+        {
+            StringBuilder destroyed = new StringBuilder();
+            List<Cube> eatenFood;
+            // 3 Parts:
+            // Players and Food (Check!)
+            // Players and Players
+            //  -- If a split cube of a player dies, and it is the one with that player's uid as its' uid, then we need to assign another one of that player's cubes to that players uid.
+            // Players and Viruses
+
+            // There has to be a faster way of doing this, as this is very slow and costly.
+            // Use a different storing method for food? Store food by location on the screen, then we just check local areas?
+            // Or is there a different solution? Paralell foreach? Other?
+            foreach(Cube player in Cubes.Values)
+            {
+                eatenFood = new List<Cube>();
+                foreach (Cube food in Food)
+                {
+                    if(food.loc_x > player.left && food.loc_x < player.right && food.loc_y > player.top && food.loc_y < player.bottom)
+                    {
+                        player.Mass += food.Mass;
+                        food.Mass = 0;
+                        destroyed.Append(JsonConvert.SerializeObject(food) + "\n");
+                        Uids.Push(food.uid);
+                        eatenFood.Add(food);
+                    }
+                }
+                RemoveEatenFood(eatenFood);
+            }
+            return destroyed.ToString();
+        }
+
+
+        /// <summary>
+        /// Removes food that was eaten. This isn't done in place because we use a foreach loop when iterating through food.
+        /// </summary>
+        /// <param name="foodEaten"></param>
+        public void RemoveEatenFood(IEnumerable<Cube> foodEaten)
+        {
+            foreach(Cube c in foodEaten)
+            {
+                Food.Remove(c);
+            }
+        }
+
+
+
+        /// <summary>
+        /// Finds starting coordinates for a new player cube so that it isn't immediately consumed
+        /// NOTE: Move this to world?
+        /// </summary>
+        public void FindStartingCoords(out double x, out double y)
+        {
+            //Implement this
+            x = Rand.Next((int)PLAYER_START_WIDTH, WIDTH - (int)PLAYER_START_WIDTH);
+            y = Rand.Next((int)PLAYER_START_WIDTH, HEIGHT - (int)PLAYER_START_WIDTH);
+
+            //More complicated stuff looking at other players and what not. Recursion?
+
+            //-----
+            // What do you think about this:
+            // 1 Hashset of lists that contain player x's or y's
+            // Each list is for a 50 (or so) - pixel block and lists all players there.
+            // We just check and make sure that either x (or y) is empty, then start the player there.
+            // If it isn't empty, grab another random value for x (or y, if we choose y) and check that.
+
+            //Alternatively, we could check points (both x's and y's), but that requires a few more resources.
+            //-----
+
+            if (true)
+                return;
+            else
+                FindStartingCoords(out x, out y);
+        }
+
+
+
+
+        /// <summary>
+        /// Helper method: creates a unique uid to give a cube
+        /// NOTE: Move this to world?
+        /// </summary>
+        public int GetUid()
+        {
+            return (Uids.Count > 0) ? Uids.Pop() : Uid++;
+        }
+
+
+        /// <summary>
+        /// Gives the cube a color
+        /// NOTE: Move this to World?
+        /// </summary>
+        /// <returns></returns>
+        public int GetColor()
+        {
+            return Rand.Next(Int32.MinValue, Int32.MaxValue);
+        }
+
+
+        /// <summary>
+        /// Adds a new food cube to the world
+        /// NOTE: this method could easily be in the world class
+        /// NOTE: To move it there, we would need to pass in (or, just have there!) random coords, uid functionality, and GetColor.
+        /// All of these methods could well just be in the world class.
+        /// </summary>
+        public Cube GenerateFood()
+        {
+            // On a random scale needs to create viruses too (5% of total food? Less?)
+            // Viruses: specific color, specific size or size range. I'd say a size of ~100 or so.
+            // Cool thought: viruses can move, become npc's that can try to chase players, or just move erratically
+
+            //Another thought: randomly allow a food piece to get 1 size bigger (mass++) each time this is called.
+
+            Cube food = new Cube(Rand.Next(WIDTH), Rand.Next(HEIGHT), GetUid(), true, "", FOOD_MASS, GetColor(), 0);
+            Food.Add(food);
+            return food;
+        }
+
+
+
+
+
+        /// <summary>
+        /// Controls a cube's movements
+        /// NOTE: This method needs to be controlled by the heartbeat.
+        /// NOTE: THis method needs to have bounds (so player can't go outside of the world).
+        /// </summary>
+        public void Move(int CubeUid, double x, double y)
+        {
+            // Get the relative mouse position:
+            x = x - Cubes[CubeUid].loc_x;
+            y = y - Cubes[CubeUid].loc_y;
+
+            // If the mouse is in the very center of the cube, then don't do anything.
+            if (Math.Abs(x) < 1 && Math.Abs(y) < 1)
+                return;
+
+            // Normalize the vector:
+            double scale = Math.Sqrt(Math.Pow(x, 2) + Math.Pow(y, 2));
+            double newX = x / scale;
+            double newY = y / scale;
+
+            // Add normalized values to the cube's location. 
+            // TODO: add in updates according to the heartbeat, and add in a speed scalar.
+            Cubes[CubeUid].loc_x += newX;
+            Cubes[CubeUid].loc_y += newY;
+        }
+
+
+        /// <summary>
+        /// Manages split requests
+        /// </summary>
+        /// <param name="CubeUid"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        public void Split(int CubeUid, double x, double y)
+        {
+            // Assign a teamid- that is the original uid
+            // Still have a cube with original uid
+            // 
+            // Needs another data structure that keeps track of all of this player's cubes
+            // These cubes need to be able to split again if they can, all of them.
+            // Somehow needs to be able to merge back together as well at some point.
+            // Perhaps in some data structure, have a stopwatch with each new cube? After the stopwatch hits some amount, that specific cube can merge back in if it is touching another cube?
+
+            /*From Website:
+            Timer: When a cube splits it should have a time set. 
+            The cube should be marked as not being allowed to merge until the time elapses.
+
+            Momentum: When a cube splits, it should not immediately jump to the final "split point", 
+            but should instead have a momentum that moves it smoothly toward that spot for a short period of time.
+            */
+
+            if (Cubes[CubeUid].Mass > this.MIN_SPLIT_MASS) // && PlayerSplitCubes.Count < this.MAX_SPLIT_COUNT
+            {
+                //do something
+            }
+            else
+                return;
+
         }
     }
 }

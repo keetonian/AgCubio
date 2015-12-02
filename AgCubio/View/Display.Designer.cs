@@ -221,6 +221,7 @@
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "Display";
             this.Text = "AgCubio Client";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Display_FormClosing);
             this.ResumeLayout(false);
             this.PerformLayout();
 

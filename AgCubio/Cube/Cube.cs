@@ -74,6 +74,30 @@ namespace AgCubio
             private set { }
         }
 
+        public double right
+        {
+            get { return this.loc_x + this.width / 2; }
+            private set { }
+        }
+
+        public double left
+        {
+            get { return this.loc_x - this.width / 2; }
+            private set { }
+        }
+
+        public double top
+        {
+            get { return this.loc_y - this.width / 2; }
+            private set { }
+        }
+
+        public double bottom
+        {
+            get { return this.loc_y + this.width / 2; }
+            private set { }
+        }
+
 
         /// <summary>
         /// Constructs a Cube
@@ -89,6 +113,16 @@ namespace AgCubio
             Mass = mass;
             argb_color = color;
             Team_ID = team_id;
+        }
+
+
+        /// <summary>
+        /// Overrides hash code- gets the uid instead.
+        /// </summary>
+        /// <returns></returns>
+        public override int GetHashCode()
+        {
+            return this.uid;
         }
     }
 }
