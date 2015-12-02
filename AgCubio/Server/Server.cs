@@ -120,19 +120,19 @@ namespace AgCubio
         /// </summary>
         private void ManageData(Preserved_State_Object state)
         {
-            
-                Action<String> TryMoveOrSplit = new Action<String>((str) =>
-                {
-                    MatchCollection values = Regex.Matches(str, @"-*\d+");
-                    double x = double.Parse(values[0].Value);
-                    double y = double.Parse(values[1].Value);
 
-                    if (str[1] == 'm')
-                        lock (DataReceived) { DataReceived[state.CubeID] = new Tuple<double, double>(x, y); }
-                    else if (str[1] == 's')
-                        lock (World) { World.Split(state.CubeID, x, y); }
+            Action<String> TryMoveOrSplit = new Action<String>((str) =>
+            {
+                MatchCollection values = Regex.Matches(str, @"-*\d+");
+                double x = double.Parse(values[0].Value);
+                double y = double.Parse(values[1].Value);
 
-                });
+                if (str[1] == 'm')
+                    lock (DataReceived) { DataReceived[state.CubeID] = new Tuple<double, double>(x, y); }
+                else if (str[1] == 's')
+                    lock (World) { World.Split(state.CubeID, x, y); }
+
+            });
 
 
             string[] actions = Regex.Split(state.data.ToString(), @"\n");

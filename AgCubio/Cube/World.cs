@@ -400,7 +400,7 @@ namespace AgCubio
             int random = Rand.Next(100);
 
             //create a virus 3% of the time
-            if(random > 97)
+            if(random > 99)
             {
                 Cube virus = new Cube(Rand.Next(WIDTH), Rand.Next(HEIGHT), GetUid(), true, "", VIRUS_MASS, Color.Green.ToArgb(), 0);
                 Food.Add(virus);
