@@ -105,12 +105,15 @@ namespace AgCubio
         /// </summary>
         public HashSet<Cube> Food { get; set; }
 
+        private Dictionary<int, List<int>> SplitCubeUids;
+
 
         /// <summary>
         /// Constructs a new world of the specified dimensions in the xml file
         /// </summary>
         public World(string filename)
         {
+            SplitCubeUids = new Dictionary<int, List<int>>();
             Cubes = new Dictionary<int,Cube>();
             Food = new HashSet<Cube>();
             Rand = new Random();
@@ -202,6 +205,7 @@ namespace AgCubio
         /// </summary>
         public World()
         {
+            SplitCubeUids = new Dictionary<int, List<int>>();
             Cubes = new Dictionary<int, Cube>();
             Food = new HashSet<Cube>();
             this.ABSORB_PERCENT_COVERAGE = .25;
@@ -428,6 +432,31 @@ namespace AgCubio
         /// <param name="y"></param>
         public void Split(int CubeUid, double x, double y)
         {
+            if (!SplitCubeUids.ContainsKey(CubeUid) && Cubes[CubeUid].Mass > this.MIN_SPLIT_MASS)
+            {
+                List<int> list = new List<int>();
+                list.Add(CubeUid);
+                SplitCubeUids[CubeUid] = list;
+            }
+
+            int[] temp = SplitCubeUids[CubeUid].ToArray();
+            foreach(int uid in temp)
+            {
+                double mass = Cubes[uid].Mass;
+                if (mass < this.MIN_SPLIT_MASS)
+                    continue;
+
+                // Halve the mass of the original cube, create a new cube
+                Cubes[uid].Mass = mass / 2;
+                Cube newCube = new Cube(x, y, GetUid(), false, Cubes[CubeUid].Name, mass / 2, Cubes[CubeUid].argb_color, CubeUid);
+
+                // Add the new cube to the world
+                Cubes.Add(newCube.uid, newCube);
+
+                SplitCubeUids[CubeUid].Add(newCube.uid);
+            }
+
+            
             // Assign a teamid- that is the original uid
             // Still have a cube with original uid
             // 
@@ -443,13 +472,6 @@ namespace AgCubio
             Momentum: When a cube splits, it should not immediately jump to the final "split point", 
             but should instead have a momentum that moves it smoothly toward that spot for a short period of time.
             */
-
-            if (Cubes[CubeUid].Mass > this.MIN_SPLIT_MASS) // && PlayerSplitCubes.Count < this.MAX_SPLIT_COUNT
-            {
-                //do something
-            }
-            else
-                return;
 
         }
     }
