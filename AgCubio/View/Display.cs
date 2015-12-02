@@ -414,8 +414,8 @@ namespace AgCubio
 
         private void Display_FormClosing(object sender, FormClosingEventArgs e)
         {
-            this.socket.Shutdown(SocketShutdown.Both);
-            this.socket.Close();
+                this.socket.Shutdown(SocketShutdown.Both);
+                this.socket.Close();
         }
 
         /// <summary>
