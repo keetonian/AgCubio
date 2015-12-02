@@ -446,7 +446,7 @@ namespace AgCubio
         {
             if (!SplitCubeUids.ContainsKey(CubeUid))
             {
-                if (Cubes[CubeUid].Mass > this.MIN_SPLIT_MASS)
+                if (Cubes[CubeUid].Mass < this.MIN_SPLIT_MASS)
                     return;
                 List<int> list = new List<int>();
                 list.Add(CubeUid);
