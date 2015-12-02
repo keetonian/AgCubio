@@ -404,9 +404,14 @@ namespace AgCubio
         /// </summary>
         public void Move(int CubeUid, double x, double y)
         {
+            // Store cube info
+            double cubeWidth = Cubes[CubeUid].width;
+            double cubeX = Cubes[CubeUid].loc_x;
+            double cubeY = Cubes[CubeUid].loc_y;
+
             // Get the relative mouse position:
-            x -= Cubes[CubeUid].loc_x;
-            y -= Cubes[CubeUid].loc_y;
+            x -= cubeX;
+            y -= cubeY;
 
             // If the mouse is in the very center of the cube, then don't do anything.
             if (Math.Abs(x) < 1 && Math.Abs(y) < 1)
@@ -417,22 +422,16 @@ namespace AgCubio
             double newX = x / scale;
             double newY = y / scale;
 
-            // Store the cube width
-            double cubeWidth = Cubes[CubeUid].width;
-
             // Add normalized values to the cube's location. 
             // TODO: add in updates according to the heartbeat, and add in a speed scalar.
-            Cubes[CubeUid].loc_x += (newX < cubeWidth || newX > (this.WIDTH - cubeWidth)) ? 0 : newX;
-            Cubes[CubeUid].loc_y += (newY < cubeWidth || newY > (this.HEIGHT - cubeWidth)) ? 0 : newY;
+            Cubes[CubeUid].loc_x += (cubeX+newX < cubeWidth || cubeX+newX > this.WIDTH-cubeWidth) ? 0 : newX;
+            Cubes[CubeUid].loc_y += (cubeY+newY < cubeWidth || cubeY+newY > this.HEIGHT-cubeWidth) ? 0 : newY;
         }
 
 
         /// <summary>
         /// Manages split requests
         /// </summary>
-        /// <param name="CubeUid"></param>
-        /// <param name="x"></param>
-        /// <param name="y"></param>
         public void Split(int CubeUid, double x, double y)
         {
             if (!SplitCubeUids.ContainsKey(CubeUid))
