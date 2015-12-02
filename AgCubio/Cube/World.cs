@@ -435,8 +435,10 @@ namespace AgCubio
         /// <param name="y"></param>
         public void Split(int CubeUid, double x, double y)
         {
-            if (!SplitCubeUids.ContainsKey(CubeUid) && Cubes[CubeUid].Mass > this.MIN_SPLIT_MASS)
+            if (!SplitCubeUids.ContainsKey(CubeUid))
             {
+                if (Cubes[CubeUid].Mass > this.MIN_SPLIT_MASS)
+                    return;
                 List<int> list = new List<int>();
                 list.Add(CubeUid);
                 SplitCubeUids[CubeUid] = list;
