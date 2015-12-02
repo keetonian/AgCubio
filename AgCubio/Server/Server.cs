@@ -127,15 +127,13 @@ namespace AgCubio
                     double x = double.Parse(values[0].Value);
                     double y = double.Parse(values[1].Value);
 
-                    lock(DataReceived)
-                    {
-                        if (str[1] == 'm')
-                            DataReceived[state.CubeID] = new Tuple<double, double>(x, y);
-                        else if (str[1] == 's')
-                            World.Split(state.CubeID, x, y);
-                    }
+                    if (str[1] == 'm')
+                        lock (DataReceived) { DataReceived[state.CubeID] = new Tuple<double, double>(x, y); }
+                    else if (str[1] == 's')
+                        lock (World) { World.Split(state.CubeID, x, y); }
+
                 });
-            
+
 
             string[] actions = Regex.Split(state.data.ToString(), @"\n");
             for (int i = 0; i < actions.Length - 1; i++)
