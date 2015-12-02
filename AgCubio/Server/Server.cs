@@ -29,7 +29,11 @@ namespace AgCubio
         private Timer Heartbeat;
 
         //Do we need this?
-        private StringBuilder DataReceived;
+        //This could be what I want:
+        // Dictionary
+        //      Key: player uid
+        //      Value: a new class containing split requests, move requests (each in new data)
+        private Dictionary<int,Tuple<double,double>> DataReceived;
 
         //Do we need this?
         private StringBuilder DataSent;
@@ -54,7 +58,7 @@ namespace AgCubio
             Heartbeat = new Timer(HeartBeatTick, null, 0, 1000 / World.HEARTBEATS_PER_SECOND);
            
             DataSent = new StringBuilder();
-            DataReceived = new StringBuilder();
+            DataReceived = new Dictionary<int, Tuple<double, double>>();
 
             while (World.Food.Count < World.MAX_FOOD_COUNT)
                 World.GenerateFood();
@@ -116,9 +120,6 @@ namespace AgCubio
         /// </summary>
         private void ManageData(Preserved_State_Object state)
         {
-            DataReceived.Append(state.data); //Doesn't really work- one stringbuilder in this class vs many clients?
-            // The state needs to have its own stringbuilder in this implementation
-            // THat string builder would have the partial json strings still in it.
             
                 Action<String> TryMoveOrSplit = new Action<String>((str) =>
                 {
@@ -126,10 +127,10 @@ namespace AgCubio
                     double x = double.Parse(values[0].Value);
                     double y = double.Parse(values[1].Value);
 
-                    lock (World)
+                    lock(DataReceived)
                     {
                         if (str[1] == 'm')
-                            World.Move(state.CubeID, x, y);
+                            DataReceived[state.CubeID] = new Tuple<double, double>(x, y);
                         else if (str[1] == 's')
                             World.Split(state.CubeID, x, y);
                     }
@@ -170,7 +171,13 @@ namespace AgCubio
             {
                 // Players get a little smaller each tick
                 //World.PlayerAttrition();
-
+                lock(DataReceived)
+                {
+                    foreach (int i in DataReceived.Keys)
+                    {
+                        World.Move(i, DataReceived[i].Item1, DataReceived[i].Item2);
+                    }
+                }
 
                 //Check for collisions, eat some food.
                 data.Append(World.ManageCollisions());
