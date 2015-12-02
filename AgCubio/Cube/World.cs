@@ -422,8 +422,8 @@ namespace AgCubio
 
             // Add normalized values to the cube's location. 
             // TODO: add in updates according to the heartbeat, and add in a speed scalar.
-            Cubes[CubeUid].loc_x += (Cubes[CubeUid].left + newX < cubeWidth/2 || Cubes[CubeUid].right + newX > this.WIDTH-cubeWidth/2)   ? 0 : newX;
-            Cubes[CubeUid].loc_y += (Cubes[CubeUid].top + newY < cubeWidth/2  || Cubes[CubeUid].bottom + newY > this.HEIGHT-cubeWidth/2) ? 0 : newY;
+            Cubes[CubeUid].loc_x += (Cubes[CubeUid].left + newX < 0 || Cubes[CubeUid].right + newX > this.WIDTH)   ? 0 : newX;
+            Cubes[CubeUid].loc_y += (Cubes[CubeUid].top + newY < 0  || Cubes[CubeUid].bottom + newY > this.HEIGHT) ? 0 : newY;
         }
 
 
@@ -434,7 +434,7 @@ namespace AgCubio
         {
             if (!SplitCubeUids.ContainsKey(CubeUid))
             {
-                if (Cubes[CubeUid].Mass > this.MIN_SPLIT_MASS)
+                if (Cubes[CubeUid].Mass < this.MIN_SPLIT_MASS)
                     return;
                 List<int> list = new List<int>();
                 list.Add(CubeUid);
