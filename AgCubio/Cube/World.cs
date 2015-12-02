@@ -405,22 +405,25 @@ namespace AgCubio
         public void Move(int CubeUid, double x, double y)
         {
             // Get the relative mouse position:
-            x = x - Cubes[CubeUid].loc_x;
-            y = y - Cubes[CubeUid].loc_y;
+            x -= Cubes[CubeUid].loc_x;
+            y -= Cubes[CubeUid].loc_y;
 
             // If the mouse is in the very center of the cube, then don't do anything.
             if (Math.Abs(x) < 1 && Math.Abs(y) < 1)
                 return;
 
             // Normalize the vector:
-            double scale = Math.Sqrt(Math.Pow(x, 2) + Math.Pow(y, 2));
+            double scale = Math.Sqrt(x * x + y * y);
             double newX = x / scale;
             double newY = y / scale;
 
+            // Store the cube width
+            double cubeWidth = Cubes[CubeUid].width;
+
             // Add normalized values to the cube's location. 
             // TODO: add in updates according to the heartbeat, and add in a speed scalar.
-            Cubes[CubeUid].loc_x += newX;
-            Cubes[CubeUid].loc_y += newY;
+            Cubes[CubeUid].loc_x += (newX < cubeWidth || newX > (this.WIDTH - cubeWidth)) ? 0 : newX;
+            Cubes[CubeUid].loc_y += (newY < cubeWidth || newY > (this.HEIGHT - cubeWidth)) ? 0 : newY;
         }
 
 
