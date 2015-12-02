@@ -106,8 +106,11 @@ namespace AgCubio
             catch (Exception)
             {
                 // If there is a problem with the socket, close it, then let the above program find the closure, try again.
-                state.socket.Shutdown(SocketShutdown.Both);
-                state.socket.Close();
+                if (state.socket.Connected)//Sometimes it wasn't conected, and threw an error here without this if statement.
+                {
+                    state.socket.Shutdown(SocketShutdown.Both);
+                    state.socket.Close();
+                }
             }
         }
 

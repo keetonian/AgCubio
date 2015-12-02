@@ -122,7 +122,7 @@ namespace AgCubio
             
                 Action<String> TryMoveOrSplit = new Action<String>((str) =>
                 {
-                    MatchCollection values = Regex.Matches(str, @"\d+");
+                    MatchCollection values = Regex.Matches(str, @"-*\d+");
                     double x = double.Parse(values[0].Value);
                     double y = double.Parse(values[1].Value);
 

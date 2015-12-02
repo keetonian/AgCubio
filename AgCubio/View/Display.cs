@@ -218,7 +218,7 @@ namespace AgCubio
                         {
                             // Location is calculated differently for user and other players - user is centered, other players' coordinates are scaled
                             rectangle = (c.uid == PlayerID) ? new RectangleF((int)(Width / 2 - c.width * scale / 2), (int)(Height / 2 - c.width * scale / 2), (int)(c.width * scale), (int)(c.width* scale)) :
-                                new RectangleF((int)((c.loc_x - Px - c.width * scale / 2) * scale + Width / 2), (int)((c.loc_y - Py - c.width * scale / 2) * scale + Height / 2), (int)(c.width* scale), (int)(c.width* scale));
+                                new RectangleF((int)((c.loc_x - Px - c.width / 2) * scale + Width / 2), (int)((c.loc_y - Py - c.width / 2) * scale + Height / 2), (int)(c.width* scale), (int)(c.width* scale));
 
                             // Players are painted with a diagonal gradient, ranging from the actual (server-defined) color to its negative
                             brush = new LinearGradientBrush(rectangle, Color.FromArgb(c.argb_color), Color.FromArgb(c.argb_color^0xFFFFFF), 225);
