@@ -391,9 +391,6 @@ namespace AgCubio
 
         /// <summary>
         /// Adds a new food cube to the world
-        /// NOTE: this method could easily be in the world class
-        /// NOTE: To move it there, we would need to pass in (or, just have there!) random coords, uid functionality, and GetColor.
-        /// All of these methods could well just be in the world class.
         /// </summary>
         public Cube GenerateFood()
         {
