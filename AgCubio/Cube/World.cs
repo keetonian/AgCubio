@@ -296,6 +296,17 @@ namespace AgCubio
                     if(food.loc_x > player.left && food.loc_x < player.right && food.loc_y > player.top && food.loc_y < player.bottom)
                     {
                         player.Mass += food.Mass;
+
+                        // Adjust cube position if edges go out of bounds
+                        if (player.left < 0)
+                            player.loc_x -= player.left;
+                        else if (player.right > this.WIDTH)
+                            player.loc_x -= player.right - this.WIDTH;
+                        if (player.top < 0)
+                            player.loc_y -= player.top;
+                        else if (player.bottom > this.HEIGHT)
+                            player.loc_y -= player.bottom - this.HEIGHT;
+
                         food.Mass = 0;
                         destroyed.Append(JsonConvert.SerializeObject(food) + "\n");
                         Uids.Push(food.uid);
@@ -422,8 +433,9 @@ namespace AgCubio
 
             // Add normalized values to the cube's location. 
             // TODO: add in updates according to the heartbeat, and add in a speed scalar.
-            Cubes[CubeUid].loc_x += (Cubes[CubeUid].left + newX < cubeWidth/2 || Cubes[CubeUid].right + newX > this.WIDTH-cubeWidth/2)   ? 0 : newX;
-            Cubes[CubeUid].loc_y += (Cubes[CubeUid].top + newY < cubeWidth/2  || Cubes[CubeUid].bottom + newY > this.HEIGHT-cubeWidth/2) ? 0 : newY;
+
+            Cubes[CubeUid].loc_x += (Cubes[CubeUid].left + newX < 0 || Cubes[CubeUid].right + newX > this.WIDTH)   ? 0 : newX;
+            Cubes[CubeUid].loc_y += (Cubes[CubeUid].top + newY < 0  || Cubes[CubeUid].bottom + newY > this.HEIGHT) ? 0 : newY;
         }
 
 
