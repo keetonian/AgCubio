@@ -18,6 +18,7 @@ namespace AgCubio
         // Another option: dictionary, where the socket is the Key, a stringbuilder the value, 
         // and we can just constantly put stuff into it and in the networking loop it automatically sends what we want.
         // This way we won't need to send stuff in other places in this code.
+        // Socket, data to send to client, move + split requests gathered from client,
         private HashSet<Socket> Sockets;
 
         // Cool. We own the world.
