@@ -122,14 +122,17 @@ namespace AgCubio
 
             Action<String> TryMoveOrSplit = new Action<String>((str) =>
             {
+                MatchCollection values = Regex.Matches(str, @"\d+");
+                double x = double.Parse(values[0].Value);
+                double y = double.Parse(values[1].Value);
+
                 if (str[1] == 'm')
                 {
-                    MatchCollection values = Regex.Matches(str, @"\d+");
-                    World.Move(state.CubeID, double.Parse(values[0].Value), double.Parse(values[1].Value));
+                    World.Move(state.CubeID, x, y);
                 }
                 else if (str[1] == 's')
                 {
-                    // Here manage split requests
+                    World.Split(state.CubeID, x, y);
                 }
             });
 
