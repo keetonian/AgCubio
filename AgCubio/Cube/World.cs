@@ -317,24 +317,14 @@ namespace AgCubio
                         eatenFood.Add(food);
                     }
                 }
-                RemoveEatenFood(eatenFood);
+
+                // Remove eaten food
+                foreach (Cube c in eatenFood)
+                    Food.Remove(c);
             }
+
             return destroyed.ToString();
         }
-
-
-        /// <summary>
-        /// Removes food that was eaten. This isn't done in place because we use a foreach loop when iterating through food.
-        /// </summary>
-        /// <param name="foodEaten"></param>
-        public void RemoveEatenFood(IEnumerable<Cube> foodEaten)
-        {
-            foreach(Cube c in foodEaten)
-            {
-                Food.Remove(c);
-            }
-        }
-
 
 
         /// <summary>
