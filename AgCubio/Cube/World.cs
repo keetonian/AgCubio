@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 using Newtonsoft.Json;
+using System.Drawing;
 
 namespace AgCubio
 {
@@ -14,7 +15,8 @@ namespace AgCubio
     /// </summary>
     public class World
     {
-
+        // Mass of Viruses
+        private readonly int VIRUS_MASS;
 
         // Our Uid counter
         private int Uid;
@@ -118,6 +120,7 @@ namespace AgCubio
             Food = new HashSet<Cube>();
             Rand = new Random();
             Uids = new Stack<int>();
+            this.VIRUS_MASS = 100;
             using (XmlReader reader = XmlReader.Create(filename))
             {
                 //TODO: implement xml file stuff.
@@ -222,6 +225,7 @@ namespace AgCubio
             this.MIN_SPLIT_MASS = 25;
             this.PLAYER_START_MASS = 10;
             this.PLAYER_START_WIDTH = Math.Sqrt(this.PLAYER_START_MASS);
+            this.VIRUS_MASS = 100;
             Rand = new Random();
             Uids = new Stack<int>();
 
@@ -293,7 +297,7 @@ namespace AgCubio
                 eatenFood = new List<Cube>();
                 foreach (Cube food in Food)
                 {
-                    if(food.loc_x > player.left && food.loc_x < player.right && food.loc_y > player.top && food.loc_y < player.bottom)
+                    if(food.loc_x > player.left && food.loc_x < player.right && food.loc_y > player.top && food.loc_y < player.bottom && player.Mass > food.Mass)
                     {
                         player.Mass += food.Mass;
                         food.Mass = 0;
@@ -382,6 +386,15 @@ namespace AgCubio
         /// </summary>
         public Cube GenerateFood()
         {
+            int random = Rand.Next(100);
+
+            //create a virus 3% of the time
+            if(random > 97)
+            {
+                Cube virus = new Cube(Rand.Next(WIDTH), Rand.Next(HEIGHT), GetUid(), true, "", VIRUS_MASS, Color.Green.ToArgb(), 0);
+                Food.Add(virus);
+                return virus;
+            }
             // On a random scale needs to create viruses too (5% of total food? Less?)
             // Viruses: specific color, specific size or size range. I'd say a size of ~100 or so.
             // Cool thought: viruses can move, become npc's that can try to chase players, or just move erratically
