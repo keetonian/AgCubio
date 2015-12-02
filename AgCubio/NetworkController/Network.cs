@@ -32,11 +32,12 @@ namespace AgCubio
         {
             // Store the server IP address and remote endpoint
             //   MSDN: localhost can be found with the "" string.
-            IPAddress ipAddress = (hostname.ToUpper() == "LOCALHOST") ? IPAddress.Parse("127.0.0.1") : IPAddress.Parse(hostname);
-            IPEndPoint remoteEP = new IPEndPoint(ipAddress, Port);
-
+            IPAddress ipAddress = (hostname.ToUpper() == "LOCALHOST") ? IPAddress.Parse("::1") : IPAddress.Parse(hostname); 
+            IPEndPoint remoteEP = new IPEndPoint(ipAddress, Port); 
+            
             // Make a new socket and preserved state object and begin connecting
             Socket socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
             Preserved_State_Object state = new Preserved_State_Object(socket, callback);
 
             // Begin establishing a connection
@@ -183,7 +184,7 @@ namespace AgCubio
         /// </summary>
         public static void Server_Awaiting_Client_Loop(Delegate callback)
         {
-            TcpListener server = new TcpListener(IPAddress.Any,11000);
+            TcpListener server = new TcpListener(IPAddress.IPv6Any,11000);
             // NOTE:
             // Sample client code works when IPAddress.IPv6Any is used, out client code doesn't when it is used
             // Our client works with (11000) (just the port #) or IPAddress.Any.
