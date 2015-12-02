@@ -119,22 +119,22 @@ namespace AgCubio
             DataReceived.Append(state.data); //Doesn't really work- one stringbuilder in this class vs many clients?
             // The state needs to have its own stringbuilder in this implementation
             // THat string builder would have the partial json strings still in it.
-
-            Action<String> TryMoveOrSplit = new Action<String>((str) =>
-            {
-                MatchCollection values = Regex.Matches(str, @"\d+");
-                double x = double.Parse(values[0].Value);
-                double y = double.Parse(values[1].Value);
-
-                if (str[1] == 'm')
+            
+                Action<String> TryMoveOrSplit = new Action<String>((str) =>
                 {
-                    World.Move(state.CubeID, x, y);
-                }
-                else if (str[1] == 's')
-                {
-                    World.Split(state.CubeID, x, y);
-                }
-            });
+                    MatchCollection values = Regex.Matches(str, @"\d+");
+                    double x = double.Parse(values[0].Value);
+                    double y = double.Parse(values[1].Value);
+
+                    lock (World)
+                    {
+                        if (str[1] == 'm')
+                            World.Move(state.CubeID, x, y);
+                        else if (str[1] == 's')
+                            World.Split(state.CubeID, x, y);
+                    }
+                });
+            
 
             string[] actions = Regex.Split(state.data.ToString(), @"\n");
             for (int i = 0; i < actions.Length - 1; i++)
