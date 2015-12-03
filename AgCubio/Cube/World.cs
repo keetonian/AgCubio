@@ -253,7 +253,7 @@ namespace AgCubio
             Uids = new Stack<int>();
 
             this.ABSORB_PERCENT_COVERAGE = .25;
-            this.ATTRITION_RATE_SCALER = .001;
+            this.ATTRITION_RATE_SCALER = .005;
             this.FOOD_MASS = 1;
             this.FOOD_WIDTH = Math.Sqrt(this.FOOD_MASS);
             this.HEARTBEATS_PER_SECOND = 30;
@@ -384,8 +384,8 @@ namespace AgCubio
             foreach (Cube player in Cubes.Values)
             {
                 if ((x > player.left && x < player.right) && (y < player.bottom && y > player.top))
-                    FindStartingCoords(out x, out y);
-            }
+                FindStartingCoords(out x, out y);
+        }
         }
 
 
@@ -412,12 +412,9 @@ namespace AgCubio
 
         /// <summary>
         /// Adds a new food cube to the world
-        /// NOTE: this method could easily be in the world class
-        /// NOTE: To move it there, we would need to pass in (or, just have there!) random coords, uid functionality, and GetColor.
-        /// All of these methods could well just be in the world class.
         /// </summary>
         public Cube GenerateFoodorVirus()
-        {
+            {
             // On a random scale needs to create viruses too (5% of total food? Less?)
             // Viruses: specific color, specific size or size range. I'd say a size of ~100 or so.
             // Cool thought: viruses can move, become npc's that can try to chase players, or just move erratically
@@ -431,19 +428,36 @@ namespace AgCubio
             int color  = virus ? Color.Green.ToArgb() : GetColor();
             int mass   = virus ? VIRUS_MASS  : ((random < 1) ? FOOD_MASS + 1 : FOOD_MASS);
             int width  = virus ? (int)VIRUS_WIDTH : (int)FOOD_WIDTH;
-            
+
             Cube foodOrVirus = new Cube(Rand.Next(width/2, WORLD_WIDTH - width/2), Rand.Next(width/2, WORLD_HEIGHT - width/2), GetUid(), true, "", mass, color, 0);
             Food.Add(foodOrVirus);
             return foodOrVirus;
         }
 
-        
+
         /// <summary>
         /// Controls a cube's movements
         /// NOTE: This method needs to be controlled by the heartbeat.
         /// NOTE: THis method needs to have bounds (so player can't go outside of the world).
         /// </summary>
-        public void Move(int CubeUid, double x, double y)
+        public void Move(int PlayerUid, double x, double y)
+        {
+            if (SplitCubeUids.ContainsKey(PlayerUid) && SplitCubeUids[PlayerUid].Count > 0)
+                foreach (int uid in SplitCubeUids[PlayerUid])
+                    MoveCube(uid, x, y);
+            else
+                MoveCube(PlayerUid, x, y);
+        }
+
+
+        /// <summary>
+        /// Helper method for move, moves split cubes as well
+        /// TODO: Needs to check for boundaries of cubes, not allow them to occupy the same spaces.
+        /// </summary>
+        /// <param name="CubeUid"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        private void MoveCube(int CubeUid, double x, double y)
         {
             // Store cube attributes
             double cubeWidth = Cubes[CubeUid].width;

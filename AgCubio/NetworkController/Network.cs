@@ -184,10 +184,7 @@ namespace AgCubio
         /// </summary>
         public static void Server_Awaiting_Client_Loop(Delegate callback)
         {
-            TcpListener server = new TcpListener(IPAddress.IPv6Any,11000);
-            // NOTE:
-            // Sample client code works when IPAddress.IPv6Any is used, out client code doesn't when it is used
-            // Our client works with (11000) (just the port #) or IPAddress.Any.
+            TcpListener server = TcpListener.Create(11000);
 
             server.Start();
             Preserved_State_Object state = new Preserved_State_Object(server, callback);

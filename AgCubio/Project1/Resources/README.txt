@@ -8,7 +8,40 @@ Current state of the project:
 
 
 -----Server-----
-Current most up-to-date server is in the MoreWork branch.
+Current most up-to-date server is in the Server branch.
+
+Needs work:
+	Splitting- moving in a decreasing speed towards a position, merging back into player, max split allowance
+	Viruses- split player.
+	Optimization of other algorithms (most are slow currently, but work at the small scale)
+	Eating other player cubes
+	Display: only draw things that are directly around the cube, instead of drawing the entire world all the time.
+
+
+Implemented Features:
+	Moving
+	Client server connections
+	Eating food
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------
 
 
 
@@ -50,6 +83,10 @@ Design decisions:
 		This implementation gets rid of partial data or unfinished strings that cause JSON deserialization errors.
 	Background: Went with a neutral, almost unnoticeable color. Made a custom background, but did not figure out how to change it to play the game.
 		We could implement it to where the player could choose a background color.
+
+	(UPDATE: PS8)
+	Background now has a grid of circles, to continue with the opposing theme towards agario (background of squares)
+	Placement of cubes and scaling algorithm patched up, easier to test now that we control the server and know where things should be.
 
 
 Server Problems:

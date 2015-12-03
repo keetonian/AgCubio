@@ -40,6 +40,10 @@ namespace AgCubio
         /// </summary>
         private Socket socket;
 
+
+        private double WIDTH;
+        private double HEIGHT;
+
         /// <summary>
         /// Thread running networking code
         /// </summary>
@@ -94,7 +98,7 @@ namespace AgCubio
             this.Resize += Display_Resize;
 
             // Background color. May be cool to have player control this.
-            this.BackColor = Color.WhiteSmoke;
+            //this.BackColor = Color.WhiteSmoke;
         }
 
 
@@ -197,16 +201,48 @@ namespace AgCubio
                 Brush brush;
                 RectangleF rectangle;
 
+                //Draw grid lines for the world
+                // TODO: Draw only around the player cube instead of across the entire world.
+                int circleHeight = 5;
+                for (int i = 0; i <= (Width); i += (circleHeight + 1))
+                {
+                    for(int j = 0; j <= (Height); j += (circleHeight + 1))
+                    {
+                        //DrawPen.Color = Color.FromArgb(World.GetColor()); // Wayy too wacky
+                        float x = (float)(((i - Px) * scale));
+                        float y = (float)((j - Py) * scale);
+                        if (x > Width || y > Height || x < (0-circleHeight * scale) || y < (0-circleHeight * scale))
+                            continue;
+                        e.Graphics.DrawEllipse(Pens.LightGray, x, y, (float)(circleHeight * scale), (float)(circleHeight * scale));
+                    }
+                    
+                }
+
+
                 foreach (Cube c in World.Cubes.Values)
                 {
+                    // Try and get the world parameters.
+                    if(c.loc_x > WIDTH)
+                        WIDTH = c.loc_x;
+                    if (c.loc_y > HEIGHT)
+                        HEIGHT = c.loc_y;
+
                     if (c.Mass > 0) // Avoid painting if mass is 0 - also solves an issue where names are still displayed after some cubes are 'eaten'
                     {
+                        // Parameters for creating cubes
+                        int x = (int)((c.loc_x - Px - c.width / 2) * scale + Width / 2);
+                        int y = (int)((c.loc_y - Py - c.width / 2) * scale + Height / 2);
+                        int cubeWidth = (int)(c.width * scale);
+
+                        // If the cube is off the screen, don't draw it.
+                        if (x > Width || y > Height || x < (0 - cubeWidth) || y < (0 - cubeWidth))
+                            continue;
+
                         // Painting food
                         if (c.food)
                         {
                             // Food is scaled, and has an extra scaling factor (so we can see it at larger cube sizes - temporary design decision to deal with a faulty server)
-                            rectangle = new RectangleF((int)((c.loc_x - Px - c.width / 2) * scale + Width / 2),
-                            (int)((c.loc_y - Py - c.width / 2) * scale + Height / 2), (int)(c.width * scale), (int)(c.width * scale));
+                            rectangle = new RectangleF(x, y, cubeWidth, cubeWidth);
 
                             // Food is painted with solid colors
                             brush = new SolidBrush(Color.FromArgb(c.argb_color));
