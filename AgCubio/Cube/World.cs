@@ -384,8 +384,8 @@ namespace AgCubio
             foreach (Cube player in Cubes.Values)
             {
                 if ((x > player.left && x < player.right) && (y < player.bottom && y > player.top))
-                FindStartingCoords(out x, out y);
-        }
+                    FindStartingCoords(out x, out y);
+            }
         }
 
 
@@ -400,13 +400,11 @@ namespace AgCubio
 
 
         /// <summary>
-        /// Gives the cube a color
-        /// NOTE: Move this to World?
+        /// Gives the cube a nice, vibrant, visible color
         /// </summary>
-        /// <returns></returns>
         public int GetColor()
         {
-            return Rand.Next(1024, 1048576);
+            return ~(Rand.Next(Int32.MinValue, Int32.MaxValue) & 0xf0f0f0);
         }
 
 
@@ -459,14 +457,12 @@ namespace AgCubio
         /// <param name="y"></param>
         private void MoveCube(int CubeUid, double x, double y)
         {
-            // Store cube attributes
+            // Store cube width
             double cubeWidth = Cubes[CubeUid].width;
-            double prevCubeX = Cubes[CubeUid].loc_x;
-            double prevCubeY = Cubes[CubeUid].loc_y;
 
             // Get the relative mouse position:
-            x -= prevCubeX;
-            y -= prevCubeY;
+            x -= Cubes[CubeUid].loc_x;
+            y -= Cubes[CubeUid].loc_y;
 
             // If the mouse is in the very center of the cube, then don't do anything.
             if (Math.Abs(x) < 1 && Math.Abs(y) < 1)
