@@ -422,6 +422,14 @@ namespace AgCubio
                 MoveCube(PlayerUid, x, y);
         }
 
+
+        /// <summary>
+        /// Helper method for move, moves split cubes as well
+        /// TODO: Needs to check for boundaries of cubes, not allow them to occupy the same spaces.
+        /// </summary>
+        /// <param name="CubeUid"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
         private void MoveCube(int CubeUid, double x, double y)
         {
             // Store cube width
