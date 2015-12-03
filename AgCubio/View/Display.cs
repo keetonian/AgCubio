@@ -203,20 +203,66 @@ namespace AgCubio
 
                 //Draw grid lines for the world
                 // TODO: Draw only around the player cube instead of across the entire world.
-                int circleHeight = 5;
-                for (int i = 0; i <= (Width); i += (circleHeight + 1))
+                // Currently: drawn from top left corner
+                // TODO: Draw from the center of the screen (like everything else is).
+                int circleHeight = 8;
+                float ii = (float)(0 - (Px % (circleHeight + 1)));
+                float jj = (float)(0 - (Py % (circleHeight + 1)));
+                for (int i = 0; i < Width/2; i += (circleHeight + 1))//for (float i = (float)(0 - (Px % (circleHeight + 1))); i <= Width * 2; i += (circleHeight + 1))
                 {
-                    for(int j = 0; j <= (Height); j += (circleHeight + 1))
-                    {
-                        //DrawPen.Color = Color.FromArgb(World.GetColor()); // Wayy too wacky
-                        float x = (float)(((i - Px) * scale));
-                        float y = (float)((j - Py) * scale);
-                        if (x > Width || y > Height || x < (0-circleHeight * scale) || y < (0-circleHeight * scale))
-                            continue;
-                        e.Graphics.DrawEllipse(Pens.LightGray, x, y, (float)(circleHeight * scale), (float)(circleHeight * scale));
-                    }
+                    float xi = (float)((Width / 2 + ii * scale + i * scale));
+                    float xii = (float)((Width / 2 + ii * scale - i * scale));
+
+
+                    //float x = (float)((Width/2 + i*scale));
+                    //float xx = (float)((Width / 2 - (i * circleHeight) * scale));
+
                     
+                    if (xii < (0 - circleHeight * scale))
+                        break;
+
+                    for(int j = 0; j < Height/2; j+=(circleHeight + 1))//for (float j = (float)(0 - (Py % (circleHeight + 1))); j < Height * 2; j += (circleHeight + 1))
+                    {
+                        float yi = (float)((Width / 2 + jj * scale + j * scale));
+                        float yii = (float)((Width / 2 + jj * scale - j * scale));
+                        //DrawPen.Color = Color.FromArgb(World.GetColor()); // Wayy too wacky
+                        //float y = (float)((j - Py - circleHeight/2) * scale);
+                        //float y = (float)((Height / 2 + j * scale));
+                        //float yy = (float)((Height / 2 - (j*circleHeight) * scale));
+
+                        //if (yi > Height + circleHeight * scale)
+                        //    break;
+                        if (yii < (0-circleHeight * scale))
+                            break;
+
+                        e.Graphics.DrawEllipse(Pens.LightGray, xi, yi, (float)(circleHeight * scale), (float)(circleHeight * scale));
+                        e.Graphics.DrawEllipse(Pens.LightGray, xii, yii, (float)(circleHeight * scale), (float)(circleHeight * scale));
+                        e.Graphics.DrawEllipse(Pens.LightGray, xi, yii, (float)(circleHeight * scale), (float)(circleHeight * scale));
+                        e.Graphics.DrawEllipse(Pens.LightGray, xii, yi, (float)(circleHeight * scale), (float)(circleHeight * scale));
+
+                    }
                 }
+                //float xx = 0, yy = 0;
+                //int ii = 0;
+                //int j = 0;
+                //while(xx < WIDTH)
+                //{
+                //    xx = (float)(((ii - Px) * scale));
+                //    ii += (circleHeight + 1);
+                //    //if (xx > Width || xx < (0 - circleHeight * scale) )
+                //    //    continue;
+                //    j = 0;
+                //    while (yy < HEIGHT)
+                //    {
+                //        yy = (float)((j - Py) * scale);
+                //        j += (circleHeight + 1);
+                //        //if (yy > Height || yy < (0 - circleHeight * scale))
+                //        //    continue;
+                //        e.Graphics.DrawEllipse(Pens.LightGray, xx, yy, (float)(circleHeight * scale), (float)(circleHeight * scale));
+                        
+                //    }
+
+                //}
 
 
                 foreach (Cube c in World.Cubes.Values)

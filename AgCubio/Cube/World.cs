@@ -406,7 +406,7 @@ namespace AgCubio
         /// <returns></returns>
         public int GetColor()
         {
-            return Rand.Next(1024, 1048576);
+            return Rand.Next(Int32.MinValue, Int32.MaxValue);
         }
 
 
