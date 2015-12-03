@@ -75,8 +75,6 @@ namespace AgCubio
         /// </summary>
         private double MaxMass;
 
-        private Pen DrawPen;
-
 
         /// <summary>
         /// Constructor to handle initial setup of the view
@@ -101,8 +99,6 @@ namespace AgCubio
 
             // Background color. May be cool to have player control this.
             //this.BackColor = Color.WhiteSmoke;
-
-            DrawPen = new Pen(Color.LightGray, 1);
         }
 
 
@@ -215,7 +211,7 @@ namespace AgCubio
                         //DrawPen.Color = Color.FromArgb(World.GetColor()); // Wayy too wacky
                         float x = (float)(((i - Px) * scale));
                         float y = (float)((j - Py) * scale);
-                        e.Graphics.DrawEllipse(DrawPen, x, y, (float)(circleHeight * scale), (float)(circleHeight * scale));
+                        e.Graphics.DrawEllipse(Pens.LightGray, x, y, (float)(circleHeight * scale), (float)(circleHeight * scale));
                     }
                     
                 }
