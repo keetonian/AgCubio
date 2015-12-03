@@ -161,7 +161,7 @@ namespace AgCubio
             lock (World)
             {
                 // Players get a little smaller each tick
-                //World.PlayerAttrition();
+                World.PlayerAttrition();
                 lock(DataReceived)
                 {
                     foreach (int i in DataReceived.Keys)

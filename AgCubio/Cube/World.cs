@@ -233,7 +233,7 @@ namespace AgCubio
             this.PLAYER_START_WIDTH = Math.Sqrt(this.PLAYER_START_MASS);
             this.FOOD_WIDTH = Math.Sqrt(this.FOOD_MASS);
             //temporary - should be in xml
-            this.VIRUS_MASS = 100;
+            this.VIRUS_MASS = 30;
             this.VIRUS_WIDTH = Math.Sqrt(this.VIRUS_MASS);
 
             while (this.Food.Count < this.MAX_FOOD_COUNT)
@@ -253,7 +253,7 @@ namespace AgCubio
             Uids = new Stack<int>();
 
             this.ABSORB_PERCENT_COVERAGE = .25;
-            this.ATTRITION_RATE_SCALER = .005;
+            this.ATTRITION_RATE_SCALER = .001;
             this.FOOD_MASS = 1;
             this.FOOD_WIDTH = Math.Sqrt(this.FOOD_MASS);
             this.HEARTBEATS_PER_SECOND = 30;
@@ -267,7 +267,7 @@ namespace AgCubio
             this.MIN_SPLIT_MASS = 25;
             this.PLAYER_START_MASS = 10;
             this.PLAYER_START_WIDTH = Math.Sqrt(this.PLAYER_START_MASS);
-            this.VIRUS_MASS = 100;
+            this.VIRUS_MASS = 30;
             this.VIRUS_WIDTH = Math.Sqrt(this.VIRUS_MASS);
 
             while (this.Food.Count < this.MAX_FOOD_COUNT)
@@ -298,10 +298,10 @@ namespace AgCubio
         public string SerializePlayers()
         {
             StringBuilder players = new StringBuilder();
+
             foreach (Cube c in Cubes.Values)
-            {
                 players.Append(JsonConvert.SerializeObject(c) + "\n");
-            }
+
             return players.ToString();
         }
 
@@ -312,10 +312,8 @@ namespace AgCubio
         public void PlayerAttrition()
         {
             foreach(Cube c in Cubes.Values)
-            {
-                if (c.Mass > this.PLAYER_START_MASS)
-                    c.Mass *= (1 - this.ATTRITION_RATE_SCALER);
-            }
+                if ((c.Mass*(1-ATTRITION_RATE_SCALER)) > this.PLAYER_START_MASS)
+                    c.Mass *= (1-this.ATTRITION_RATE_SCALER);
         }
 
 
@@ -382,10 +380,8 @@ namespace AgCubio
 
             // Retry if coordinates are contained by any other player cube
             foreach (Cube player in Cubes.Values)
-            {
                 if ((x > player.left && x < player.right) && (y < player.bottom && y > player.top))
                     FindStartingCoords(out x, out y);
-            }
         }
 
 
@@ -420,14 +416,14 @@ namespace AgCubio
             //Another thought: randomly allow a food piece to get 1 size bigger (mass++) each time this is called.
 
             int random = Rand.Next(100);
-            bool virus = (random > 99);
+            bool virus = (random > 98);
 
             //create a virus 1% of the time
-            int color  = virus ? Color.Green.ToArgb() : GetColor();
+            int color  = virus ? Color.LightGreen.ToArgb() : GetColor();
             int mass   = virus ? VIRUS_MASS  : ((random < 1) ? FOOD_MASS + 1 : FOOD_MASS);
             int width  = virus ? (int)VIRUS_WIDTH : (int)FOOD_WIDTH;
 
-            Cube foodOrVirus = new Cube(Rand.Next(width/2, WORLD_WIDTH - width/2), Rand.Next(width/2, WORLD_HEIGHT - width/2), GetUid(), true, "", mass, color, 0);
+            Cube foodOrVirus = new Cube(Rand.Next(width, WORLD_WIDTH - width), Rand.Next(width, WORLD_HEIGHT - width), GetUid(), true, "", mass, color, 0);
             Food.Add(foodOrVirus);
             return foodOrVirus;
         }
@@ -452,9 +448,6 @@ namespace AgCubio
         /// Helper method for move, moves split cubes as well
         /// TODO: Needs to check for boundaries of cubes, not allow them to occupy the same spaces.
         /// </summary>
-        /// <param name="CubeUid"></param>
-        /// <param name="x"></param>
-        /// <param name="y"></param>
         private void MoveCube(int CubeUid, double x, double y)
         {
             // Store cube width
