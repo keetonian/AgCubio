@@ -212,7 +212,7 @@ namespace AgCubio
             Cubes = new Dictionary<int, Cube>();
             Food = new HashSet<Cube>();
             this.ABSORB_PERCENT_COVERAGE = .25;
-            this.ATTRITION_RATE_SCALER = .001;
+            this.ATTRITION_RATE_SCALER = .005;
             this.FOOD_MASS = 1;
             this.HEARTBEATS_PER_SECOND = 30;
             this.HEIGHT = 1000;
@@ -413,7 +413,16 @@ namespace AgCubio
         /// NOTE: This method needs to be controlled by the heartbeat.
         /// NOTE: THis method needs to have bounds (so player can't go outside of the world).
         /// </summary>
-        public void Move(int CubeUid, double x, double y)
+        public void Move(int PlayerUid, double x, double y)
+        {
+            if (SplitCubeUids.ContainsKey(PlayerUid) && SplitCubeUids[PlayerUid].Count > 0)
+                foreach (int uid in SplitCubeUids[PlayerUid])
+                    MoveCube(uid, x, y);
+            else
+                MoveCube(PlayerUid, x, y);
+        }
+
+        private void MoveCube(int CubeUid, double x, double y)
         {
             // Store cube width
             double cubeWidth = Cubes[CubeUid].width;
@@ -434,8 +443,8 @@ namespace AgCubio
             // Add normalized values to the cube's location. 
             // TODO: add in updates according to the heartbeat, and add in a speed scalar.
 
-            Cubes[CubeUid].loc_x += (Cubes[CubeUid].left + newX < 0 || Cubes[CubeUid].right + newX > this.WIDTH)   ? 0 : newX;
-            Cubes[CubeUid].loc_y += (Cubes[CubeUid].top + newY < 0  || Cubes[CubeUid].bottom + newY > this.HEIGHT) ? 0 : newY;
+            Cubes[CubeUid].loc_x += (Cubes[CubeUid].left + newX < 0 || Cubes[CubeUid].right + newX > this.WIDTH) ? 0 : newX;
+            Cubes[CubeUid].loc_y += (Cubes[CubeUid].top + newY < 0 || Cubes[CubeUid].bottom + newY > this.HEIGHT) ? 0 : newY;
         }
 
 

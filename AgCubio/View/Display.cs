@@ -204,9 +204,9 @@ namespace AgCubio
                 //Draw grid lines for the world
                 // TODO: Draw only around the player cube instead of across the entire world.
                 int circleHeight = 5;
-                for (int i = 0; i <= (WIDTH * 1.5); i += (circleHeight + 1))
+                for (int i = 0; i <= (WIDTH); i += (circleHeight + 1))
                 {
-                    for(int j = 0; j <= (HEIGHT * 1.5); j += (circleHeight + 1))
+                    for(int j = 0; j <= (HEIGHT); j += (circleHeight + 1))
                     {
                         //DrawPen.Color = Color.FromArgb(World.GetColor()); // Wayy too wacky
                         float x = (float)(((i - Px) * scale));
