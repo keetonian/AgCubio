@@ -24,7 +24,6 @@ namespace AgCubio
         // Cool. We own the world.
         private World World;
 
-
         //Timer that controls updates
         private Timer Heartbeat;
 
@@ -60,9 +59,6 @@ namespace AgCubio
             DataSent = new StringBuilder();
             DataReceived = new Dictionary<int, Tuple<double, double>>();
 
-            while (World.Food.Count < World.MAX_FOOD_COUNT)
-                World.GenerateFood();
-
             //Start the client loop
             Network.Server_Awaiting_Client_Loop(new Network.Callback(SetUpClient));
         }
@@ -90,7 +86,6 @@ namespace AgCubio
             double x, y;
             World.FindStartingCoords(out x, out y);
             Cube cube = new Cube(x, y, World.GetUid(), false, state.data.ToString(), World.PLAYER_START_MASS, World.GetColor(), 0);
-            state.CubeID = cube.uid;
 
             string worldData;
             lock(World)
@@ -99,17 +94,15 @@ namespace AgCubio
                 worldData = World.SerializeAllCubes();
             }
 
+            state.CubeID = cube.uid;
             state.data.Clear();
-
             state.callback = new Network.Callback(ManageData);
 
-            //Sends the client's cube and then all of the world data.
+            // Send the client's cube and then all of the world data
             Network.Send(state.socket, JsonConvert.SerializeObject(cube) + "\n");
-            //Thread.Sleep(1000); // Temporary fix... Maybe. Do we even need this?
-
             Network.Send(state.socket, worldData);
 
-            //Asks for more data from client.
+            // Ask for more data from client
             Network.I_Want_More_Data(state);
         }
 
@@ -183,7 +176,7 @@ namespace AgCubio
                 // Add food to the world if necessary and append it to the data stream
                 if (World.Food.Count < World.MAX_FOOD_COUNT)
                 {
-                    Cube food = World.GenerateFood();
+                    Cube food = World.GenerateFoodorVirus();
                     data.Append(JsonConvert.SerializeObject(food) + "\n");
                 }
 
@@ -206,8 +199,5 @@ namespace AgCubio
                 //Parallel.ForEach<Socket>(Sockets, s => { Network.Send(s, data.ToString()); });
             }
         }
-
-
-       
     }
 }

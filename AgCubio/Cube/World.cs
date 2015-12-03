@@ -15,32 +15,61 @@ namespace AgCubio
     /// </summary>
     public class World
     {
-        // Mass of Viruses
-        private readonly int VIRUS_MASS;
-
-        // Our Uid counter
-        private int Uid;
-
-        //Previously used Uid's that can now be reused (cubes were deleted)
-        private Stack<int> Uids;
-
-        //Random number generator
-        private Random Rand;
+        // ---------------------- WORLD ATTRIBUTES ----------------------
 
         /// <summary>
         /// Width of the world
         /// </summary>
-        public readonly int WIDTH;
+        public readonly int WORLD_WIDTH;
 
         /// <summary>
         /// Height of the world
         /// </summary>
-        public readonly int HEIGHT;
+        public readonly int WORLD_HEIGHT;
 
         /// <summary>
         /// Number of updates the server attemps to execute per second
         /// </summary>
         public readonly int HEARTBEATS_PER_SECOND;
+
+        // -------------------- FOOD/VIRUS ATTRIBUTES -------------------
+
+        /// <summary>
+        /// Default mass of food cubes
+        /// </summary>
+        public readonly int FOOD_MASS;
+
+        /// <summary>
+        /// Default width of food cubes
+        /// </summary>
+        public readonly double FOOD_WIDTH;
+
+        /// <summary>
+        /// Default mass of viruses
+        /// </summary>
+        public readonly int VIRUS_MASS;
+
+        /// <summary>
+        /// Default mass of viruses
+        /// </summary>
+        public readonly double VIRUS_WIDTH;
+
+        /// <summary>
+        /// Maximum total food cubes in the world
+        /// </summary>
+        public readonly int MAX_FOOD_COUNT;
+
+        // ---------------------- PLAYER ATTRIBUTES ---------------------
+
+        /// <summary>
+        /// Starting mass for all players
+        /// </summary>
+        public readonly int PLAYER_START_MASS;
+
+        /// <summary>
+        /// Starting width of players
+        /// </summary>
+        public readonly double PLAYER_START_WIDTH;
 
         /// <summary>
         /// Maximum player speed (for small cube sizes)
@@ -56,21 +85,6 @@ namespace AgCubio
         /// Scaler for how quickly a player cube loses mass
         /// </summary>
         public readonly double ATTRITION_RATE_SCALER;
-
-        /// <summary>
-        /// Default mass of food cubes
-        /// </summary>
-        public readonly int FOOD_MASS;
-
-        /// <summary>
-        /// Starting mass for all players
-        /// </summary>
-        public readonly int PLAYER_START_MASS;
-
-        /// <summary>
-        /// Maximum total food cubes in the world
-        /// </summary>
-        public readonly int MAX_FOOD_COUNT;
 
         /// <summary>
         /// Minimum mass before a player can spit
@@ -92,22 +106,39 @@ namespace AgCubio
         /// </summary>
         public readonly double ABSORB_PERCENT_COVERAGE;
 
-        /// <summary>
-        /// Starting width of players
-        /// </summary>
-        public readonly double PLAYER_START_WIDTH;
+        // ---------------------- OTHER ATTRIBUTES ----------------------
 
         /// <summary>
         /// Dictionary for storing all the cubes. Uid's map to cubes
         /// </summary>
-        public Dictionary<int,Cube> Cubes { get; set; }
+        public Dictionary<int, Cube> Cubes;
 
         /// <summary>
         /// Keeps track of all food.
         /// </summary>
-        public HashSet<Cube> Food { get; set; }
+        public HashSet<Cube> Food;
 
+        /// <summary>
+        /// Dictionary for tracking split cubes
+        /// </summary>
         private Dictionary<int, List<int>> SplitCubeUids;
+
+        /// <summary>
+        /// Our Uid counter
+        /// </summary>
+        private int Uid;
+
+        /// <summary>
+        /// Previously used Uid's that can now be reused (cubes were deleted)
+        /// </summary>
+        private Stack<int> Uids;
+
+        /// <summary>
+        /// Random number generator
+        /// </summary>
+        private Random Rand;
+
+        // --------------------------------------------------------------
 
 
         /// <summary>
@@ -120,7 +151,7 @@ namespace AgCubio
             Food = new HashSet<Cube>();
             Rand = new Random();
             Uids = new Stack<int>();
-            this.VIRUS_MASS = 100;
+            
             using (XmlReader reader = XmlReader.Create(filename))
             {
                 //TODO: implement xml file stuff.
@@ -132,12 +163,12 @@ namespace AgCubio
                         {
                             case "width":
                                 reader.Read();
-                                int.TryParse(reader.Value,out this.WIDTH);
+                                int.TryParse(reader.Value,out this.WORLD_WIDTH);
                                 break;
 
                             case "height":
                                 reader.Read();
-                                int.TryParse(reader.Value, out this.HEIGHT);
+                                int.TryParse(reader.Value, out this.WORLD_HEIGHT);
                                 break;
 
                             case "max_split_distance":
@@ -200,6 +231,13 @@ namespace AgCubio
             }
 
             this.PLAYER_START_WIDTH = Math.Sqrt(this.PLAYER_START_MASS);
+            this.FOOD_WIDTH = Math.Sqrt(this.FOOD_MASS);
+            //temporary - should be in xml
+            this.VIRUS_MASS = 100;
+            this.VIRUS_WIDTH = Math.Sqrt(this.VIRUS_MASS);
+
+            while (this.Food.Count < this.MAX_FOOD_COUNT)
+                this.GenerateFoodorVirus();
         }
 
 
@@ -211,12 +249,16 @@ namespace AgCubio
             SplitCubeUids = new Dictionary<int, List<int>>();
             Cubes = new Dictionary<int, Cube>();
             Food = new HashSet<Cube>();
+            Rand = new Random();
+            Uids = new Stack<int>();
+
             this.ABSORB_PERCENT_COVERAGE = .25;
             this.ATTRITION_RATE_SCALER = .001;
             this.FOOD_MASS = 1;
+            this.FOOD_WIDTH = Math.Sqrt(this.FOOD_MASS);
             this.HEARTBEATS_PER_SECOND = 30;
-            this.HEIGHT = 1000;
-            this.WIDTH = 1000;
+            this.WORLD_HEIGHT = 1000;
+            this.WORLD_WIDTH = 1000;
             this.MAX_FOOD_COUNT = 5000;
             this.MAX_SPEED = 10;
             this.MAX_SPLIT_COUNT = 15;
@@ -226,9 +268,10 @@ namespace AgCubio
             this.PLAYER_START_MASS = 10;
             this.PLAYER_START_WIDTH = Math.Sqrt(this.PLAYER_START_MASS);
             this.VIRUS_MASS = 100;
-            Rand = new Random();
-            Uids = new Stack<int>();
+            this.VIRUS_WIDTH = Math.Sqrt(this.VIRUS_MASS);
 
+            while (this.Food.Count < this.MAX_FOOD_COUNT)
+                this.GenerateFoodorVirus();
         }
 
 
@@ -295,6 +338,7 @@ namespace AgCubio
             foreach(Cube player in Cubes.Values)
             {
                 eatenFood = new List<Cube>();
+
                 foreach (Cube food in Food)
                 {
                     if(food.loc_x > player.left && food.loc_x < player.right && food.loc_y > player.top && food.loc_y < player.bottom && player.Mass > food.Mass)
@@ -304,12 +348,12 @@ namespace AgCubio
                         // Adjust cube position if edges go out of bounds
                         if (player.left < 0)
                             player.loc_x -= player.left;
-                        else if (player.right > this.WIDTH)
-                            player.loc_x -= player.right - this.WIDTH;
+                        else if (player.right > this.WORLD_WIDTH)
+                            player.loc_x -= player.right - this.WORLD_WIDTH;
                         if (player.top < 0)
                             player.loc_y -= player.top;
-                        else if (player.bottom > this.HEIGHT)
-                            player.loc_y -= player.bottom - this.HEIGHT;
+                        else if (player.bottom > this.WORLD_HEIGHT)
+                            player.loc_y -= player.bottom - this.WORLD_HEIGHT;
 
                         food.Mass = 0;
                         destroyed.Append(JsonConvert.SerializeObject(food) + "\n");
@@ -329,33 +373,20 @@ namespace AgCubio
 
         /// <summary>
         /// Finds starting coordinates for a new player cube so that it isn't immediately consumed
-        /// NOTE: Move this to world?
         /// </summary>
         public void FindStartingCoords(out double x, out double y)
         {
-            //Implement this
-            x = Rand.Next((int)PLAYER_START_WIDTH, WIDTH - (int)PLAYER_START_WIDTH);
-            y = Rand.Next((int)PLAYER_START_WIDTH, HEIGHT - (int)PLAYER_START_WIDTH);
+            // Assign random coordinates
+            x = Rand.Next((int)PLAYER_START_WIDTH, WORLD_WIDTH - (int)PLAYER_START_WIDTH);
+            y = Rand.Next((int)PLAYER_START_WIDTH, WORLD_HEIGHT - (int)PLAYER_START_WIDTH);
 
-            //More complicated stuff looking at other players and what not. Recursion?
-
-            //-----
-            // What do you think about this:
-            // 1 Hashset of lists that contain player x's or y's
-            // Each list is for a 50 (or so) - pixel block and lists all players there.
-            // We just check and make sure that either x (or y) is empty, then start the player there.
-            // If it isn't empty, grab another random value for x (or y, if we choose y) and check that.
-
-            //Alternatively, we could check points (both x's and y's), but that requires a few more resources.
-            //-----
-
-            if (true)
-                return;
-            else
-                FindStartingCoords(out x, out y);
+            // Retry if coordinates are contained by any other player cube
+            foreach (Cube player in Cubes.Values)
+            {
+                if ((x > player.left && x < player.right) && (y < player.bottom && y > player.top))
+                    FindStartingCoords(out x, out y);
+            }
         }
-
-
 
 
         /// <summary>
@@ -375,7 +406,7 @@ namespace AgCubio
         /// <returns></returns>
         public int GetColor()
         {
-            return Rand.Next(Int32.MinValue, Int32.MaxValue);
+            return Rand.Next(1024, 1048576);
         }
 
 
@@ -385,32 +416,28 @@ namespace AgCubio
         /// NOTE: To move it there, we would need to pass in (or, just have there!) random coords, uid functionality, and GetColor.
         /// All of these methods could well just be in the world class.
         /// </summary>
-        public Cube GenerateFood()
+        public Cube GenerateFoodorVirus()
         {
-            int random = Rand.Next(100);
-
-            //create a virus 3% of the time
-            if(random > 99)
-            {
-                Cube virus = new Cube(Rand.Next(WIDTH), Rand.Next(HEIGHT), GetUid(), true, "", VIRUS_MASS, Color.Green.ToArgb(), 0);
-                Food.Add(virus);
-                return virus;
-            }
             // On a random scale needs to create viruses too (5% of total food? Less?)
             // Viruses: specific color, specific size or size range. I'd say a size of ~100 or so.
             // Cool thought: viruses can move, become npc's that can try to chase players, or just move erratically
 
             //Another thought: randomly allow a food piece to get 1 size bigger (mass++) each time this is called.
 
-            Cube food = new Cube(Rand.Next(WIDTH), Rand.Next(HEIGHT), GetUid(), true, "", FOOD_MASS, GetColor(), 0);
-            Food.Add(food);
-            return food;
+            int random = Rand.Next(100);
+            bool virus = (random > 99);
+
+            //create a virus 1% of the time
+            int color  = virus ? Color.Green.ToArgb() : GetColor();
+            int mass   = virus ? VIRUS_MASS  : ((random < 1) ? FOOD_MASS + 1 : FOOD_MASS);
+            int width  = virus ? (int)VIRUS_WIDTH : (int)FOOD_WIDTH;
+            
+            Cube foodOrVirus = new Cube(Rand.Next(width/2, WORLD_WIDTH - width/2), Rand.Next(width/2, WORLD_HEIGHT - width/2), GetUid(), true, "", mass, color, 0);
+            Food.Add(foodOrVirus);
+            return foodOrVirus;
         }
 
-
-
-
-
+        
         /// <summary>
         /// Controls a cube's movements
         /// NOTE: This method needs to be controlled by the heartbeat.
@@ -418,12 +445,14 @@ namespace AgCubio
         /// </summary>
         public void Move(int CubeUid, double x, double y)
         {
-            // Store cube width
+            // Store cube attributes
             double cubeWidth = Cubes[CubeUid].width;
+            double prevCubeX = Cubes[CubeUid].loc_x;
+            double prevCubeY = Cubes[CubeUid].loc_y;
 
             // Get the relative mouse position:
-            x -= Cubes[CubeUid].loc_x;
-            y -= Cubes[CubeUid].loc_y;
+            x -= prevCubeX;
+            y -= prevCubeY;
 
             // If the mouse is in the very center of the cube, then don't do anything.
             if (Math.Abs(x) < 1 && Math.Abs(y) < 1)
@@ -437,8 +466,8 @@ namespace AgCubio
             // Add normalized values to the cube's location. 
             // TODO: add in updates according to the heartbeat, and add in a speed scalar.
 
-            Cubes[CubeUid].loc_x += (Cubes[CubeUid].left + newX < 0 || Cubes[CubeUid].right + newX > this.WIDTH)   ? 0 : newX;
-            Cubes[CubeUid].loc_y += (Cubes[CubeUid].top + newY < 0  || Cubes[CubeUid].bottom + newY > this.HEIGHT) ? 0 : newY;
+            Cubes[CubeUid].loc_x += (Cubes[CubeUid].left + newX < 0 || Cubes[CubeUid].right + newX > this.WORLD_WIDTH)   ? 0 : newX;
+            Cubes[CubeUid].loc_y += (Cubes[CubeUid].top + newY < 0  || Cubes[CubeUid].bottom + newY > this.WORLD_HEIGHT) ? 0 : newY;
         }
 
 
