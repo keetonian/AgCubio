@@ -40,6 +40,10 @@ namespace AgCubio
         /// </summary>
         private Socket socket;
 
+
+        private double WIDTH;
+        private double HEIGHT;
+
         /// <summary>
         /// Thread running networking code
         /// </summary>
@@ -71,6 +75,8 @@ namespace AgCubio
         /// </summary>
         private double MaxMass;
 
+        private Pen DrawPen;
+
 
         /// <summary>
         /// Constructor to handle initial setup of the view
@@ -94,7 +100,9 @@ namespace AgCubio
             this.Resize += Display_Resize;
 
             // Background color. May be cool to have player control this.
-            this.BackColor = Color.WhiteSmoke;
+            //this.BackColor = Color.WhiteSmoke;
+
+            DrawPen = new Pen(Color.LightGray, 1);
         }
 
 
@@ -197,8 +205,30 @@ namespace AgCubio
                 Brush brush;
                 RectangleF rectangle;
 
+                //Draw grid lines for the world
+                // TODO: Draw only around the player cube instead of across the entire world.
+                int circleHeight = 5;
+                for (int i = 0; i <= (WIDTH * 1.5); i += (circleHeight + 1))
+                {
+                    for(int j = 0; j <= (HEIGHT * 1.5); j += (circleHeight + 1))
+                    {
+                        //DrawPen.Color = Color.FromArgb(World.GetColor()); // Wayy too wacky
+                        float x = (float)(((i - Px) * scale));
+                        float y = (float)((j - Py) * scale);
+                        e.Graphics.DrawEllipse(DrawPen, x, y, (float)(circleHeight * scale), (float)(circleHeight * scale));
+                    }
+                    
+                }
+
+
                 foreach (Cube c in World.Cubes.Values)
                 {
+                    // Try and get the world parameters.
+                    if(c.loc_x > WIDTH)
+                        WIDTH = c.loc_x;
+                    if (c.loc_y > HEIGHT)
+                        HEIGHT = c.loc_y;
+
                     if (c.Mass > 0) // Avoid painting if mass is 0 - also solves an issue where names are still displayed after some cubes are 'eaten'
                     {
                         // Painting food

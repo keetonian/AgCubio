@@ -317,24 +317,14 @@ namespace AgCubio
                         eatenFood.Add(food);
                     }
                 }
-                RemoveEatenFood(eatenFood);
+
+                // Remove eaten food
+                foreach (Cube c in eatenFood)
+                    Food.Remove(c);
             }
+
             return destroyed.ToString();
         }
-
-
-        /// <summary>
-        /// Removes food that was eaten. This isn't done in place because we use a foreach loop when iterating through food.
-        /// </summary>
-        /// <param name="foodEaten"></param>
-        public void RemoveEatenFood(IEnumerable<Cube> foodEaten)
-        {
-            foreach(Cube c in foodEaten)
-            {
-                Food.Remove(c);
-            }
-        }
-
 
 
         /// <summary>
@@ -397,7 +387,7 @@ namespace AgCubio
             int random = Rand.Next(100);
 
             //create a virus 3% of the time
-            if(random > 99)
+            if(random > 98)
             {
                 Cube virus = new Cube(Rand.Next(WIDTH), Rand.Next(HEIGHT), GetUid(), true, "", VIRUS_MASS, Color.Green.ToArgb(), 0);
                 Food.Add(virus);

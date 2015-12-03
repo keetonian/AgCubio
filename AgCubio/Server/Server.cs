@@ -60,7 +60,7 @@ namespace AgCubio
             DataSent = new StringBuilder();
             DataReceived = new Dictionary<int, Tuple<double, double>>();
 
-            while (World.Food.Count < World.MAX_FOOD_COUNT)
+            while (World.Food.Count < World.MAX_FOOD_COUNT/10)
                 World.GenerateFood();
 
             //Start the client loop
