@@ -99,7 +99,7 @@ namespace AgCubio
         /// <summary>
         /// Scaler for how quickly a player cube loses mass (double 0-1)
         /// </summary>
-        public readonly double ATTRITION_RATE_SCALER;
+        public readonly double ATTRITION_RATE;
 
         /// <summary>
         /// Minimum mass before a player can spit (integer 0-)
@@ -116,10 +116,10 @@ namespace AgCubio
         /// </summary>
         public readonly int MAX_SPLIT_COUNT;
 
-        /// <summary>
+        /*/// <summary>
         /// Distance between cubes before a larger eats a smaller
         /// </summary>
-        public readonly double ABSORB_DISTANCE_DELTA;
+        public readonly double ABSORB_DISTANCE_DELTA;*/
 
         // ---------------------- OTHER ATTRIBUTES ----------------------
 
@@ -169,7 +169,6 @@ namespace AgCubio
             
             using (XmlReader reader = XmlReader.Create(filename))
             {
-                //TODO: implement xml file stuff.
                 while (reader.Read())
                 {
                     if (reader.IsStartElement())
@@ -191,22 +190,22 @@ namespace AgCubio
                                 int.TryParse(reader.Value, out this.MAX_SPLIT_DISTANCE);
                                 break;
 
-                            case "top_speed":
+                            case "max_speed":
                                 reader.Read();
                                 double.TryParse(reader.Value, out this.MAX_SPEED);
                                 break;
 
-                            case "low_speed":
+                            case "min_speed":
                                 reader.Read();
                                 double.TryParse(reader.Value, out this.MIN_SPEED);
                                 break;
 
                             case "attrition_rate":
                                 reader.Read();
-                                double.TryParse(reader.Value, out this.ATTRITION_RATE_SCALER);
+                                double.TryParse(reader.Value, out this.ATTRITION_RATE);
                                 break;
 
-                            case "food_value":
+                            case "food_mass":
                                 reader.Read();
                                 int.TryParse(reader.Value, out this.FOOD_MASS);
                                 break;
@@ -216,7 +215,7 @@ namespace AgCubio
                                 int.TryParse(reader.Value, out this.PLAYER_START_MASS);
                                 break;
 
-                            case "max_food":
+                            case "max_food_count":
                                 reader.Read();
                                 int.TryParse(reader.Value, out this.MAX_FOOD_COUNT);
                                 break;
@@ -226,19 +225,29 @@ namespace AgCubio
                                 int.TryParse(reader.Value, out this.MIN_SPLIT_MASS);
                                 break;
 
-                            case "absorb_constant":
+                            case "max_split_count":
+                                reader.Read();
+                                int.TryParse(reader.Value, out this.MAX_SPLIT_COUNT);
+                                break;
+
+                            /*case "absorb_constant":
                                 reader.Read();
                                 double.TryParse(reader.Value, out this.ABSORB_DISTANCE_DELTA);
-                                break;
-                            /*Good idea: Shall we implement it?
-                            case "max_view_range":
-                                reader.Read();
-                                int.TryParse(reader.Value, out this.HEIGHT);
-                                break;
-                            */
+                                break;*/
+
                             case "heartbeats_per_second":
                                 reader.Read();
                                 int.TryParse(reader.Value, out this.HEARTBEATS_PER_SECOND);
+                                break;
+
+                            case "virus_percent":
+                                reader.Read();
+                                int.TryParse(reader.Value, out this.VIRUS_PERCENT);
+                                break;
+
+                            case "virus_mass":
+                                reader.Read();
+                                int.TryParse(reader.Value, out this.VIRUS_MASS);
                                 break;
                         }
                     }
@@ -246,13 +255,10 @@ namespace AgCubio
             }
 
             this.PLAYER_START_WIDTH = Math.Sqrt(this.PLAYER_START_MASS);
-            this.FOOD_WIDTH = Math.Sqrt(this.FOOD_MASS);
-            //temporary - should be in xml
-            this.VIRUS_MASS = 30;
-            this.VIRUS_PERCENT = 2;
-            this.VIRUS_WIDTH = Math.Sqrt(this.VIRUS_MASS);
+            this.FOOD_WIDTH         = Math.Sqrt(this.FOOD_MASS);
+            this.VIRUS_WIDTH        = Math.Sqrt(this.VIRUS_MASS);
 
-            double maxSpeedMass = 1 / (10 * ATTRITION_RATE_SCALER);
+            double maxSpeedMass = 1 / (10 * ATTRITION_RATE);
             this.SPEED_SLOPE = (MIN_SPEED - MAX_SPEED) / (maxSpeedMass - PLAYER_START_MASS);
             this.SPEED_CONSTANT = (MAX_SPEED - MIN_SPEED * (PLAYER_START_MASS / maxSpeedMass)) / (1 - PLAYER_START_MASS / maxSpeedMass);
 
@@ -272,8 +278,8 @@ namespace AgCubio
             Rand = new Random();
             Uids = new Stack<int>();
 
-            this.ABSORB_DISTANCE_DELTA = 5;
-            this.ATTRITION_RATE_SCALER = .0005;
+            //this.ABSORB_DISTANCE_DELTA = 5;
+            this.ATTRITION_RATE = .0005;
             this.FOOD_MASS = 1;
             this.FOOD_WIDTH = Math.Sqrt(this.FOOD_MASS);
             this.HEARTBEATS_PER_SECOND = 30;
@@ -291,7 +297,7 @@ namespace AgCubio
             this.VIRUS_PERCENT = 2;
             this.VIRUS_WIDTH = Math.Sqrt(this.VIRUS_MASS);
 
-            double maxSpeedMass = 1 / (10 * ATTRITION_RATE_SCALER);
+            double maxSpeedMass = 1 / (10 * ATTRITION_RATE);
             this.SPEED_SLOPE    = (MIN_SPEED - MAX_SPEED) / (maxSpeedMass - PLAYER_START_MASS);
             this.SPEED_CONSTANT = (MAX_SPEED - MIN_SPEED * (PLAYER_START_MASS / maxSpeedMass)) / (1 - PLAYER_START_MASS / maxSpeedMass);
 
@@ -335,8 +341,8 @@ namespace AgCubio
         public void PlayerAttrition()
         {
             foreach (Cube c in Cubes.Values)
-                if ((c.Mass * (1 - ATTRITION_RATE_SCALER)) > this.PLAYER_START_MASS)
-                    c.Mass *= (1 - this.ATTRITION_RATE_SCALER);
+                if ((c.Mass * (1 - ATTRITION_RATE)) > this.PLAYER_START_MASS)
+                    c.Mass *= (1 - this.ATTRITION_RATE);
         }
 
 
