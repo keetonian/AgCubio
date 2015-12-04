@@ -431,6 +431,9 @@ namespace AgCubio
         }
 
 
+        /// <summary>
+        /// 
+        /// </summary>
         private void AdjustPosition(int uid)
         {
             Cube player = Cubes[uid];
@@ -442,6 +445,17 @@ namespace AgCubio
                 player.loc_y -= player.top;
             else if (player.bottom > this.WORLD_HEIGHT)
                 player.loc_y -= player.bottom - this.WORLD_HEIGHT;
+        }
+
+
+        /// <summary>
+        /// Creates a unit vector out of the given x and y coordinates
+        /// </summary>
+        public static void UnitVector(ref double x, ref double y)
+        {
+            double scale = Math.Sqrt(x * x + y * y);
+            x /= scale;
+            y /= scale;
         }
 
 
@@ -540,16 +554,16 @@ namespace AgCubio
             double speed = SPEED_SLOPE * Cubes[CubeUid].Mass + SPEED_CONSTANT;
             speed = (speed < MIN_SPEED) ? MIN_SPEED : ((speed > MAX_SPEED) ? MAX_SPEED : speed);
 
-            // Normalize the vector:
-            double scale = Math.Sqrt(x * x + y * y) / speed;
-            double newX = x / scale;
-            double newY = y / scale;
+            // Normalize and scale the vector:
+            UnitVector(ref x, ref y);
+            x *= speed;
+            y *= speed;
 
             // Add normalized values to the cube's location. 
             // TODO: add in updates according to the heartbeat, and add in a speed scalar.
 
-            Cubes[CubeUid].loc_x += (Cubes[CubeUid].left + newX < 0 || Cubes[CubeUid].right + newX > this.WORLD_WIDTH) ? 0 : newX;
-            Cubes[CubeUid].loc_y += (Cubes[CubeUid].top + newY < 0 || Cubes[CubeUid].bottom + newY > this.WORLD_HEIGHT) ? 0 : newY;
+            Cubes[CubeUid].loc_x += (Cubes[CubeUid].left + x < 0 || Cubes[CubeUid].right + x > this.WORLD_WIDTH) ? 0 : x;
+            Cubes[CubeUid].loc_y += (Cubes[CubeUid].top + y < 0 || Cubes[CubeUid].bottom + y > this.WORLD_HEIGHT) ? 0 : y;
         }
 
 
@@ -606,21 +620,8 @@ namespace AgCubio
 
 
         /// <summary>
-        /// Creates a unit vector out of the given x and y coordinates
+        /// 
         /// </summary>
-        public static void UnitVector(ref double x, ref double y)
-        {
-            double scale = Math.Sqrt(x * x + y * y);
-            x /= scale;
-            y /= scale;
-        }
-
-
-
-
-
-
-
         class SplitCubeData
         {
             /// <summary>
@@ -633,7 +634,6 @@ namespace AgCubio
             /// </summary>
             public double inertia;
             
-
             /// <summary>
             /// Countdown until it can merge again
             /// </summary>
@@ -643,6 +643,9 @@ namespace AgCubio
                 set { }
             }
 
+            /// <summary>
+            /// 
+            /// </summary>
             public int CubeUid;
 
             /// <summary>
@@ -651,8 +654,8 @@ namespace AgCubio
             World Parent;
 
             /* Design notes:
-            Has an initial direction, multiplied by an initia scalar that decreases quickly. Mouse directions after this initial are added on to it, with their speed.
-            Has a max distance of where the cube can split to- that split needs to happen   quickly, and quickly scale back down to normal speed once that spot is attained.
+            Has an initial direction, multiplied by an initial scalar that decreases quickly. Mouse directions after this initial are added on to it, with their speed.
+            Has a max distance of where the cube can split to- that split needs to happen quickly, and quickly scale back down to normal speed once that spot is attained.
             Everything needs to happen gradually.
             Work out the storing of data here, and the actual moving in the Move() method in the World class.
 
@@ -660,6 +663,9 @@ namespace AgCubio
 
             */
 
+            /// <summary>
+            /// 
+            /// </summary>
             public SplitCubeData(double x, double y, World parent, int cubeUid)
             {
                 inertia = 2;//initial speed
@@ -673,7 +679,7 @@ namespace AgCubio
 
                 inertia = 2;//-(1 * Parent.Cubes[CubeUid].Mass / 58) + 59 / 58; // NEED A NEW SPEED SCALAR
 
-                World.UnitVector(ref x, ref y);
+                UnitVector(ref x, ref y);
                 direction = new Tuple<double, double>(x, y);
             }
         }
