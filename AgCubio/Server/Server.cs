@@ -84,12 +84,13 @@ namespace AgCubio
 
             // Generate 2 random starting coords within our world, check if other players are there, then send if player won't get eaten immediately. (helper method)
             double x, y;
-            World.FindStartingCoords(out x, out y, false);
-            Cube cube = new Cube(x, y, World.GetUid(), false, state.data.ToString(), World.PLAYER_START_MASS, World.GetColor(), 0);
-
+            Cube cube;
             string worldData;
-            lock (World)
+
+            lock(World)
             {
+                World.FindStartingCoords(out x, out y, false);
+                cube = new Cube(x, y, World.GetUid(), false, state.data.ToString(), World.PLAYER_START_MASS, World.GetColor(), 0);
                 World.Cubes[cube.uid] = cube;
                 worldData = World.SerializeAllCubes();
             }
@@ -138,8 +139,6 @@ namespace AgCubio
             else
                 state.data = new StringBuilder(lastAction);
 
-            //Network.Send(state.socket, DataSent.ToString());
-
             Network.I_Want_More_Data(state);
         }
 
@@ -152,9 +151,6 @@ namespace AgCubio
         /// </summary>
         private void HeartBeatTick(object state)
         {
-            //TODO: Process move requests, split requests, and make the game mechanics (eating, etc) work.
-
-
             //Data to send to all of the clients
             StringBuilder data = new StringBuilder();
 
@@ -162,12 +158,11 @@ namespace AgCubio
             {
                 // Players get a little smaller each tick
                 World.PlayerAttrition();
+
                 lock (DataReceived)
                 {
                     foreach (int i in DataReceived.Keys)
-                    {
                         World.Move(i, DataReceived[i].Item1, DataReceived[i].Item2);
-                    }
                 }
 
                 //Check for collisions, eat some food.
@@ -184,19 +179,26 @@ namespace AgCubio
                 data.Append(World.SerializePlayers());
             }
 
-            //Would this be where we send the data? It's easy to do it here, granted, but shouldn't it be in the callback?
+            // Send data to sockets
             lock (Sockets)
             {
+                List<Socket> disconnected = new List<Socket>();
+
                 foreach (Socket s in Sockets)
                 {
-                    if (!s.Connected) // We need some way of getting rid of unconnected sockets.
+                    // Set disconnected sockets to be removed (don't send)
+                    if (!s.Connected)
+                    {
+                        disconnected.Add(s);
                         continue;
-                    //Do we need to thread this, or is it automatically threaded by virtue of just using sockets?
+                    }
+
                     Network.Send(s, data.ToString());
                 }
 
-                // Alternative Route?
-                //Parallel.ForEach<Socket>(Sockets, s => { Network.Send(s, data.ToString()); });
+                // Remove disconnected sockets
+                foreach (Socket s in disconnected)
+                    Sockets.Remove(s);
             }
         }
     }
