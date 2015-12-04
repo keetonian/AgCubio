@@ -70,7 +70,7 @@ namespace AgCubio
         /// </summary>
         public double width
         {
-            get { return Math.Pow(Mass,0.65); }
+            get { return Math.Pow(Mass, 0.65); }
             private set { }
         }
 

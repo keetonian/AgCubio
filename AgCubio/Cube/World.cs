@@ -409,10 +409,10 @@ namespace AgCubio
                         continue;
 
 
-                    if (Collide(player, players) || Collide(players,player))
+                    if (Collide(player, players) || Collide(players, player))
                     {
                         // IF TEAMID = UID and COUNTDOWN < 0, then the player can eat its own split cube
-                        
+
                         if (player.Team_ID != 0 && player.Team_ID == players.Team_ID)
                         {
 
@@ -435,7 +435,7 @@ namespace AgCubio
                                 AdjustPosition(player.uid);
 
                                 Uids.Push(players.uid);
-                                eatenPlayers.Add(players.uid); 
+                                eatenPlayers.Add(players.uid);
                                 SplitCubeUids.Remove(players.uid);
                                 destroyed.Append(JsonConvert.SerializeObject(players) + "\n");
                             }
@@ -734,7 +734,7 @@ namespace AgCubio
             AdjustPosition(newCube3.uid);
             AdjustPosition(newCube4.uid);
 
-            
+
 
             SplitCubeUids[CubeUid].Add(newCube.uid);
             SplitCubeUids[CubeUid].Add(newCube2.uid);

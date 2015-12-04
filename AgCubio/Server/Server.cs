@@ -27,7 +27,7 @@ namespace AgCubio
         // Move requests for players, updated with each timer tick
         private Dictionary<int, Tuple<double, double>> DataReceived;
 
-  
+
         /// <summary>
         /// 
         /// </summary>
@@ -67,13 +67,13 @@ namespace AgCubio
             }
 
             Console.WriteLine("User " + state.data + " has connected to the server");
-            
+
             // Generate 2 random starting coords within our world, check if other players are there, then send if player won't get eaten immediately. (helper method)
             double x, y;
             Cube cube;
             string worldData;
 
-            lock(World)
+            lock (World)
             {
                 World.FindStartingCoords(out x, out y, false);
                 cube = new Cube(x, y, World.GetUid(), false, state.data.ToString(), World.PLAYER_START_MASS, World.GetColor(), 0);
