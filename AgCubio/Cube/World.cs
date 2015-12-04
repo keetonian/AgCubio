@@ -18,24 +18,24 @@ namespace AgCubio
         // ---------------------- WORLD ATTRIBUTES ----------------------
 
         /// <summary>
-        /// Width of the world
+        /// Width of the world (integer 0-)
         /// </summary>
         public readonly int WORLD_WIDTH;
 
         /// <summary>
-        /// Height of the world
+        /// Height of the world (integer 0-)
         /// </summary>
         public readonly int WORLD_HEIGHT;
 
         /// <summary>
-        /// Number of updates the server attemps to execute per second
+        /// Number of updates the server attemps to execute per second (integer 0-)
         /// </summary>
         public readonly int HEARTBEATS_PER_SECOND;
 
         // -------------------- FOOD/VIRUS ATTRIBUTES -------------------
 
         /// <summary>
-        /// Default mass of food cubes
+        /// Default mass of food cubes (integer 0-)
         /// </summary>
         public readonly int FOOD_MASS;
 
@@ -45,24 +45,29 @@ namespace AgCubio
         public readonly double FOOD_WIDTH;
 
         /// <summary>
-        /// Default mass of viruses
+        /// Default mass of viruses (integer 0-)
         /// </summary>
         public readonly int VIRUS_MASS;
 
         /// <summary>
-        /// Default mass of viruses
+        /// Default width of viruses
         /// </summary>
         public readonly double VIRUS_WIDTH;
 
         /// <summary>
-        /// Maximum total food cubes in the world
+        /// Percent of food that becomes a virus (integer 0-100)
+        /// </summary>
+        public readonly int VIRUS_PERCENT;
+
+        /// <summary>
+        /// Maximum total food cubes in the world (integer 0-)
         /// </summary>
         public readonly int MAX_FOOD_COUNT;
 
         // ---------------------- PLAYER ATTRIBUTES ---------------------
 
         /// <summary>
-        /// Starting mass for all players
+        /// Starting mass for all players (integer 0-)
         /// </summary>
         public readonly int PLAYER_START_MASS;
 
@@ -72,39 +77,49 @@ namespace AgCubio
         public readonly double PLAYER_START_WIDTH;
 
         /// <summary>
-        /// Maximum player speed (for small cube sizes)
+        /// Maximum player speed - for small cube sizes (integer 0-10)
         /// </summary>
-        public readonly int MAX_SPEED;
+        public readonly double MAX_SPEED;
 
         /// <summary>
-        /// Minimum player speed (for large cube sizes)
+        /// Minimum player speed - for large cube sizes (integer 0-10)
         /// </summary>
-        public readonly int MIN_SPEED;
+        public readonly double MIN_SPEED;
 
         /// <summary>
-        /// Scaler for how quickly a player cube loses mass
+        /// Constant in the linear equation for calculating a cube's speed
+        /// </summary>
+        public readonly double SPEED_CONSTANT;
+
+        /// <summary>
+        /// Slope in the linear equation for calculating a cubes's speed
+        /// </summary>
+        public readonly double SPEED_SLOPE;
+
+        /// <summary>
+        /// Scaler for how quickly a player cube loses mass (double 0-1)
         /// </summary>
         public readonly double ATTRITION_RATE_SCALER;
 
         /// <summary>
-        /// Minimum mass before a player can spit
+        /// Minimum mass before a player can spit (integer 0-)
         /// </summary>
         public readonly int MIN_SPLIT_MASS;
 
         /// <summary>
-        /// How far a cube can be thrown when split
+        /// How far a cube can be thrown when split (integer 0-)
         /// </summary>
         public readonly int MAX_SPLIT_DISTANCE;
 
         /// <summary>
-        /// Maximum total cubes a single player is allowed
+        /// Maximum total cubes a single player is allowed (integer 0-)
         /// </summary>
         public readonly int MAX_SPLIT_COUNT;
 
         /// <summary>
-        /// Percent overlap before a larger cube eats a smaller
+        /// Distance between cubes before a larger eats a smaller
         /// </summary>
-        public readonly double ABSORB_PERCENT_COVERAGE;
+        public readonly double ABSORB_DISTANCE_DELTA;
 
         // ---------------------- OTHER ATTRIBUTES ----------------------
 
@@ -178,12 +193,12 @@ namespace AgCubio
 
                             case "top_speed":
                                 reader.Read();
-                                int.TryParse(reader.Value, out this.MAX_SPEED);
+                                double.TryParse(reader.Value, out this.MAX_SPEED);
                                 break;
 
                             case "low_speed":
                                 reader.Read();
-                                int.TryParse(reader.Value, out this.MIN_SPEED);
+                                double.TryParse(reader.Value, out this.MIN_SPEED);
                                 break;
 
                             case "attrition_rate":
@@ -213,7 +228,7 @@ namespace AgCubio
 
                             case "absorb_constant":
                                 reader.Read();
-                                double.TryParse(reader.Value, out this.ABSORB_PERCENT_COVERAGE);
+                                double.TryParse(reader.Value, out this.ABSORB_DISTANCE_DELTA);
                                 break;
                             /*Good idea: Shall we implement it?
                             case "max_view_range":
@@ -234,7 +249,12 @@ namespace AgCubio
             this.FOOD_WIDTH = Math.Sqrt(this.FOOD_MASS);
             //temporary - should be in xml
             this.VIRUS_MASS = 30;
+            this.VIRUS_PERCENT = 2;
             this.VIRUS_WIDTH = Math.Sqrt(this.VIRUS_MASS);
+            
+            double maxSpeedMass = 1 / (10 * ATTRITION_RATE_SCALER);
+            this.SPEED_SLOPE = (MIN_SPEED - MAX_SPEED) / (maxSpeedMass - PLAYER_START_MASS);
+            this.SPEED_CONSTANT = (MAX_SPEED - MIN_SPEED * (PLAYER_START_MASS / maxSpeedMass)) / (1 - PLAYER_START_MASS / maxSpeedMass);
 
             while (this.Food.Count < this.MAX_FOOD_COUNT)
                 this.GenerateFoodorVirus();
@@ -252,23 +272,28 @@ namespace AgCubio
             Rand = new Random();
             Uids = new Stack<int>();
 
-            this.ABSORB_PERCENT_COVERAGE = .25;
-            this.ATTRITION_RATE_SCALER = .001;
+            this.ABSORB_DISTANCE_DELTA = 5;
+            this.ATTRITION_RATE_SCALER = .0005;
             this.FOOD_MASS = 1;
             this.FOOD_WIDTH = Math.Sqrt(this.FOOD_MASS);
             this.HEARTBEATS_PER_SECOND = 30;
             this.WORLD_HEIGHT = 1000;
             this.WORLD_WIDTH = 1000;
             this.MAX_FOOD_COUNT = 5000;
-            this.MAX_SPEED = 10;
+            this.MAX_SPEED = 1;
             this.MAX_SPLIT_COUNT = 15;
             this.MAX_SPLIT_DISTANCE = 30;
-            this.MIN_SPEED = 1;
+            this.MIN_SPEED = 0.4;
             this.MIN_SPLIT_MASS = 25;
             this.PLAYER_START_MASS = 10;
             this.PLAYER_START_WIDTH = Math.Sqrt(this.PLAYER_START_MASS);
             this.VIRUS_MASS = 30;
+            this.VIRUS_PERCENT = 2;
             this.VIRUS_WIDTH = Math.Sqrt(this.VIRUS_MASS);
+
+            double maxSpeedMass = 1 / (10 * ATTRITION_RATE_SCALER);
+            this.SPEED_SLOPE    = (MIN_SPEED - MAX_SPEED) / (maxSpeedMass - PLAYER_START_MASS);
+            this.SPEED_CONSTANT = (MAX_SPEED - MIN_SPEED * (PLAYER_START_MASS / maxSpeedMass)) / (1 - PLAYER_START_MASS / maxSpeedMass);
 
             while (this.Food.Count < this.MAX_FOOD_COUNT)
                 this.GenerateFoodorVirus();
@@ -282,9 +307,7 @@ namespace AgCubio
         {
             StringBuilder info = new StringBuilder();
             foreach(Cube c in Food)
-            {
                 info.Append(JsonConvert.SerializeObject(c) + "\n");
-            }
 
             info.Append(SerializePlayers());
 
@@ -339,7 +362,7 @@ namespace AgCubio
 
                 foreach (Cube food in Food)
                 {
-                    if(food.loc_x > player.left && food.loc_x < player.right && food.loc_y > player.top && food.loc_y < player.bottom && player.Mass > food.Mass)
+                    if (food.loc_x > player.left && food.loc_x < player.right && food.loc_y > player.top && food.loc_y < player.bottom && player.Mass > food.Mass)
                     {
                         player.Mass += food.Mass;
 
@@ -416,11 +439,11 @@ namespace AgCubio
             //Another thought: randomly allow a food piece to get 1 size bigger (mass++) each time this is called.
 
             int random = Rand.Next(100);
-            bool virus = (random > 98);
+            bool virus = (random < VIRUS_PERCENT);
 
             //create a virus 1% of the time
             int color  = virus ? Color.LightGreen.ToArgb() : GetColor();
-            int mass   = virus ? VIRUS_MASS  : ((random < 1) ? FOOD_MASS + 1 : FOOD_MASS);
+            int mass   = virus ? VIRUS_MASS  : ((random > 99) ? FOOD_MASS + 1 : FOOD_MASS);
             int width  = virus ? (int)VIRUS_WIDTH : (int)FOOD_WIDTH;
 
             Cube foodOrVirus = new Cube(Rand.Next(width, WORLD_WIDTH - width), Rand.Next(width, WORLD_HEIGHT - width), GetUid(), true, "", mass, color, 0);
@@ -461,8 +484,11 @@ namespace AgCubio
             if (Math.Abs(x) < 1 && Math.Abs(y) < 1)
                 return;
 
+            double speed = SPEED_SLOPE * Cubes[CubeUid].Mass + SPEED_CONSTANT;
+            speed = (speed < MIN_SPEED) ? MIN_SPEED : ((speed > MAX_SPEED) ? MAX_SPEED : speed);
+
             // Normalize the vector:
-            double scale = Math.Sqrt(x * x + y * y);
+            double scale = Math.Sqrt(x * x + y * y) / speed;
             double newX = x / scale;
             double newY = y / scale;
 
@@ -483,9 +509,8 @@ namespace AgCubio
             {
                 if (Cubes[CubeUid].Mass < this.MIN_SPLIT_MASS)
                     return;
-                List<int> list = new List<int>();
-                list.Add(CubeUid);
-                SplitCubeUids[CubeUid] = list;
+                
+                SplitCubeUids[CubeUid] = new List<int>() { CubeUid };
             }
 
             int[] temp = SplitCubeUids[CubeUid].ToArray();
