@@ -664,12 +664,12 @@ namespace AgCubio
         /// </summary>
         private void MoveCube(int CubeUid, double x, double y)
         {
-            // Get the actual cube
-            Cube cube = Cubes[CubeUid];
-
             // Store cube width
             if (!Cubes.ContainsKey(CubeUid))
                 return;
+
+            // Get the actual cube
+            Cube cube = Cubes[CubeUid];
             double cubeWidth = Cubes[CubeUid].width;
 
             // Get the relative mouse position:
