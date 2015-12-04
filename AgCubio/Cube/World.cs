@@ -548,10 +548,50 @@ namespace AgCubio
         public void Move(int PlayerUid, double x, double y)
         {
             if (SplitCubeUids.ContainsKey(PlayerUid) && SplitCubeUids[PlayerUid].Count > 0)
+            {
                 foreach (int uid in SplitCubeUids[PlayerUid])
+                {
+                    double x0 = Cubes[uid].loc_x;
+                    double y0 = Cubes[uid].loc_y;
+
                     MoveCube(uid, x, y);
+
+                    foreach (int team in SplitCubeUids[PlayerUid])
+                    {
+                        if (uid == team)
+                            continue;
+
+                        CheckOverlap(uid, Cubes[team], x0, y0);
+                    }
+                }
+            }
             else
                 MoveCube(PlayerUid, x, y);
+        }
+
+
+        /// <summary>
+        /// Helper method - checks for overlap between split cubes and cancels the directional movement that causes overlap
+        /// </summary>
+        public void CheckOverlap(int movingUid, Cube teammate, double x0, double y0)
+        {
+            Cube moving = Cubes[movingUid];
+
+            if (((moving.left < teammate.right && moving.left > teammate.left) || (moving.right < teammate.right && moving.right > teammate.left)) &&
+                ((moving.top < teammate.bottom && moving.top > teammate.top) || (moving.bottom < teammate.bottom && moving.bottom > teammate.top)))
+            {
+                double relative = Math.Abs(moving.loc_x - teammate.loc_x) - Math.Abs(moving.loc_y - teammate.loc_y);
+
+                if (relative < 0)
+                    Cubes[movingUid].loc_y = y0;
+                else if (relative > 0)
+                    Cubes[movingUid].loc_x = x0;
+                else
+                {
+                    Cubes[movingUid].loc_x = x0;
+                    Cubes[movingUid].loc_y = y0;
+                }
+            }
         }
 
 
@@ -561,30 +601,49 @@ namespace AgCubio
         /// </summary>
         private void MoveCube(int CubeUid, double x, double y)
         {
+            // Get the actual cube
+            Cube cube = Cubes[CubeUid];
+
             // Store cube width
-            double cubeWidth = Cubes[CubeUid].width;
+            double cubeWidth = cube.width;
 
             // Get the relative mouse position:
-            x -= Cubes[CubeUid].loc_x;
-            y -= Cubes[CubeUid].loc_y;
+            x -= cube.loc_x;
+            y -= cube.loc_y;
 
             // If the mouse is in the very center of the cube, then don't do anything.
             if (Math.Abs(x) < 1 && Math.Abs(y) < 1)
                 return;
 
-            double speed = SPEED_SLOPE * Cubes[CubeUid].Mass + SPEED_CONSTANT;
-            speed = (speed < MIN_SPEED) ? MIN_SPEED : ((speed > MAX_SPEED) ? MAX_SPEED : speed);
+            double speed = GetSpeed(CubeUid);
 
             // Normalize and scale the vector:
             UnitVector(ref x, ref y);
             x *= speed;
             y *= speed;
 
-            // Add normalized values to the cube's location. 
-            // TODO: add in updates according to the heartbeat, and add in a speed scalar.
+            // Set the new position
+            Cubes[CubeUid].loc_x += (cube.left + x < 0 || cube.right + x > this.WORLD_WIDTH)   ? 0 : x;
+            Cubes[CubeUid].loc_y += (cube.top + y < 0  || cube.bottom + y > this.WORLD_HEIGHT) ? 0 : y;
+        }
 
-            Cubes[CubeUid].loc_x += (Cubes[CubeUid].left + x < 0 || Cubes[CubeUid].right + x > this.WORLD_WIDTH) ? 0 : x;
-            Cubes[CubeUid].loc_y += (Cubes[CubeUid].top + y < 0 || Cubes[CubeUid].bottom + y > this.WORLD_HEIGHT) ? 0 : y;
+
+        /// <summary>
+        /// Gets the speed of the cube
+        /// </summary>
+        public double GetSpeed(int CubeUid)
+        {
+            Cube cube = Cubes[CubeUid];
+
+            //if (cube.Team_ID == 0)
+            //{
+                double speed = SPEED_SLOPE * Cubes[CubeUid].Mass + SPEED_CONSTANT;
+                return speed = (speed < MIN_SPEED) ? MIN_SPEED : ((speed > MAX_SPEED) ? MAX_SPEED : speed);
+            //}
+            //else
+            //{
+
+            //}
         }
 
 

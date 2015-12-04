@@ -66,11 +66,11 @@ namespace AgCubio
         public int argb_color { get; private set; }
 
         /// <summary>
-        /// Width, derived as the (almost) square root of the width (adjusted slightly to deal with a temporary faulty server)
+        /// Width, derived as the (almost) square root of the width
         /// </summary>
         public double width
         {
-            get { return Math.Pow(Mass,0.65); }
+            get { return Math.Sqrt(Mass); }
             private set { }
         }
 
