@@ -59,20 +59,22 @@ namespace AgCubio
             try
             {
                 state.socket.EndConnect(state_in_an_ar_object);
+
+                // Invoke the callback
+                state.callback.DynamicInvoke(state);
+
+                // Begin receiving data from the server
+                state.socket.BeginReceive(state.buffer, 0, Preserved_State_Object.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
             }
             catch (SocketException)
             {
-                // Manage problems with a socket connection, return to above program
-                state.socket.Close();
-                state.callback.DynamicInvoke(state);
-                return;
+                // If there is a problem with the socket, gracefully close it down
+                if (state.socket.Connected)
+                {
+                    state.socket.Shutdown(SocketShutdown.Both);
+                    state.socket.Close();
+                }
             }
-
-            // Invoke the callback
-            state.callback.DynamicInvoke(state);
-
-            // Begin receiving data from the server
-            state.socket.BeginReceive(state.buffer, 0, Preserved_State_Object.BufferSize, 0, new AsyncCallback(ReceiveCallback), state);
         }
 
 
@@ -106,8 +108,8 @@ namespace AgCubio
             }
             catch (Exception)
             {
-                // If there is a problem with the socket, close it, then let the above program find the closure, try again.
-                if (state.socket.Connected)//Sometimes it wasn't conected, and threw an error here without this if statement.
+                // If there is a problem with the socket, gracefully close it down
+                if (state.socket.Connected)
                 {
                     state.socket.Shutdown(SocketShutdown.Both);
                     state.socket.Close();
@@ -127,8 +129,12 @@ namespace AgCubio
             }
             catch(Exception)
             {
-                //Do something? Exception was thrown when I opened lots of windows, connected them all, then closed them all, then opened another one to connect and it didn't like it.
-                //I was running server code at the time.
+                // If there is a problem with the socket, gracefully close it down
+                if (state.socket.Connected)
+                {
+                    state.socket.Shutdown(SocketShutdown.Both);
+                    state.socket.Close();
+                }
             }
         }
 
@@ -146,7 +152,12 @@ namespace AgCubio
             }
             catch(Exception)
             {
-                //TODO: fix this for if a socket is closed, say, in the upper level check for a connection?
+                // If there is a problem with the socket, gracefully close it down
+                if (socket.Connected)
+                {
+                    socket.Shutdown(SocketShutdown.Both);
+                    socket.Close();
+                }
             }
         }
 
@@ -173,8 +184,12 @@ namespace AgCubio
             }
             catch(Exception)
             {
-                //TODO: Was throwing exceptions here and in send because of sockets closing
-                //Need to have a good way of taking care of this.
+                // If there is a problem with the socket, gracefully close it down
+                if (state.Item1.Connected)
+                {
+                    state.Item1.Shutdown(SocketShutdown.Both);
+                    state.Item1.Close();
+                }
             }
         }
 
@@ -209,13 +224,12 @@ namespace AgCubio
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="ar"></param>
         public static void Accept_a_New_Client(IAsyncResult ar)
         {
             System.Diagnostics.Debug.WriteLine("Server Accept Client");
-            //NOTE: sometimes when several clients are connected, then one experiences an error, then
-            // the code goes to this point then does not actually completely connect the client to server.
-            // More study of this bug is needed.
+            // NOTE: sometimes when several clients are connected, then one experiences an error, then
+            //   the code goes to this point then does not actually completely connect the client to server.
+            //   More study of this bug is needed.
 
             Preserved_State_Object state = (Preserved_State_Object)ar.AsyncState;
             state.socket = state.server.EndAcceptSocket(ar);
@@ -252,7 +266,7 @@ namespace AgCubio
         {
             this.socket = socket;
             this.callback = callback;
-            this.data = new StringBuilder();
+            data = new StringBuilder();
         }
 
 
@@ -263,7 +277,7 @@ namespace AgCubio
         {
             this.server = server;
             this.callback = callback;
-            this.data = new StringBuilder();
+            data = new StringBuilder();
         }
 
         /// <summary>
@@ -286,8 +300,6 @@ namespace AgCubio
         /// </summary>
         public Socket socket;
 
-        // FOR CLIENT USE:
-
         /// <summary>
         /// String for storing cube data received from the server
         /// </summary>
@@ -298,10 +310,8 @@ namespace AgCubio
         /// </summary>
         public int CubeID;
 
-        // FOR SERVER USE:
-
         /// <summary>
-        /// 
+        /// TcpListener the server uses
         /// </summary>
         public TcpListener server;
     }

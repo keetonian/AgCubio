@@ -84,7 +84,7 @@ namespace AgCubio
 
             // Generate 2 random starting coords within our world, check if other players are there, then send if player won't get eaten immediately. (helper method)
             double x, y;
-            World.FindStartingCoords(out x, out y);
+            World.FindStartingCoords(out x, out y, false);
             Cube cube = new Cube(x, y, World.GetUid(), false, state.data.ToString(), World.PLAYER_START_MASS, World.GetColor(), 0);
 
             string worldData;

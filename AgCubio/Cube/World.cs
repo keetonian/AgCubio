@@ -466,18 +466,20 @@ namespace AgCubio
 
 
         /// <summary>
-        /// Finds starting coordinates for a new player cube so that it isn't immediately consumed
+        /// Finds starting coordinates for a new player (or virus) cube so that it isn't immediately consumed (or exploded)
         /// </summary>
-        public void FindStartingCoords(out double x, out double y)
+        public void FindStartingCoords(out double x, out double y, bool virus)
         {
+            double width = virus ? VIRUS_WIDTH : PLAYER_START_WIDTH;
+
             // Assign random coordinates
-            x = Rand.Next((int)PLAYER_START_WIDTH, WORLD_WIDTH - (int)PLAYER_START_WIDTH);
-            y = Rand.Next((int)PLAYER_START_WIDTH, WORLD_HEIGHT - (int)PLAYER_START_WIDTH);
+            x = Rand.Next((int)width, WORLD_WIDTH - (int)width);
+            y = Rand.Next((int)width, WORLD_HEIGHT - (int)width);
 
             // Retry if coordinates are contained by any other player cube
             foreach (Cube player in Cubes.Values)
                 if ((x > player.left && x < player.right) && (y < player.bottom && y > player.top))
-                    FindStartingCoords(out x, out y);
+                    FindStartingCoords(out x, out y, virus);
         }
 
 
@@ -512,14 +514,27 @@ namespace AgCubio
             //Another thought: randomly allow a food piece to get 1 size bigger (mass++) each time this is called.
 
             int random = Rand.Next(100);
-            bool virus = (random < VIRUS_PERCENT);
+            int color, mass, width;
+            double x, y;
 
-            //create a virus 1% of the time
-            int color  = virus ? Color.LightGreen.ToArgb() : GetColor();
-            int mass   = virus ? VIRUS_MASS  : ((random > 99) ? FOOD_MASS + 1 : FOOD_MASS);
-            int width  = virus ? (int)VIRUS_WIDTH : (int)FOOD_WIDTH;
+            // Create a virus some percent of the time
+            if (random < VIRUS_PERCENT)
+            {
+                color = Color.LightGreen.ToArgb();
+                mass  = VIRUS_MASS;
+                width = (int)VIRUS_WIDTH;
+                FindStartingCoords(out x, out y, true);
+            }
+            // Otherwise create food
+            else
+            {
+                color = GetColor();
+                mass = (random > 99) ? FOOD_MASS*2 : FOOD_MASS; // 1% of food is double-size
+                x = Rand.Next((int)FOOD_WIDTH, WORLD_WIDTH - (int)FOOD_WIDTH);
+                y = Rand.Next((int)FOOD_WIDTH, WORLD_HEIGHT - (int)FOOD_WIDTH);
+            }
 
-            Cube foodOrVirus = new Cube(Rand.Next(width, WORLD_WIDTH - width), Rand.Next(width, WORLD_HEIGHT - width), GetUid(), true, "", mass, color, 0);
+            Cube foodOrVirus = new Cube(x, y, GetUid(), true, "", mass, color, 0);
             Food.Add(foodOrVirus);
             return foodOrVirus;
         }
