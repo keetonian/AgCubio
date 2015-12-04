@@ -23,6 +23,7 @@ Needs work:
 	Optimization of other algorithms (most are slow currently, but work at the small scale)
 	Polishing code
 	Splitting: a bug where sometimes split cubes are not put into our data structure for tracking them.
+	Collisions code: much of it is the same, can be put into helper methods.
 
 
 Implemented Features:

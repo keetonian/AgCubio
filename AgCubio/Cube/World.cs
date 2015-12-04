@@ -369,8 +369,8 @@ namespace AgCubio
             List<Cube> eatenFood;
             List<int> eatenPlayers = new List<int>();
 
-            IEnumerator<Cube> numerator = Cubes.Values.GetEnumerator();
             List<int> cuids = new List<int>(Cubes.Keys);
+
             for (int i = 0; i < cuids.Count; i++)
             {
                 Cube player = Cubes[cuids[i]];
@@ -401,10 +401,6 @@ namespace AgCubio
                     }
                 }
 
-
-                // BEGINNING IMPLEMENTATION: EATING PLAYERS. NOT DONE YET.
-                // DOESNT LIKE NESTING FOREACH LOOPS AND MODIFYING THIS INSIDE OF THE FOREACH. FIND A BETTER IMPLEMENTATION.
-                // WE COULD NEST FOR LOOPS, SINCE WE ARE NOT DELETING ANYTHING, JUST MODIFYING DATA.
                 IEnumerator<Cube> numerator2 = Cubes.Values.GetEnumerator();
                 for (int j = i + 1; j < cuids.Count; j++)
                 {
@@ -416,7 +412,7 @@ namespace AgCubio
                     if (Collide(player, players) || Collide(players,player))
                     {
                         // IF TEAMID = UID and COUNTDOWN < 0, then the player can eat its own split cube
-                        // NOT IMPLEMENTED
+                        
                         if (player.Team_ID != 0 && player.Team_ID == players.Team_ID)
                         {
 
@@ -427,8 +423,8 @@ namespace AgCubio
                                 player.Mass = 0;
                                 AdjustPosition(players.uid);
 
-                                Uids.Push(player.uid);// ONLY IF THIS IS THE LAST CUBE OF THE PLAYER OR ITS NOT THEIR UNIQUE ID
-                                eatenPlayers.Add(player.uid); // NEEDS TO REMOVE THESE
+                                Uids.Push(player.uid);
+                                eatenPlayers.Add(player.uid);
                                 SplitCubeUids.Remove(player.uid);
                                 destroyed.Append(JsonConvert.SerializeObject(player) + "\n");
                             }
@@ -438,8 +434,8 @@ namespace AgCubio
                                 players.Mass = 0;
                                 AdjustPosition(player.uid);
 
-                                Uids.Push(players.uid);// ONLY IF THIS IS THE LAST CUBE OF THE PLAYER OR ITS NOT THEIR UNIQUE ID
-                                eatenPlayers.Add(players.uid); // NEEDS TO REMOVE THESE
+                                Uids.Push(players.uid);
+                                eatenPlayers.Add(players.uid); 
                                 SplitCubeUids.Remove(players.uid);
                                 destroyed.Append(JsonConvert.SerializeObject(players) + "\n");
                             }
@@ -451,16 +447,14 @@ namespace AgCubio
                             player.Mass += players.Mass;
                             players.Mass = 0;
                             AdjustPosition(player.uid);
+
                             if (players.uid == players.Team_ID && SplitCubeUids.ContainsKey(players.Team_ID))
                                 id = ReassignUid(players.uid);
                             else
-                                Uids.Push(players.uid);// ONLY IF THIS IS THE LAST CUBE OF THE PLAYER OR ITS NOT THEIR UNIQUE ID
-                            eatenPlayers.Add(id); //NEEDS TO REMOVE THESE
+                                Uids.Push(players.uid);
+
+                            eatenPlayers.Add(id);
                             destroyed.Append(JsonConvert.SerializeObject(players) + "\n");
-
-                            //IF PLAYER HAS OTHER CUBES, then assign uid if this is the special cube
-
-                            //remove from split cube uids
                         }
                         else
                         {
@@ -469,28 +463,21 @@ namespace AgCubio
                             players.Mass += player.Mass;
                             player.Mass = 0;
                             AdjustPosition(players.uid);
+
                             if (player.uid == player.Team_ID && SplitCubeUids.ContainsKey(players.Team_ID))
                                 id = ReassignUid(player.uid);
                             else
-                                Uids.Push(player.uid);// ONLY IF THIS IS THE LAST CUBE OF THE PLAYER OR ITS NOT THEIR UNIQUE ID
-                            eatenPlayers.Add(id); // NEEDS TO REMOVE THESE
+                                Uids.Push(player.uid);
+
+                            eatenPlayers.Add(id);
                             destroyed.Append(JsonConvert.SerializeObject(player) + "\n");
-
-                            //IF PLAYER HAS OTHER CUBES, then assign PLAYERuid if this is the special cube with the main uid (teamid)
-
-                            //remove from split cube uids
                         }
-
-                        // Adjust cube position if edges go out of bounds
-
                     }
                 }
 
                 // Remove eaten food and players.
                 foreach (Cube c in eatenFood)
                     Food.Remove(c);
-
-
             }
             foreach (int i in eatenPlayers)
                 Cubes.Remove(i);
@@ -561,7 +548,6 @@ namespace AgCubio
 
         /// <summary>
         /// Helper method: creates a unique uid to give a cube
-        /// NOTE: Move this to world?
         /// </summary>
         public int GetUid()
         {
@@ -618,8 +604,6 @@ namespace AgCubio
 
         /// <summary>
         /// Controls a cube's movements
-        /// NOTE: This method needs to be controlled by the heartbeat.
-        /// NOTE: THis method needs to have bounds (so player can't go outside of the world).
         /// </summary>
         public void Move(int PlayerUid, double x, double y)
         {
@@ -659,7 +643,6 @@ namespace AgCubio
             y *= speed;
 
             // Add normalized values to the cube's location. 
-            // TODO: add in updates according to the heartbeat, and add in a speed scalar.
 
             Cubes[CubeUid].loc_x += (Cubes[CubeUid].left + x < 0 || Cubes[CubeUid].right + x > this.WORLD_WIDTH) ? 0 : x;
             Cubes[CubeUid].loc_y += (Cubes[CubeUid].top + y < 0 || Cubes[CubeUid].bottom + y > this.WORLD_HEIGHT) ? 0 : y;
@@ -715,6 +698,7 @@ namespace AgCubio
 
         /// <summary>
         /// Manages splitting when hit a virus
+        /// Non optimal code.
         /// </summary>
         public void VirusSplit(int CubeUid, double x, double y)
         {
@@ -760,7 +744,8 @@ namespace AgCubio
 
 
         /// <summary>
-        /// 
+        /// THIS MAY OR MAY NOT BE USED TO TRACK COUNTDOWNS AND INERTIA OF A SPLIT CUBE
+        /// Cube needs to gracefully slide to new position.
         /// </summary>
         class SplitCubeData
         {
