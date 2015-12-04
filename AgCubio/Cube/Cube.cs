@@ -74,24 +74,36 @@ namespace AgCubio
             private set { }
         }
 
+        /// <summary>
+        /// Returns the right x value of the cube
+        /// </summary>
         public double right
         {
             get { return this.loc_x + this.width / 2; }
             private set { }
         }
 
+        /// <summary>
+        /// Returns the left x value of the cube
+        /// </summary>
         public double left
         {
             get { return this.loc_x - this.width / 2; }
             private set { }
         }
 
+        /// <summary>
+        /// Returns the top y value of the cube
+        /// </summary>
         public double top
         {
             get { return this.loc_y - this.width / 2; }
             private set { }
         }
 
+        /// <summary>
+        /// Returns the bottom y value of the cube
+        /// </summary>
         public double bottom
         {
             get { return this.loc_y + this.width / 2; }

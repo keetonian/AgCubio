@@ -32,7 +32,7 @@ namespace AgCubio
         // Dictionary
         //      Key: player uid
         //      Value: a new class containing split requests, move requests (each in new data)
-        private Dictionary<int,Tuple<double,double>> DataReceived;
+        private Dictionary<int, Tuple<double, double>> DataReceived;
 
         //Do we need this?
         private StringBuilder DataSent;
@@ -55,7 +55,7 @@ namespace AgCubio
 
             //Initialize many of our member variables.
             Heartbeat = new Timer(HeartBeatTick, null, 0, 1000 / World.HEARTBEATS_PER_SECOND);
-           
+
             DataSent = new StringBuilder();
             DataReceived = new Dictionary<int, Tuple<double, double>>();
 
@@ -69,7 +69,7 @@ namespace AgCubio
         /// </summary>
         private void SetUpClient(Preserved_State_Object state)
         {
-            lock(Sockets)
+            lock (Sockets)
             {
                 Sockets.Add(state.socket);
             }
@@ -88,7 +88,7 @@ namespace AgCubio
             Cube cube = new Cube(x, y, World.GetUid(), false, state.data.ToString(), World.PLAYER_START_MASS, World.GetColor(), 0);
 
             string worldData;
-            lock(World)
+            lock (World)
             {
                 World.Cubes[cube.uid] = cube;
                 worldData = World.SerializeAllCubes();
@@ -162,7 +162,7 @@ namespace AgCubio
             {
                 // Players get a little smaller each tick
                 World.PlayerAttrition();
-                lock(DataReceived)
+                lock (DataReceived)
                 {
                     foreach (int i in DataReceived.Keys)
                     {
@@ -183,9 +183,9 @@ namespace AgCubio
                 //Appends all of the player cube data - they should be constantly changing (mass, position, or both), therefore, we send them every time
                 data.Append(World.SerializePlayers());
             }
-            
+
             //Would this be where we send the data? It's easy to do it here, granted, but shouldn't it be in the callback?
-            lock(Sockets)
+            lock (Sockets)
             {
                 foreach (Socket s in Sockets)
                 {
