@@ -488,6 +488,7 @@ namespace AgCubio
 
         private int ReassignUid(int cubeUid)
         {
+            // METHOD NEEDS SOME HELP: NOT BEST SOLUTION
             List<int> temp = new List<int>(SplitCubeUids[cubeUid]);
             int tempID = temp[1];
             SplitCubeUids[cubeUid].GetEnumerator().Dispose();
@@ -765,13 +766,13 @@ namespace AgCubio
         /// </summary>
         public void VirusSplit(int CubeUid, double x, double y)
         {
-            if (!SplitCubeUids.ContainsKey(CubeUid))
+            if (!SplitCubeUids.ContainsKey(Cubes[CubeUid].Team_ID))
             {
                 Cubes[CubeUid].Team_ID = CubeUid;
                 SplitCubeUids[CubeUid] = new HashSet<int>() { CubeUid };
             }
-
-            if (SplitCubeUids[CubeUid].Count >= this.MAX_SPLIT_COUNT)
+            int TeamID = Cubes[CubeUid].Team_ID;
+            if (SplitCubeUids[TeamID].Count >= this.MAX_SPLIT_COUNT)
                 return;
 
             double mass = Cubes[CubeUid].Mass;
@@ -779,10 +780,10 @@ namespace AgCubio
             // Halve the mass of the original cube, create a new cube
             Cubes[CubeUid].Mass = (mass - 10) / 2;
 
-            Cube newCube = new Cube(x + MAX_SPLIT_DISTANCE, y + MAX_SPLIT_DISTANCE, GetUid(), false, Cubes[CubeUid].Name, mass / 8, Cubes[CubeUid].argb_color, CubeUid);
-            Cube newCube2 = new Cube(x - MAX_SPLIT_DISTANCE, y - MAX_SPLIT_DISTANCE, GetUid(), false, Cubes[CubeUid].Name, mass / 8, Cubes[CubeUid].argb_color, CubeUid);
-            Cube newCube3 = new Cube(x - MAX_SPLIT_DISTANCE, y + MAX_SPLIT_DISTANCE, GetUid(), false, Cubes[CubeUid].Name, mass / 8, Cubes[CubeUid].argb_color, CubeUid);
-            Cube newCube4 = new Cube(x + MAX_SPLIT_DISTANCE, y - MAX_SPLIT_DISTANCE, GetUid(), false, Cubes[CubeUid].Name, mass / 8, Cubes[CubeUid].argb_color, CubeUid);
+            Cube newCube = new Cube(x + MAX_SPLIT_DISTANCE, y + MAX_SPLIT_DISTANCE, GetUid(), false, Cubes[CubeUid].Name, mass / 8, Cubes[CubeUid].argb_color, TeamID);
+            Cube newCube2 = new Cube(x - MAX_SPLIT_DISTANCE, y - MAX_SPLIT_DISTANCE, GetUid(), false, Cubes[CubeUid].Name, mass / 8, Cubes[CubeUid].argb_color, TeamID);
+            Cube newCube3 = new Cube(x - MAX_SPLIT_DISTANCE, y + MAX_SPLIT_DISTANCE, GetUid(), false, Cubes[CubeUid].Name, mass / 8, Cubes[CubeUid].argb_color, TeamID);
+            Cube newCube4 = new Cube(x + MAX_SPLIT_DISTANCE, y - MAX_SPLIT_DISTANCE, GetUid(), false, Cubes[CubeUid].Name, mass / 8, Cubes[CubeUid].argb_color, TeamID);
 
 
             // Add the new cube to the world
@@ -799,10 +800,10 @@ namespace AgCubio
 
 
 
-            SplitCubeUids[CubeUid].Add(newCube.uid);
-            SplitCubeUids[CubeUid].Add(newCube2.uid);
-            SplitCubeUids[CubeUid].Add(newCube3.uid);
-            SplitCubeUids[CubeUid].Add(newCube4.uid);
+            SplitCubeUids[TeamID].Add(newCube.uid);
+            SplitCubeUids[TeamID].Add(newCube2.uid);
+            SplitCubeUids[TeamID].Add(newCube3.uid);
+            SplitCubeUids[TeamID].Add(newCube4.uid);
         }
 
 
