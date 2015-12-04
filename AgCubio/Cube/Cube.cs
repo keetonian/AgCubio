@@ -30,7 +30,7 @@ namespace AgCubio
         /// Food id: 0.
         /// </summary>
         [JsonProperty]
-        public int Team_ID { get; private set; }
+        public int Team_ID { get; set; }
 
         /// <summary>
         /// ID of this current cube

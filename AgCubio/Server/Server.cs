@@ -15,10 +15,7 @@ namespace AgCubio
     /// </summary>
     public class Server
     {
-        // Another option: dictionary, where the socket is the Key, a stringbuilder the value, 
-        // and we can just constantly put stuff into it and in the networking loop it automatically sends what we want.
-        // This way we won't need to send stuff in other places in this code.
-        // Socket, data to send to client, move + split requests gathered from client,
+        // Client connections
         private HashSet<Socket> Sockets;
 
         // Cool. We own the world.
@@ -27,15 +24,8 @@ namespace AgCubio
         //Timer that controls updates
         private Timer Heartbeat;
 
-        //Do we need this?
-        //This could be what I want:
-        // Dictionary
-        //      Key: player uid
-        //      Value: a new class containing split requests, move requests (each in new data)
+        // Move requests for players, updated with each timer tick
         private Dictionary<int, Tuple<double, double>> DataReceived;
-
-        //Do we need this?
-        private StringBuilder DataSent;
 
 
         /// <summary>
@@ -59,7 +49,6 @@ namespace AgCubio
             //Initialize many of our member variables.
             Heartbeat = new Timer(HeartBeatTick, null, 0, 1000 / World.HEARTBEATS_PER_SECOND);
 
-            DataSent = new StringBuilder();
             DataReceived = new Dictionary<int, Tuple<double, double>>();
 
             //Start the client loop
@@ -79,18 +68,12 @@ namespace AgCubio
 
             Console.WriteLine("User " + state.data + " has connected to the server");
 
-            //For original UID's: have a counter that counts up and gives unique uid's
-            //When a cube is removed, store the uid in a stack to be reused.
-            //If there is nothing on the stack, increment the counter and use that UID.
-            //IF there is something on the stack, pop it and use that as the uid.
-
-
             // Generate 2 random starting coords within our world, check if other players are there, then send if player won't get eaten immediately. (helper method)
             double x, y;
             Cube cube;
             string worldData;
 
-            lock(World)
+            lock (World)
             {
                 World.FindStartingCoords(out x, out y, false);
                 cube = new Cube(x, y, World.GetUid(), false, state.data.ToString(), World.PLAYER_START_MASS, World.GetColor(), 0);
