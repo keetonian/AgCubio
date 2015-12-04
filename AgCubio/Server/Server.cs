@@ -38,6 +38,9 @@ namespace AgCubio
         private StringBuilder DataSent;
 
 
+        /// <summary>
+        /// 
+        /// </summary>
         public static void Main(string[] args)
         {
             new Server();
@@ -144,7 +147,6 @@ namespace AgCubio
             // Call for more client actions
             Network.I_Want_More_Data(state);
         }
-
 
 
         /// <summary>
