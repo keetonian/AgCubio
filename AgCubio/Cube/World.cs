@@ -611,6 +611,8 @@ namespace AgCubio
             {
                 foreach (int uid in SplitCubeUids[PlayerUid])
                 {
+                    if (!Cubes.ContainsKey(uid))
+                        continue;
                     double x0 = Cubes[uid].loc_x;
                     double y0 = Cubes[uid].loc_y;
 
@@ -620,7 +622,8 @@ namespace AgCubio
                     {
                         if (uid == team)
                             continue;
-
+                        if (!Cubes.ContainsKey(team))
+                            continue;
                         CheckOverlap(uid, Cubes[team], x0, y0);
                     }
                 }
