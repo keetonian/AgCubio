@@ -163,7 +163,7 @@ namespace AgCubio
                 //Disconnection: proceed with this method call.
                 MessageBox.Show("You've been disconnected.");
                 ShowMainScreen();
-                
+
                 return;
             }
 
@@ -195,8 +195,8 @@ namespace AgCubio
                 // Get player coordinates, use to calculate actual mouse position
                 double Px = World.Cubes[PlayerID].loc_x, Py = World.Cubes[PlayerID].loc_y;
 
-                PrevMouseLoc_x = (int)((Display.MousePosition.X - Width / 2 )/scale + Px);
-                PrevMouseLoc_y = (int)((Display.MousePosition.Y - Height / 2 )/scale + Py );
+                PrevMouseLoc_x = (int)((Display.MousePosition.X - Width / 2) / scale + Px);
+                PrevMouseLoc_y = (int)((Display.MousePosition.Y - Height / 2) / scale + Py);
 
                 Brush brush;
                 RectangleF rectangle;
@@ -208,24 +208,24 @@ namespace AgCubio
                 int circleHeight = 8;
                 float ii = (float)(0 - (Px % (circleHeight + 1))); //Note: dividing this and jj by 2 creates an interesting, almost 3D-esque effect
                 float jj = (float)(0 - (Py % (circleHeight + 1)));
-                for (int i = 0; i < Width/2; i += (circleHeight + 1))
+                for (int i = 0; i < Width / 2; i += (circleHeight + 1))
                 {
                     float xi = (float)((Width / 2 + ii * scale + i * scale));
                     float xii = (float)((Width / 2 + ii * scale - i * scale));
 
                     // Out of screen area, so break loop
-                    if (xii < (0 - circleHeight * scale))
+                    if (xii < (0 - circleHeight * 2 * scale))
                         break;
 
-                    for(int j = 0; j < Height/2; j+=(circleHeight + 1))
+                    for (int j = 0; j < Height; j += (circleHeight + 1))
                     {
                         float yi = (float)((Width / 2 + jj * scale + j * scale));
                         float yii = (float)((Width / 2 + jj * scale - j * scale));
 
                         //DrawPen.Color = Color.FromArgb(World.GetColor()); // Wayy too wacky, but could be fun as an easter egg
-                        
+
                         // out of screen area, so break loop
-                        if (yii < (0-circleHeight * scale))
+                        if (yii < (0 - circleHeight * scale))
                             break;
 
                         // Draw the circles, in each of the 4 quadrants around the player.
@@ -239,7 +239,7 @@ namespace AgCubio
                 foreach (Cube c in World.Cubes.Values)
                 {
                     // Try and get the world parameters.
-                    if(c.loc_x > WIDTH)
+                    if (c.loc_x > WIDTH)
                         WIDTH = c.loc_x;
                     if (c.loc_y > HEIGHT)
                         HEIGHT = c.loc_y;
@@ -270,11 +270,11 @@ namespace AgCubio
                         else
                         {
                             // Location is calculated differently for user and other players - user is centered, other players' coordinates are scaled
-                            rectangle = (c.uid == PlayerID) ? new RectangleF((int)(Width / 2 - c.width * scale / 2), (int)(Height / 2 - c.width * scale / 2), (int)(c.width * scale), (int)(c.width* scale)) :
-                                new RectangleF((int)((c.loc_x - Px - c.width / 2) * scale + Width / 2), (int)((c.loc_y - Py - c.width / 2) * scale + Height / 2), (int)(c.width* scale), (int)(c.width* scale));
+                            rectangle = (c.uid == PlayerID) ? new RectangleF((int)(Width / 2 - c.width * scale / 2), (int)(Height / 2 - c.width * scale / 2), (int)(c.width * scale), (int)(c.width * scale)) :
+                                new RectangleF((int)((c.loc_x - Px - c.width / 2) * scale + Width / 2), (int)((c.loc_y - Py - c.width / 2) * scale + Height / 2), (int)(c.width * scale), (int)(c.width * scale));
 
                             // Players are painted with a diagonal gradient, ranging from the actual (server-defined) color to its negative
-                            brush = new LinearGradientBrush(rectangle, Color.FromArgb(c.argb_color), Color.FromArgb(c.argb_color^0xFFFFFF), 225);
+                            brush = new LinearGradientBrush(rectangle, Color.FromArgb(c.argb_color), Color.FromArgb(c.argb_color ^ 0xFFFFFF), 225);
                             e.Graphics.FillRectangle(brush, rectangle);
 
                             // Players also have their names printed on them, centered
@@ -329,7 +329,7 @@ namespace AgCubio
         private void ShowMainScreen()
         {
             // Reset the world
-            lock(World)
+            lock (World)
                 World = new World();
 
             // Get rid of the network thread so it isn't updating while no work is being done
@@ -337,7 +337,7 @@ namespace AgCubio
 
             // Close the socket, not being used until player signs in again.
             socket.Close();
-            
+
             // Prevent further painting (would be bad when there is no socket connection)
             this.Paint -= this.Display_Paint;
 
@@ -384,7 +384,7 @@ namespace AgCubio
             {
                 // Save the socket so that it doesn't go out of scope or get garbage collected (happened a few times)
                 socket = Network.Connect_to_Server(new Network.Callback(SendName), textBoxServer.Text);
-                
+
                 // Hide menu (and stat) items
                 this.connectButton.Hide();
                 this.textBoxName.Hide();
@@ -397,7 +397,7 @@ namespace AgCubio
                 this.MaxMassLabel.Hide();
                 this.PlaytimeLabel.Hide();
                 this.PlaytimeVal.Hide();
-                
+
                 // Start the game timer
                 FPStimer.Start();
                 Playtime = 0;
