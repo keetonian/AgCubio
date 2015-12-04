@@ -1,4 +1,4 @@
-﻿AgCubio Client
+﻿AgCubio Client and server
 
 By:
 Daniel Avery
@@ -10,30 +10,40 @@ Current state of the project:
 -----Server-----
 Current most up-to-date server is in the Server branch.
 
+This project is only close to completion due to hours spent on compatibility. It took a lot of time and study to figure out how to make our client and the class client
+work on both versions of the server on remote and local hosts. If we did not spend that time on that problem, more game mechanics would have been implemented.
+
+We fixed several problems with our client code and are working on implementing everything in our server.
+
+
+
 Needs work:
-	Splitting- moving in a decreasing speed towards a position, merging back into player, max split allowance
+	Splitting- moving in a decreasing speed towards a position, merging back together after a set time
 	Viruses- split player.
 	Optimization of other algorithms (most are slow currently, but work at the small scale)
-	Eating other player cubes
-	Display: only draw things that are directly around the cube, instead of drawing the entire world all the time.
+	Polishing code
+	Splitting: a bug where sometimes split cubes are not put into our data structure for tracking them.
 
 
 Implemented Features:
-	Moving
-	Client server connections
-	Eating food
+	Thread safety (locking)
+	Moving- using vector math
+	Client and server connections and communications
+	Eating food (slow algorithm, but no time yet for optimizations)
+	Eating other players
+	Attrition (players lose size over time)
+	Randomly generated food
+	Players spawn at starting coordinates where they won't be eaten.
 
 
+	World: 
+		contains the state of the simulation. Most computations happen in the world class.
+		Reads an xml file of parameters
 
-
-
-
-
-
-
-
-
-
+	Server: 
+		updates the world at a steady rate gained from the world
+		Async connection requests
+	
 
 
 
@@ -51,15 +61,14 @@ Implemented Features:
 
 
 Bugs(/Features!):
-	Mouse coordinates are a little off for non-fullscreen window and split cubes, but for fullscreen it is fine.
-	Split cubes focus on one cube instead of center of mass
-	Splitting does not resize the screen, and some player cubes may go off the screen
-	Food may sometimes be left onscreen after being eaten (rare bug)
-	Split cubes and cubes of other players not always drawn correctly, may overlap food (offset too far down and to the right)
-	Sometimes get a big red X through screen, not sure what that error means (very rare)
-	Sometimes get a disposed object exception that the server thread can’t access the socket after a player restarts a game after he dies.
-		This error only happens when we don't expect it to, but the code works fine if it is run again after that. We are working on fixing it.
-	JSON parse errors after a player dies: Sometimes happens, but hasn't for a while. Perhaps we fixed the bug.
+		Mouse coordinates are a little off for non-fullscreen window and split cubes, but for fullscreen it is fine.
+		Split cubes focus on one cube instead of center of mass
+		Splitting does not resize the screen, and some player cubes may go off the screen
+		Food may sometimes be left onscreen after being eaten (rare bug)
+(fixed)	Split cubes and cubes of other players not always drawn correctly, may overlap food (offset too far down and to the right)
+(fixed)	Sometimes get a big red X through screen, not sure what that error means (very rare)
+(fixed)	Sometimes get a disposed object exception that the server thread can’t access the socket after a player restarts a game after he dies.
+		JSON parse errors after a player dies: Sometimes happens, but hasn't for a while. Perhaps we fixed the bug.
 
 
 Design decisions:

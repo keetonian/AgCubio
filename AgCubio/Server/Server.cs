@@ -53,7 +53,7 @@ namespace AgCubio
         /// </summary>
         public Server()
         {
-            World = new World(/*"World_Params.xml"*/);
+            World = new World("World_Params.xml");
             Sockets = new HashSet<Socket>();
 
             //Initialize many of our member variables.
