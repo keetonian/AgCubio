@@ -110,17 +110,18 @@ namespace AgCubio
 
         /// <summary>
         /// Method to send and receive data from client
-        /// NOTE: SERVER IS CURRENTLY SENDING ALL DATA FROM THE HeartBeatTick function. should this change to here? (Concern: threading is here, but is it there?)
         /// </summary>
         private void ManageData(Preserved_State_Object state)
         {
-
+            // Action for parsing client requests into moves or splits
             Action<String> TryMoveOrSplit = new Action<String>((str) =>
             {
+                // Get the coordinates for the move or split
                 MatchCollection values = Regex.Matches(str, @"-*\d+");
                 double x = double.Parse(values[0].Value);
                 double y = double.Parse(values[1].Value);
 
+                // Handle moving or splitting
                 if (str[1] == 'm')
                     lock (DataReceived) { DataReceived[state.CubeID] = new Tuple<double, double>(x, y); }
                 else if (str[1] == 's')
@@ -128,17 +129,19 @@ namespace AgCubio
 
             });
 
-
+            // Try to perform the complete move or split actions
             string[] actions = Regex.Split(state.data.ToString(), @"\n");
             for (int i = 0; i < actions.Length - 1; i++)
                 TryMoveOrSplit(actions[i]);
 
+            // Try to perform the last move or split action if it is complete, otherwise append what is there for later
             string lastAction = actions.Last();
             if (lastAction.Length > 1 && lastAction?.Last() == ')')
                 TryMoveOrSplit(lastAction);
             else
                 state.data = new StringBuilder(lastAction);
 
+            // Call for more client actions
             Network.I_Want_More_Data(state);
         }
 
@@ -146,12 +149,12 @@ namespace AgCubio
 
         /// <summary>
         /// Every timer tick:
-        ///     Updates the world (adds food, etc)
-        ///     Sends updates to the clients
+        ///   Updates the world (adds food, etc)
+        ///   Sends updates to the clients
         /// </summary>
         private void HeartBeatTick(object state)
         {
-            //Data to send to all of the clients
+            // Data to send to all of the clients
             StringBuilder data = new StringBuilder();
 
             lock (World)
@@ -165,7 +168,7 @@ namespace AgCubio
                         World.Move(i, DataReceived[i].Item1, DataReceived[i].Item2);
                 }
 
-                //Check for collisions, eat some food.
+                // Check for collisions, eat some food
                 data.Append(World.ManageCollisions());
 
                 // Add food to the world if necessary and append it to the data stream
@@ -175,7 +178,7 @@ namespace AgCubio
                     data.Append(JsonConvert.SerializeObject(food) + "\n");
                 }
 
-                //Appends all of the player cube data - they should be constantly changing (mass, position, or both), therefore, we send them every time
+                // Appends all of the player cube data - they should be constantly changing (mass, position, or both), therefore, we send them every time
                 data.Append(World.SerializePlayers());
             }
 
