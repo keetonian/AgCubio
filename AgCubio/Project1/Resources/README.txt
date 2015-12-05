@@ -24,6 +24,7 @@ Needs work:
 	Polishing code
 	Splitting: a bug where sometimes split cubes are not put into our data structure for tracking them.
 	Collisions code: much of it is the same, can be put into helper methods.
+	bug: multiple players: eating cubes, sometimes a player cube gets left on the screen even after it is consumed.
 
 
 Implemented Features:
@@ -35,6 +36,9 @@ Implemented Features:
 	Attrition (players lose size over time)
 	Randomly generated food
 	Players spawn at starting coordinates where they won't be eaten.
+	start uid counter at 1 so that no player can have a uid of 0 and a teamid of 0 (give all cubes to his team)
+	Food cubes: there are cubes of mass 1xfoodmass, 2x and 3x (increasing rarity)
+	If you have split the max amount, you can eat viruses with no ill effects: they are simply very big food items
 
 
 	World: 
@@ -48,7 +52,7 @@ Implemented Features:
 
 
 
-
+	NOTE: most bug fixes have been documented in GitHub by committing data and commenting on what was done.
 
 
 

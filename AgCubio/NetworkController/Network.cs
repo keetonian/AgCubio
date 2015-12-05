@@ -195,7 +195,7 @@ namespace AgCubio
 
 
         /// <summary>
-        /// 
+        /// Heart of the server code. Creates an async loop for accepting new clients.
         /// </summary>
         public static void Server_Awaiting_Client_Loop(Delegate callback)
         {
@@ -207,49 +207,21 @@ namespace AgCubio
             server.BeginAcceptSocket(new AsyncCallback(Accept_a_New_Client), state);
 
             System.Diagnostics.Debug.WriteLine("Server Awaiting client");
-
-            /*
-            Class webpage:
-
-            This is the heart of the server code. It should ask the OS to listen for a connection and save the callback function with that request. 
-            Upon a connection request coming in the OS should invoke the Accept_a_New_Client method (see below).
-
-            Note: while this method is called "Loop", it is not a traditional loop, but an "event loop" 
-            (i.e., this method sets up the connection listener, which, when a connection occurs, sets up a new connection listener. for another connection).
-
-            */
         }
 
 
         /// <summary>
-        /// 
+        /// Accepts a new client and begins data transferring
         /// </summary>
         public static void Accept_a_New_Client(IAsyncResult ar)
         {
             System.Diagnostics.Debug.WriteLine("Server Accept Client");
-            // NOTE: sometimes when several clients are connected, then one experiences an error, then
-            //   the code goes to this point then does not actually completely connect the client to server.
-            //   More study of this bug is needed.
 
             Preserved_State_Object state = (Preserved_State_Object)ar.AsyncState;
             state.socket = state.server.EndAcceptSocket(ar);
 
             state.socket.BeginReceive(state.buffer, 0, Preserved_State_Object.BufferSize, 0, new AsyncCallback(ReceiveCallback), state); //Get the name, then give them their cube.
             state.server.BeginAcceptSocket(new AsyncCallback(Accept_a_New_Client), new Preserved_State_Object(state.server, state.callback));
-
-            /*
-            This code should be invoked by the OS when a connection request comes in. It should:
-            1.Create a new socket
-            2.Call the callback provided by the above method
-            3.Await a new connection request.
-
-            Note: the callback method referenced in the above function should have been transferred to this 
-            function via the AsyncResult parameter and should be invoked at this point.
-
-            WARNING!!!After accepting a new client, the Networking code should NOT start listening for data!
-            It is the job of the game server(presumably via the callback method) to request data!
-
-            */
         }
     }
 
