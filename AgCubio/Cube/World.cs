@@ -87,6 +87,11 @@ namespace AgCubio
         public readonly double MIN_SPEED;
 
         /// <summary>
+        /// Mass at which minimum speed is reached
+        /// </summary>
+        public readonly int MIN_SPEED_MASS;
+
+        /// <summary>
         /// Constant in the linear equation for calculating a cube's speed
         /// </summary>
         public readonly double SPEED_CONSTANT;
@@ -121,7 +126,7 @@ namespace AgCubio
         /// </summary>
         public readonly double ABSORB_DISTANCE_DELTA;*/
 
-        // ---------------------- OTHER ATTRIBUTES ----------------------
+        // ---------------------- OTHER FIELDS --------------------------
 
         /// <summary>
         /// Dictionary for storing all the cubes. Uid's map to cubes
@@ -157,16 +162,18 @@ namespace AgCubio
 
 
         /// <summary>
-        /// Constructs a new world of the specified dimensions in the xml file
+        /// Constructs a new world using parameters specified in an xml file
         /// </summary>
         public World(string filename)
         {
+            // Initialize fields
             SplitCubeUids = new Dictionary<int, HashSet<int>>();
             Cubes = new Dictionary<int, Cube>();
-            Food = new HashSet<Cube>();
-            Rand = new Random();
-            Uids = new Stack<int>();
+            Food  = new HashSet<Cube>();
+            Rand  = new Random();
+            Uids  = new Stack<int>();
             
+            // Read parameters from xml
             using (XmlReader reader = XmlReader.Create(filename))
             {
                 while (reader.Read())
@@ -249,75 +256,49 @@ namespace AgCubio
                                 reader.Read();
                                 int.TryParse(reader.Value, out this.VIRUS_MASS);
                                 break;
+
+                            case "min_speed_mass":
+                                reader.Read();
+                                int.TryParse(reader.Value, out this.MIN_SPEED_MASS);
+                                break;
                         }
                     }
                 }
             }
 
+            // Calculate remaining parameters
             this.PLAYER_START_WIDTH = Math.Sqrt(this.PLAYER_START_MASS);
-            this.FOOD_WIDTH = Math.Sqrt(this.FOOD_MASS);
-            this.VIRUS_WIDTH = Math.Sqrt(this.VIRUS_MASS);
+            this.FOOD_WIDTH         = Math.Sqrt(this.FOOD_MASS);
+            this.VIRUS_WIDTH        = Math.Sqrt(this.VIRUS_MASS);
+            this.SPEED_SLOPE        = (MIN_SPEED - MAX_SPEED) / (MIN_SPEED_MASS - PLAYER_START_MASS);
+            this.SPEED_CONSTANT     = (MAX_SPEED - MIN_SPEED * (PLAYER_START_MASS / MIN_SPEED_MASS)) / (1 - PLAYER_START_MASS / MIN_SPEED_MASS);
 
-            double maxSpeedMass = 1 / (10 * ATTRITION_RATE);
-            this.SPEED_SLOPE = (MIN_SPEED - MAX_SPEED) / (maxSpeedMass - PLAYER_START_MASS);
-            this.SPEED_CONSTANT = (MAX_SPEED - MIN_SPEED * (PLAYER_START_MASS / maxSpeedMass)) / (1 - PLAYER_START_MASS / maxSpeedMass);
-
+            // Generate starting food
             while (this.Food.Count < this.MAX_FOOD_COUNT)
                 this.GenerateFoodorVirus();
         }
 
 
         /// <summary>
-        /// Default constructor: uses predetermined values
+        /// Much simpler constructor, for client use
         /// </summary>
         public World()
         {
-            SplitCubeUids = new Dictionary<int, HashSet<int>>();
             Cubes = new Dictionary<int, Cube>();
-            Food = new HashSet<Cube>();
-            Rand = new Random();
-            Uids = new Stack<int>();
-
-            //this.ABSORB_DISTANCE_DELTA = 5;
-            this.ATTRITION_RATE = .0005;
-            this.FOOD_MASS = 1;
-            this.FOOD_WIDTH = Math.Sqrt(this.FOOD_MASS);
-            this.HEARTBEATS_PER_SECOND = 30;
-            this.WORLD_HEIGHT = 1000;
-            this.WORLD_WIDTH = 1000;
-            this.MAX_FOOD_COUNT = 5000;
-            this.MAX_SPEED = 1;
-            this.MAX_SPLIT_COUNT = 15;
-            this.MAX_SPLIT_DISTANCE = 30;
-            this.MIN_SPEED = 0.4;
-            this.MIN_SPLIT_MASS = 25;
-            this.PLAYER_START_MASS = 10;
-            this.PLAYER_START_WIDTH = Math.Sqrt(this.PLAYER_START_MASS);
-            this.VIRUS_MASS = 30;
-            this.VIRUS_PERCENT = 2;
-            this.VIRUS_WIDTH = Math.Sqrt(this.VIRUS_MASS);
-
-            double maxSpeedMass = 1 / (10 * ATTRITION_RATE);
-            this.SPEED_SLOPE = (MIN_SPEED - MAX_SPEED) / (maxSpeedMass - PLAYER_START_MASS);
-            this.SPEED_CONSTANT = (MAX_SPEED - MIN_SPEED * (PLAYER_START_MASS / maxSpeedMass)) / (1 - PLAYER_START_MASS / maxSpeedMass);
-
-            while (this.Food.Count < this.MAX_FOOD_COUNT)
-                this.GenerateFoodorVirus();
         }
 
 
         /// <summary>
-        /// Serializes all cubes in the world to send them to a new player.
+        /// Serializes all cubes in the world to send them to a new player
         /// </summary>
         public string SerializeAllCubes()
         {
             StringBuilder info = new StringBuilder();
+
             foreach (Cube c in Food)
                 info.Append(JsonConvert.SerializeObject(c) + "\n");
 
-            info.Append(SerializePlayers());
-
-            return info.ToString();
+            return info.Append(SerializePlayers()).ToString();
         }
 
 

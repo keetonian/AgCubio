@@ -4,32 +4,40 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.Text.RegularExpressions;
 
 namespace AgCubio
 {
     /// <summary>
-    /// 
+    /// Server manages all data interactions with clients
     /// </summary>
     public class Server
     {
-        // Client connections
+        /// <summary>
+        /// Client connections
+        /// </summary>
         private HashSet<Socket> Sockets;
 
-        // Cool. We own the world.
+        /// <summary>
+        /// World object for storing and managing the game state
+        /// </summary>
         private World World;
 
-        //Timer that controls updates
+        /// <summary>
+        /// Timer that controls updates
+        /// </summary>
         private Timer Heartbeat;
 
-        // Move requests for players, updated with each timer tick
+        /// <summary>
+        /// Move requests for players, updated with each timer tick
+        ///   cube uid => coordinates
+        /// </summary>
         private Dictionary<int, Tuple<double, double>> DataReceived;
 
 
         /// <summary>
-        /// 
+        /// Create a server and pause the console
         /// </summary>
         public static void Main(string[] args)
         {
@@ -39,19 +47,15 @@ namespace AgCubio
 
 
         /// <summary>
-        /// Constructor. Sets up the server
+        /// Constructor - initializes server fields and begins awaiting client connections
         /// </summary>
         public Server()
         {
-            World = new World("World_Params.xml");
-            Sockets = new HashSet<Socket>();
-
-            //Initialize many of our member variables.
-            Heartbeat = new Timer(HeartBeatTick, null, 0, 1000 / World.HEARTBEATS_PER_SECOND);
-
+            World        = new World("World_Params.xml");
+            Sockets      = new HashSet<Socket>();
+            Heartbeat    = new Timer(HeartBeatTick, null, 0, 1000 / World.HEARTBEATS_PER_SECOND);
             DataReceived = new Dictionary<int, Tuple<double, double>>();
 
-            //Start the client loop
             Network.Server_Awaiting_Client_Loop(new Network.Callback(SetUpClient));
         }
 
