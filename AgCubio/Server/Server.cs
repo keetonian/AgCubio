@@ -147,10 +147,20 @@ namespace AgCubio
                 // Players get a little smaller each tick
                 World.PlayerAttrition();
 
+                // Move all players according to last mouse position
                 lock (DataReceived)
                 {
-                    foreach (int i in DataReceived.Keys)
-                        World.Move(i, DataReceived[i].Item1, DataReceived[i].Item2);
+                    List<int> id = new List<int>(DataReceived.Keys);
+                    foreach (int i in id)
+                    {
+                        if (!World.Cubes.ContainsKey(i))
+                        {
+                            DataReceived.Remove(i);
+                            continue;
+                        }
+
+                        World.Move(i, DataReceived[i].Item1, DataReceived[i].Item2); 
+                    }
                 }
 
                 // Check for collisions, eat some food
