@@ -175,7 +175,7 @@ namespace AgCubio
             Rand = new Random();
             Uids = new Stack<int>();
             Uid = 1; // Start at 1 so that no cube has a uid of 0
-            
+
             // Read parameters from xml
             using (XmlReader reader = XmlReader.Create(filename))
             {
@@ -271,10 +271,10 @@ namespace AgCubio
 
             // Calculate remaining parameters
             this.PLAYER_START_WIDTH = Math.Sqrt(this.PLAYER_START_MASS);
-            this.FOOD_WIDTH         = Math.Sqrt(this.FOOD_MASS);
-            this.VIRUS_WIDTH        = Math.Sqrt(this.VIRUS_MASS);
-            this.SPEED_SLOPE        = (MIN_SPEED - MAX_SPEED) / (MIN_SPEED_MASS - PLAYER_START_MASS);
-            this.SPEED_CONSTANT     = (MAX_SPEED - MIN_SPEED * (PLAYER_START_MASS / MIN_SPEED_MASS)) / (1 - PLAYER_START_MASS / MIN_SPEED_MASS);
+            this.FOOD_WIDTH = Math.Sqrt(this.FOOD_MASS);
+            this.VIRUS_WIDTH = Math.Sqrt(this.VIRUS_MASS);
+            this.SPEED_SLOPE = (MIN_SPEED - MAX_SPEED) / (MIN_SPEED_MASS - PLAYER_START_MASS);
+            this.SPEED_CONSTANT = (MAX_SPEED - MIN_SPEED * (PLAYER_START_MASS / MIN_SPEED_MASS)) / (1 - PLAYER_START_MASS / MIN_SPEED_MASS);
 
             // Generate starting food
             while (this.Food.Count < this.MAX_FOOD_COUNT)
@@ -361,7 +361,7 @@ namespace AgCubio
             for (int i = 0; i < cuids.Count; i++)
             {
                 Cube player = Cubes[cuids[i]];
-               
+
                 eatenFood = new List<Cube>();
                 if (player.Mass == 0)
                     continue;
@@ -377,14 +377,13 @@ namespace AgCubio
                             VirusSplit(player.uid, food.loc_x + 10, food.loc_y + 10);
                         }
                         else
-                        player.Mass += food.Mass;
+                            player.Mass += food.Mass;
 
                         // Adjust cube position if edges go out of bounds
                         AdjustPosition(player.uid);
 
                         food.Mass = 0;
                         destroyed.Append(JsonConvert.SerializeObject(food) + "\n");
-                        Uids.Push(food.uid);
                         eatenFood.Add(food);
                     }
                 }
@@ -412,21 +411,19 @@ namespace AgCubio
                                 player.Mass = 0;
                                 AdjustPosition(players.uid);
 
-                                Uids.Push(player.uid);
                                 eatenPlayers.Add(player.uid);
                                 SplitCubeUids[player.Team_ID].Remove(player.uid);
                                 destroyed.Append(JsonConvert.SerializeObject(player) + "\n");
                             }
                             else
                             {
-                            player.Mass += players.Mass;
-                            players.Mass = 0;
+                                player.Mass += players.Mass;
+                                players.Mass = 0;
                                 AdjustPosition(player.uid);
 
-                                Uids.Push(players.uid);
                                 eatenPlayers.Add(players.uid);
                                 SplitCubeUids[players.Team_ID].Remove(players.uid);
-                            destroyed.Append(JsonConvert.SerializeObject(players) + "\n");
+                                destroyed.Append(JsonConvert.SerializeObject(players) + "\n");
                             }
                         }
                         else if (player.Mass > players.Mass)
@@ -439,12 +436,11 @@ namespace AgCubio
                             if (SplitCubeUids.ContainsKey(players.Team_ID) && SplitCubeUids[players.Team_ID].Count > 1)
                             {
                                 if (players.uid == players.Team_ID)
-                                id = ReassignUid(players.uid);
-                            else
+                                    id = ReassignUid(players.uid);
+                                else
                                     SplitCubeUids[players.Team_ID].Remove(players.uid);
                             }
-                            else
-                                Uids.Push(players.uid);
+                            
 
                             eatenPlayers.Add(id);
                             destroyed.Append(JsonConvert.SerializeObject(players) + "\n");
@@ -460,30 +456,33 @@ namespace AgCubio
                             if (SplitCubeUids.ContainsKey(player.Team_ID) && SplitCubeUids[player.Team_ID].Count > 1)
                             {
                                 if (player.uid == player.Team_ID)
-                                id = ReassignUid(player.uid);
-                            else
+                                    id = ReassignUid(player.uid);
+                                else
                                     SplitCubeUids[player.Team_ID].Remove(player.uid);
                             }
-                            else
-                                Uids.Push(player.uid);
+                            
 
                             eatenPlayers.Add(id);
                             destroyed.Append(JsonConvert.SerializeObject(player) + "\n");
                         }
-                        }
                     }
+                }
 
                 // Remove eaten food and players.
                 foreach (Cube c in eatenFood)
+                {
                     Food.Remove(c);
+                    Uids.Push(c.uid);
+                }
             }
-                foreach (int i in eatenPlayers)
+            foreach (int i in eatenPlayers)
             {
-                    Cubes.Remove(i);
+                Cubes.Remove(i);
+                Uids.Push(i);
             }
 
             return destroyed.ToString();
-            }
+        }
 
 
         /// <summary>
@@ -573,7 +572,7 @@ namespace AgCubio
         /// Adds a new food cube to the world
         /// </summary>
         public Cube GenerateFoodorVirus()
-            {
+        {
             // On a random scale needs to create viruses too 
             // Viruses: specific color, specific size or size range.
             // Cool thought: viruses can move, become npc's that can try to chase players, or just move erratically
@@ -628,7 +627,7 @@ namespace AgCubio
                     {
                         if (uid == team)
                             continue;
-                        
+
                         CheckOverlap(uid, Cubes[team], x0, y0);
                     }
                 }
@@ -703,8 +702,8 @@ namespace AgCubio
 
             //if (cube.Team_ID == 0)
             //{
-                double speed = SPEED_SLOPE * Cubes[CubeUid].Mass + SPEED_CONSTANT;
-                return speed = (speed < MIN_SPEED) ? MIN_SPEED : ((speed > MAX_SPEED) ? MAX_SPEED : speed);
+            double speed = SPEED_SLOPE * Cubes[CubeUid].Mass + SPEED_CONSTANT;
+            return speed = (speed < MIN_SPEED) ? MIN_SPEED : ((speed > MAX_SPEED) ? MAX_SPEED : speed);
             //}
             //else
             //{
@@ -725,7 +724,7 @@ namespace AgCubio
                 Cubes[CubeUid].Team_ID = CubeUid;
                 SplitCubeUids[CubeUid] = new HashSet<int>() { CubeUid };
             }
-                
+
 
             List<int> temp = new List<int>(SplitCubeUids[CubeUid]);
             List<int> remove = new List<int>();
@@ -789,7 +788,7 @@ namespace AgCubio
             Cubes.Add(newCube2.uid, newCube2);
             Cubes.Add(newCube3.uid, newCube3);
             Cubes.Add(newCube4.uid, newCube4);
-            
+
             //Adjust position so it's inside world.
             AdjustPosition(newCube.uid);
             AdjustPosition(newCube2.uid);
@@ -823,7 +822,7 @@ namespace AgCubio
                 get { return inertia--; }
                 set { }
             }
-            
+
             /// <summary>
             /// Countdown until it can merge again
             /// </summary>

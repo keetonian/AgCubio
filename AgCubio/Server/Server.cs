@@ -51,7 +51,7 @@ namespace AgCubio
         /// </summary>
         public Server()
         {
-            World        = new World("World_Params.xml");
+            World        = new World("..\\..\\..\\Project1/Resources/World_Params.xml");
             Sockets      = new HashSet<Socket>();
             Heartbeat    = new Timer(HeartBeatTick, null, 0, 1000 / World.HEARTBEATS_PER_SECOND);
             DataReceived = new Dictionary<int, Tuple<double, double>>();
@@ -65,10 +65,7 @@ namespace AgCubio
         /// </summary>
         private void SetUpClient(Preserved_State_Object state)
         {
-            lock (Sockets)
-            {
-                Sockets.Add(state.socket);
-            }
+            
 
             Console.WriteLine("User " + state.data + " has connected to the server");
 
@@ -92,6 +89,11 @@ namespace AgCubio
             // Send the client's cube and then all of the world data
             Network.Send(state.socket, JsonConvert.SerializeObject(cube) + "\n");
             Network.Send(state.socket, worldData);
+
+            lock (Sockets)
+            {
+                Sockets.Add(state.socket);
+            }
 
             // Ask for more data from client
             Network.I_Want_More_Data(state);
