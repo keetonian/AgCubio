@@ -173,10 +173,18 @@ namespace AgCubio
             {
                 // Initialize total player mass to 0, get player x and y coordinates
                 double totalMass = 0;
+                double Px = 0, Py = 0;
 
                 // Iterate over split player cubes in the world and increment total player mass
                 foreach (int i in PlayerSplitID)
-                    totalMass += World.Cubes[i].Mass;
+                {
+                    Cube c = World.Cubes[i];
+                    totalMass += c.Mass;
+                    Px += (c.loc_x * c.Mass);
+                    Py += (c.loc_y * c.Mass);
+                }
+                Px /= totalMass;
+                Py /= totalMass;
 
                 // If the total mass of the player cube(s) is 0, it means that the game has ended
                 if (totalMass == 0)
@@ -193,7 +201,6 @@ namespace AgCubio
                 double scale = 100 / Math.Sqrt(totalMass);
 
                 // Get player coordinates, use to calculate actual mouse position
-                double Px = World.Cubes[PlayerID].loc_x, Py = World.Cubes[PlayerID].loc_y;
 
                 PrevMouseLoc_x = (int)((Display.MousePosition.X - Width / 2) / scale + Px);
                 PrevMouseLoc_y = (int)((Display.MousePosition.Y - Height / 2) / scale + Py);
@@ -270,7 +277,7 @@ namespace AgCubio
                         else
                         {
                             // Location is calculated differently for user and other players - user is centered, other players' coordinates are scaled
-                            rectangle = (c.uid == PlayerID) ? new RectangleF((int)(Width / 2 - c.width * scale / 2), (int)(Height / 2 - c.width * scale / 2), (int)(c.width * scale), (int)(c.width * scale)) :
+                            rectangle = /*(c.uid == PlayerID) ? new RectangleF((int)(Width / 2 - c.width * scale / 2), (int)(Height / 2 - c.width * scale / 2), (int)(c.width * scale), (int)(c.width * scale)) :*/
                                 new RectangleF((int)((c.loc_x - Px - c.width / 2) * scale + Width / 2), (int)((c.loc_y - Py - c.width / 2) * scale + Height / 2), (int)(c.width * scale), (int)(c.width * scale));
 
                             // Players are painted with a diagonal gradient, ranging from the actual (server-defined) color to its negative
