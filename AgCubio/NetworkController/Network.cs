@@ -74,6 +74,9 @@ namespace AgCubio
                     state.socket.Shutdown(SocketShutdown.Both);
                     state.socket.Close();
                 }
+
+                // Invoke the callback
+                state.callback.DynamicInvoke(state);
             }
         }
 
