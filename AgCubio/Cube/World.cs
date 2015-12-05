@@ -381,8 +381,7 @@ namespace AgCubio
             for (int i = 0; i < cuids.Count; i++)
             {
                 Cube player = Cubes[cuids[i]];
-                if (player == null)
-                    break; // Shouldn't need this code
+               
                 eatenFood = new List<Cube>();
                 if (player.Mass == 0)
                     continue;
@@ -639,8 +638,6 @@ namespace AgCubio
             {
                 foreach (int uid in SplitCubeUids[PlayerUid])
                 {
-                    if (!Cubes.ContainsKey(uid))
-                        continue; // Shouldn't need this
                     double x0 = Cubes[uid].loc_x;
                     double y0 = Cubes[uid].loc_y;
 
@@ -651,8 +648,7 @@ namespace AgCubio
                     {
                         if (uid == team)
                             continue;
-                        if (!Cubes.ContainsKey(team)) // Hits this after the player re-eats its own cube
-                            continue; // Shouldn't need this, but this fixes a problem.
+                        
                         CheckOverlap(uid, Cubes[team], x0, y0);
                     }
                 }
@@ -693,10 +689,6 @@ namespace AgCubio
         /// </summary>
         private void MoveCube(int CubeUid, double x, double y)
         {
-            // Store cube width
-            if (!Cubes.ContainsKey(CubeUid))
-                return; // Shouldn't need this
-
             // Get the actual cube
             Cube cube = Cubes[CubeUid];
             double cubeWidth = Cubes[CubeUid].width;
@@ -759,12 +751,6 @@ namespace AgCubio
             List<int> remove = new List<int>();
             foreach (int uid in temp)
             {
-                if (!Cubes.ContainsKey(uid))
-                {
-                    remove.Add(uid); // Shouldn't need this
-                    continue;
-                }
-
                 if (SplitCubeUids[CubeUid].Count >= this.MAX_SPLIT_COUNT)
                     continue;
 
