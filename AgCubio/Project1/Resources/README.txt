@@ -19,12 +19,25 @@ We fixed several problems with our client code and are working on implementing e
 
 Needs work:
 	Splitting- moving in a decreasing speed towards a position, merging back together after a set time
-	Viruses- split player.
+	Viruses- split player. (RESOLVED, but needs a better algorithm and mechanics)
 	Optimization of other algorithms (most are slow currently, but work at the small scale)
 	Polishing code
-	Splitting: a bug where sometimes split cubes are not put into our data structure for tracking them.
+	Splitting: a bug where sometimes split cubes are not put into our data structure for tracking them. (RESOLVED)
 	Collisions code: much of it is the same, can be put into helper methods.
 	bug: multiple players: eating cubes, sometimes a player cube gets left on the screen even after it is consumed.
+		This happens when the main player cube gets eaten and the player has other split cubes still. Work in progress.
+	
+	COOL IDEA: Military Grade Viruses: red viruses that move in a set pattern, can quasi-chase players, move around world.
+		Are limited to a specific area
+		Move in a flower shape that moves in a circular pattern around the world ?
+		Eat food?
+		Model as players?
+		Splits player if it hits them?
+		Does virus explode?
+
+	TESTING:
+		It seems that for most purposes, testing is very tricky and hard to implement, as edge cases are most easily reached by players testing the code instead of code testing the code.
+		We talk about each new implementation and draw/diagram it out, then test it several times by running the server and multiple clients.
 
 
 Implemented Features:
