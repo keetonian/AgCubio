@@ -749,18 +749,17 @@ namespace AgCubio
 
         /// <summary>
         /// Helper method - checks for overlap between split cubes and cancels the directional movement that causes overlap
-        /// x0 and y0 are the original positions
         /// </summary>
         public void CheckOverlap(int movingUid, Cube teammate)
         {
             Cube moving = Cubes[movingUid];
 
-            if (((moving.left < teammate.right && moving.left > teammate.left) // THis is when the left side of the moving cube intersects with the right side of another cube
+            if (((moving.left < teammate.right && moving.left > teammate.left) // This is when the left side of the moving cube intersects with the right side of another cube
                 || (moving.right < teammate.right && moving.right > teammate.left)) // This is when the right side of the moving cube intersects with the left side of another cube
                 && ((moving.top < teammate.bottom && moving.top > teammate.top) // This is when the top of the moving cube is higher than the bottom of another cube
                 || (moving.bottom < teammate.bottom && moving.bottom > teammate.top))) // This is when the bottom of the moving cube is lower than the top of another cube
             {
-                double relativeX = moving.loc_x - teammate.loc_x;
+                /*double relativeX = moving.loc_x - teammate.loc_x;
                 double relativeY = moving.loc_y - teammate.loc_y;
 
                 if (relativeX < 0)
@@ -772,14 +771,34 @@ namespace AgCubio
                     moving.loc_y = teammate.top - (moving.width/2);
                 else if ( relativeY > 0)
                     moving.loc_y = teammate.bottom + (moving.width / 2);
-                AdjustPosition(movingUid);
 
-                //FALLACIES:
-                // 1. Does not take into consideration different sizes of cubes: a cube could have both top and bottom within the top and bottom of another cube
-                // 2. One size fits all: the if checks need to be broken up more, a more broad approach is needed
-                // For now, this will do.
+                AdjustPosition(movingUid);*/
+
+                double relative = Math.Abs(moving.loc_x - teammate.loc_x) - Math.Abs(moving.loc_y - teammate.loc_y);
+                double relativeX = moving.loc_x - teammate.loc_x;
+                double relativeY = moving.loc_y - teammate.loc_y;
+
+                if (relative < 0)
+                    Cubes[movingUid].loc_x = teammate.right + (moving.width / 2);
+                else if (relative > 0)
+                    Cubes[movingUid].loc_y = teammate.top - (moving.width / 2);
+               
+                else
+                {
+                    Cubes[movingUid].loc_x = teammate.left - (moving.width / 2);
+                    Cubes[movingUid].loc_y = teammate.bottom + (moving.width / 2);
+                }
+                
+
+               
             }
+
+
+            //FALLACIES:
+            // 1. Cubes jump to touch each other by the corners
+            // For now, this will do.
         }
+    
 
 
         /// <summary>
