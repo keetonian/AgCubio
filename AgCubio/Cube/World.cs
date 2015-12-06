@@ -293,17 +293,9 @@ namespace AgCubio
                 this.GenerateFoodorVirus();
 
             // Make our military viruses
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < 8; i++)
             {
-                double x = (i * WORLD_WIDTH / 2) + (WORLD_WIDTH / 4);
-                for (int j = 0; j < 2; j++)
-                {
-                    double y = (j * WORLD_HEIGHT / 2) + (WORLD_HEIGHT / 4);
-
-                    Cube mVirus = new Cube(x, y, GetUid(), true, "", VIRUS_MASS, Color.Red.ToArgb(), 0);
-                    Cubes.Add(mVirus.uid, mVirus);
-                    MilitaryViruses.Add(mVirus.uid, new Tuple<Tuple<double, double>, double>(new Tuple<double, double>(x, y), 0));
-        }
+                CreateMilitaryVirus();
 
             }
         }
@@ -489,6 +481,8 @@ namespace AgCubio
             {
                 Cubes.Remove(i);
                 Uids.Push(i);
+                if (MilitaryViruses.Remove(i))
+                    CreateMilitaryVirus();
             }
 
             return destroyed.ToString();
@@ -546,6 +540,18 @@ namespace AgCubio
             double scale = Math.Sqrt(x * x + y * y);
             x /= scale;
             y /= scale;
+        }
+
+
+        public void CreateMilitaryVirus()
+        {
+            double x = Rand.Next(50,this.WORLD_WIDTH - 50);
+            double y = Rand.Next(50, this.WORLD_HEIGHT - 50);
+            
+
+                Cube mVirus = new Cube(x, y, GetUid(), true, "", VIRUS_MASS, Color.Red.ToArgb(), 0);
+                Cubes.Add(mVirus.uid, mVirus);
+                MilitaryViruses.Add(mVirus.uid, new Tuple<Tuple<double, double>, double>(new Tuple<double, double>(x, y), 0));
         }
 
 
