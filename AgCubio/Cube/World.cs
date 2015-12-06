@@ -428,11 +428,11 @@ namespace AgCubio
                         // Check if players are part of a split (same team)
                         if (player.Team_ID != 0 && player.Team_ID == player2.Team_ID)
                         {
-                            // NEEDS A COUNTDOWN ----
                             // Merge into the cube that has the focus (Uid == Team_ID)
                             Cube focus = (player.uid == player.Team_ID) ? player  : player2;
                             Cube other = (player.uid == player.Team_ID) ? player2 : player;
-
+                            if (SplitCubeUids[focus.Team_ID][focus.uid].Cooloff > 0 || SplitCubeUids[focus.Team_ID][other.uid].Cooloff > 0)
+                                continue;
                             focus.Mass += other.Mass;
                             other.Mass = 0;
                             AdjustPosition(focus.uid);
@@ -451,7 +451,11 @@ namespace AgCubio
                             int id = prey.uid;
                             predator.Mass += prey.Mass;
                             if(prey.food)
+                            {
+                                if (predator.food)
+                                    predator.Mass += prey.Mass;
                                 VirusSplit(predator.uid, prey.loc_x + 10, prey.loc_y + 10);
+                            }
                             prey.Mass = 0;
                             AdjustPosition(predator.uid);
 
@@ -498,7 +502,7 @@ namespace AgCubio
         /// <returns>ID to remove</returns>
         private int ReassignUid(int cubeUid)
         {
-            //TODO: MAKE THIS WORK #####################################################################################
+            //TODO: MAKE THIS WORK
             // Iterate through split cubes
             foreach (int uid in SplitCubeUids[cubeUid].Keys)
             {
@@ -627,7 +631,7 @@ namespace AgCubio
             Cube foodOrVirus = new Cube(x, y, GetUid(), true, "", mass, color, 0);
             Food.Add(foodOrVirus);
             random = Rand.Next(1000);
-            if (random < 10)
+            if (random < 2)
                 CreateMilitaryVirus();
             return foodOrVirus;
         }
@@ -638,7 +642,6 @@ namespace AgCubio
         /// </summary>
         public void MilitaryVirusMove()
         {
-            //Dictionary<int, Tuple<Tuple<double,double>,double>>
             List<int> keys = new List<int>(MilitaryViruses.Keys);
             foreach (int i in keys)
             {
@@ -648,7 +651,7 @@ namespace AgCubio
                 angle += ((2 * Math.PI) / 180);
 
                 //Do a grade according to angle
-                // 0 - 2pi
+                // Goes in a clover shape
                 if (angle > 4 * Math.PI)
                     angle = 0;
 
@@ -671,14 +674,6 @@ namespace AgCubio
                     Cubes[i].loc_y = y;
                 }
 
-
-                // 2pi to 4pi opposite
-
-                //4 pi to 6 pi big x
-
-                // 6 pi to 8pi opposite
-
-
             }
         }
 
@@ -695,6 +690,7 @@ namespace AgCubio
                 {
                     double x0 = Cubes[uid].loc_x;
                     double y0 = Cubes[uid].loc_y;
+                    SplitCubeUids[PlayerUid][uid].Cooloff--;
 
                     if (SplitCubeUids[Cubes[uid].Team_ID][uid].Countdown > 0)
                         MoveSplitCube(uid, x, y);
@@ -707,7 +703,11 @@ namespace AgCubio
                         if (uid == team)
                             continue;
 
-                        CheckOverlap(uid, Cubes[team], x0, y0);
+                        if (SplitCubeUids[PlayerUid][team].Cooloff > 0)
+                            CheckOverlap(uid, Cubes[team], x0, y0);
+                        else
+                            if(SplitCubeUids[PlayerUid][uid].Cooloff > 0)
+                                CheckOverlap(uid, Cubes[team], x0, y0);
                     }
                 }
             }
@@ -750,14 +750,16 @@ namespace AgCubio
 
         /// <summary>
         /// Helper method - checks for overlap between split cubes and cancels the directional movement that causes overlap
-        /// NOTE: NEEDS MORE WORK. THIS IS A LITTLE JERKY, DOESN'T QUITE WORK##########################################################
+        /// x0 and y0 are the original positions
         /// </summary>
         public void CheckOverlap(int movingUid, Cube teammate, double x0, double y0)
         {
             Cube moving = Cubes[movingUid];
 
-            if (((moving.left < teammate.right && moving.left > teammate.left) || (moving.right < teammate.right && moving.right > teammate.left)) &&
-                ((moving.top < teammate.bottom && moving.top > teammate.top) || (moving.bottom < teammate.bottom && moving.bottom > teammate.top)))
+            if (((moving.left < teammate.right && moving.left > teammate.left) // THis is when the left side of the moving cube intersects with the right side of another cube
+                || (moving.right < teammate.right && moving.right > teammate.left)) // This is when the right side of the moving cube intersects with the left side of another cube
+                && ((moving.top < teammate.bottom && moving.top > teammate.top) // This is when the top of the moving cube is higher than the bottom of another cube
+                || (moving.bottom < teammate.bottom && moving.bottom > teammate.top))) // This is when the bottom of the moving cube is lower than the top of another cube
             {
                 double relative = Math.Abs(moving.loc_x - teammate.loc_x) - Math.Abs(moving.loc_y - teammate.loc_y);
 
@@ -845,15 +847,16 @@ namespace AgCubio
                 // Halve the mass of the original cube, create a new cube
                 Cubes[uid].Mass = mass / 2;
 
-                //## NOTE: NEEDS TO NOT PUT THE CUBE ALREADY AT X,Y. ##
+                // Get the directional vector
                 double xx = x - Cubes[uid].loc_x;
                 double yy = y - Cubes[uid].loc_y;
                 UnitVector(ref xx, ref yy);
 
-                // For use in putting into SplitCubeUids at the very bottom of this method. This is the direction vector the cube needs to go
+                // For use in putting into SplitCubeUids at the very bottom of this method. This is the direction vector the cube needs to keep going
                 double xxx = xx;
                 double yyy = yy;
 
+                // Get a starting position for the cube that isn't right in the center of the original cube and is in the direction that it needs to go.
                 xx = (xx < 0) ? Cubes[uid].left - (Cubes[uid].width + 1 / 2) : Cubes[uid].right + (Cubes[uid].width + 1 / 2);
                 yy = (yy < 0) ? Cubes[uid].top - (Cubes[uid].width + 1 / 2) : Cubes[uid].bottom + (Cubes[uid].width + 1 / 2);
 
@@ -993,7 +996,7 @@ namespace AgCubio
                 X = x;
                 Y = y;
                 Countdown = countdown;
-                Cooloff = 100;
+                Cooloff = 800;
             }
         }
     }
