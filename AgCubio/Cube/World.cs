@@ -502,7 +502,7 @@ namespace AgCubio
         /// <returns>ID to remove</returns>
         private int ReassignUid(int cubeUid)
         {
-            //TODO: MAKE THIS WORK #####################################################################################
+            //TODO: MAKE THIS WORK
             // Iterate through split cubes
             foreach (int uid in SplitCubeUids[cubeUid].Keys)
             {
@@ -763,17 +763,25 @@ namespace AgCubio
                 double relativeX = moving.loc_x - teammate.loc_x;
                 double relativeY = moving.loc_y - teammate.loc_y;
 
-                if (relativeX < 0)
-                    Cubes[movingUid].loc_x = teammate.loc_x - ((teammate.width/2) + (Cubes[movingUid].width/2));
+                if (relativeX == 0)
+                { }   //Do nothing
+                else if (relativeX < 0)
+                    Cubes[movingUid].loc_x = teammate.left - (moving.width / 2);
                 else
-                    Cubes[movingUid].loc_x = teammate.loc_x + ((teammate.width / 2) + (Cubes[movingUid].width / 2));
+                    Cubes[movingUid].loc_x = teammate.right + (moving.width / 2);
 
-                if (relativeY < 0)
-                    Cubes[movingUid].loc_y = teammate.loc_y - ((teammate.width/2) + (Cubes[movingUid].width/2));
+                if(relativeY == 0)
+                { } // Do nothing
+                else if (relativeY < 0)
+                    Cubes[movingUid].loc_y = teammate.top - (moving.width/2);
                 else
-                    Cubes[movingUid].loc_y = teammate.loc_y + ((teammate.width / 2) + (Cubes[movingUid].width / 2));
+                    Cubes[movingUid].loc_y = teammate.bottom + (moving.width / 2);
                 AdjustPosition(movingUid);
 
+                //FALLACIES:
+                // 1. Does not take into consideration different sizes of cubes: a cube could have both top and bottom within the top and bottom of another cube
+                // 2. One size fits all: the if checks need to be broken up more, a more broad approach is needed
+                // For now, this will do.
             }
         }
 
