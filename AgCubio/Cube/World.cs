@@ -781,17 +781,17 @@ namespace AgCubio
             // Store the original cube mass
             double mass = cube.Mass;
             
-            // Find the number of new split cubes to make
-            int maxNewSplits = (int)(mass / PLAYER_START_MASS);
-            int numNewSplits = (maxNewSplits > MAX_SPLIT_COUNT - numSplitCubes) ? MAX_SPLIT_COUNT - numSplitCubes : maxNewSplits;
+            // Find the number of split cubes to make
+            int maxSplits = (int)(mass / PLAYER_START_MASS);
+            int numSplits = (maxSplits > MAX_SPLIT_COUNT - numSplitCubes) ? MAX_SPLIT_COUNT - numSplitCubes + 1 : maxSplits + 1; // +1 to account for reassigning original cube
 
             // Find the leftover mass (if all split cubes get the player starting mass)
-            double leftoverMass = mass - (numNewSplits * PLAYER_START_MASS);
+            double leftoverMass = mass - (numSplits * PLAYER_START_MASS);
 
             // Generate all but the last split cube (the last will 'replace' the original later)
-            while (numNewSplits > 1)
+            while (numSplits > 1)
             {
-                Cube newCube = GenerateSplitCube(ref numNewSplits, ref leftoverMass, teamID, CubeUid, x, y);
+                Cube newCube = GenerateSplitCube(ref numSplits, ref leftoverMass, teamID, CubeUid, x, y);
 
                 // Add the new cube in to the world and the split set, and adjust its position
                 Cubes.Add(newCube.uid, newCube);
@@ -800,39 +800,11 @@ namespace AgCubio
             }
 
             // Alter the original cube to be a split cube now
-            Cube replacement = GenerateSplitCube(ref numNewSplits, ref leftoverMass, teamID, CubeUid, x, y);
+            Cube replacement = GenerateSplitCube(ref numSplits, ref leftoverMass, teamID, CubeUid, x, y);
             cube.Mass  = replacement.Mass;
             cube.loc_x = replacement.loc_x;
             cube.loc_y = replacement.loc_y;
             AdjustPosition(cube.uid);
-            
-            // Halve the mass of the original cube, make it a little smaller as a penalty for eating a virus
-            //Cubes[CubeUid].Mass = (mass - 10) / 2;
-
-            // Viruses make 4 new cubes, each of 1/8 the player mass
-            /*Cube newCube = new Cube(x + MAX_SPLIT_DISTANCE, y + MAX_SPLIT_DISTANCE, GetUid(), false, Cubes[CubeUid].Name, mass / 8, Cubes[CubeUid].argb_color, teamID);
-            Cube newCube2 = new Cube(x - MAX_SPLIT_DISTANCE, y - MAX_SPLIT_DISTANCE, GetUid(), false, Cubes[CubeUid].Name, mass / 8, Cubes[CubeUid].argb_color, teamID);
-            Cube newCube3 = new Cube(x - MAX_SPLIT_DISTANCE, y + MAX_SPLIT_DISTANCE, GetUid(), false, Cubes[CubeUid].Name, mass / 8, Cubes[CubeUid].argb_color, teamID);
-            Cube newCube4 = new Cube(x + MAX_SPLIT_DISTANCE, y - MAX_SPLIT_DISTANCE, GetUid(), false, Cubes[CubeUid].Name, mass / 8, Cubes[CubeUid].argb_color, teamID);
-
-
-            // Add the new cube to the world
-            Cubes.Add(newCube.uid, newCube);
-            Cubes.Add(newCube2.uid, newCube2);
-            Cubes.Add(newCube3.uid, newCube3);
-            Cubes.Add(newCube4.uid, newCube4);
-
-            //Adjust position so it's inside world.
-            AdjustPosition(newCube.uid);
-            AdjustPosition(newCube2.uid);
-            AdjustPosition(newCube3.uid);
-            AdjustPosition(newCube4.uid);
-
-            // Add in the splitoff cubes
-            SplitCubeUids[teamID].Add(newCube.uid);
-            SplitCubeUids[teamID].Add(newCube2.uid);
-            SplitCubeUids[teamID].Add(newCube3.uid);
-            SplitCubeUids[teamID].Add(newCube4.uid);*/
         }
 
 
@@ -841,7 +813,7 @@ namespace AgCubio
         ///   random mass (greater than player start mass, but plus a random remainder portion of the original cube mass, based on how many splits there will be)
         ///   random start coordinates (within a certain distance of the original virus, based on determined mass)
         /// </summary>
-        private Cube GenerateSplitCube(ref int numNewSplits, ref double leftoverMass, int teamID, int CubeUid, double x, double y)
+        private Cube GenerateSplitCube(ref int numSplits, ref double leftoverMass, int teamID, int CubeUid, double x, double y)
         {
             // Randomly decide whether to add to or subtract from original coordinates
             int xdir = Rand.Next(2) * 2 - 1;
@@ -850,7 +822,7 @@ namespace AgCubio
             // Randomly allocate mass for the split cube
             double splitMass;
 
-            if (numNewSplits-- == 1) // Last cube gets all leftover mass
+            if (--numSplits == 0) // Last cube gets all leftover mass
                 splitMass = PLAYER_START_MASS + leftoverMass;
             else
             {
