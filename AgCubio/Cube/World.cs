@@ -844,8 +844,8 @@ namespace AgCubio
         private Cube GenerateSplitCube(ref int numNewSplits, ref double leftoverMass, int teamID, int CubeUid, double x, double y)
         {
             // Randomly decide whether to add to or subtract from original coordinates
-            int xdir = (int)(Rand.NextDouble() * 2) - 1;
-            int ydir = (int)(Rand.NextDouble() * 2) - 1;
+            int xdir = Rand.Next(2) * 2 - 1;
+            int ydir = Rand.Next(2) * 2 - 1;
 
             // Randomly allocate mass for the split cube
             double splitMass;
