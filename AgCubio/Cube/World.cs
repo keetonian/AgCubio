@@ -307,7 +307,7 @@ namespace AgCubio
 
         /// <summary>
         /// Serializes all players.
-        /// Players should all be (almost) constantly changing.
+        ///   Players should all be (almost) constantly changing
         /// </summary>
         public string SerializePlayers()
         {
@@ -361,6 +361,7 @@ namespace AgCubio
             for (int i = 0; i < playerList.Count; i++)
             {
                 Cube player = playerList[i];
+
                 if (player.Mass == 0)
                     continue;
 
@@ -716,6 +717,7 @@ namespace AgCubio
             {
                 if (Cubes[CubeUid].Mass < this.MIN_SPLIT_MASS)
                     return;
+
                 Cubes[CubeUid].Team_ID = CubeUid;
                 SplitCubeUids[CubeUid] = new HashSet<int>() { CubeUid };
             }
@@ -723,12 +725,14 @@ namespace AgCubio
 
             List<int> temp = new List<int>(SplitCubeUids[CubeUid]);
             List<int> remove = new List<int>();
+
             foreach (int uid in temp)
             {
                 if (SplitCubeUids[CubeUid].Count >= this.MAX_SPLIT_COUNT)
                     continue;
 
                 double mass = Cubes[uid].Mass;
+
                 if (mass < this.MIN_SPLIT_MASS)
                     continue;
 
@@ -791,8 +795,8 @@ namespace AgCubio
 
                 // Add the new cube in to the world and the split set, and adjust its position
                 Cubes.Add(newCube.uid, newCube);
-                AdjustPosition(newCube.uid);
                 SplitCubeUids[teamID].Add(newCube.uid);
+                AdjustPosition(newCube.uid);
             }
 
             // Alter the original cube to be a split cube now
@@ -833,7 +837,9 @@ namespace AgCubio
 
 
         /// <summary>
-        /// 
+        /// Generates a (virus-resultant) split cube:
+        ///   random mass (greater than player start mass, but plus a random remainder portion of the original cube mass, based on how many splits there will be)
+        ///   random start coordinates (within a certain distance of the original virus, based on determined mass)
         /// </summary>
         private Cube GenerateSplitCube(ref int numNewSplits, ref double leftoverMass, int teamID, int CubeUid, double x, double y)
         {
@@ -845,10 +851,10 @@ namespace AgCubio
             double splitMass;
 
             if (numNewSplits-- == 1) // Last cube gets all leftover mass
-                splitMass = leftoverMass;
+                splitMass = PLAYER_START_MASS + leftoverMass;
             else
             {
-                double portion = 1.0 / Rand.Next(1, 10) * leftoverMass;
+                double portion = 1.0 / Rand.Next(3, 10) * leftoverMass;
                 splitMass = PLAYER_START_MASS + portion;
                 leftoverMass -= portion;
             }
