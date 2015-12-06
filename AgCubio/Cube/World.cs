@@ -113,6 +113,7 @@ namespace AgCubio
 
         /// <summary>
         /// How far a cube can be thrown when split (integer 0-)
+        /// Note: this is a time distance, so how long a cube can go at an increased speed in the direction the mouse points.
         /// </summary>
         public readonly int MAX_SPLIT_DISTANCE;
 
@@ -522,6 +523,7 @@ namespace AgCubio
         /// <returns>ID to remove</returns>
         private int ReassignUid(int cubeUid)
         {
+            //TODO: MAKE THIS WORK #####################################################################################
             // Iterate through split cubes
             foreach (int uid in SplitCubeUids[cubeUid].Keys)
             {
@@ -743,12 +745,11 @@ namespace AgCubio
             double speed = GetSpeed(CubeUid);
 
             // Normalize and scale the vector:
-
             UnitVector(ref xx, ref yy);
             xx *= (speed * 3);
             yy *= (speed * 3);
 
-            // Set the new position
+            // Set the new position, make sure it's within the world boundaries.
             Cubes[CubeUid].loc_x += (cube.left + xx < 0 || cube.right + yy > this.WORLD_WIDTH) ? 0 : xx;
             Cubes[CubeUid].loc_y += (cube.top + yy < 0 || cube.bottom + xx > this.WORLD_HEIGHT) ? 0 : yy;
         }
@@ -756,6 +757,7 @@ namespace AgCubio
 
         /// <summary>
         /// Helper method - checks for overlap between split cubes and cancels the directional movement that causes overlap
+        /// NOTE: NEEDS MORE WORK. THIS IS A LITTLE JERKY, DOESN'T QUITE WORK##########################################################
         /// </summary>
         public void CheckOverlap(int movingUid, Cube teammate, double x0, double y0)
         {
@@ -832,8 +834,7 @@ namespace AgCubio
 
                 Cubes[CubeUid].Team_ID = CubeUid;
                 SplitCubeUids[CubeUid] = new Dictionary<int, SplitCubeData>();
-                SplitCubeUids[CubeUid][CubeUid] = new SplitCubeData(Cubes[CubeUid].loc_y, Cubes[CubeUid].loc_y);
-                SplitCubeUids[CubeUid][CubeUid].Countdown = 0;
+                SplitCubeUids[CubeUid][CubeUid] = new SplitCubeData(Cubes[CubeUid].loc_y, Cubes[CubeUid].loc_y, 0);
             }
 
 
@@ -868,7 +869,7 @@ namespace AgCubio
                 // Add the new cube to the world
                 Cubes.Add(newCube.uid, newCube);
 
-                SplitCubeUids[CubeUid][newCube.uid] = new SplitCubeData(xxx, yyy);
+                SplitCubeUids[CubeUid][newCube.uid] = new SplitCubeData(xxx, yyy, this.MAX_SPLIT_DISTANCE);
             }
             }
 
@@ -887,8 +888,7 @@ namespace AgCubio
             {
                 Cubes[CubeUid].Team_ID = CubeUid;
                 SplitCubeUids[CubeUid] = new Dictionary<int, SplitCubeData>();
-                SplitCubeUids[CubeUid][CubeUid] = new SplitCubeData(cube.loc_x, cube.loc_y);
-                SplitCubeUids[CubeUid][CubeUid].Countdown = 0;
+                SplitCubeUids[CubeUid][CubeUid] = new SplitCubeData(cube.loc_x, cube.loc_y, 0);
             }
 
             // Store the team id, and number of split cubes
@@ -922,7 +922,7 @@ namespace AgCubio
                 UnitVector(ref xx, ref yy);
                 // Add the new cube in to the world and the split set, and adjust its position
                 Cubes.Add(newCube.uid, newCube);
-                SplitCubeUids[teamID][newCube.uid] = new SplitCubeData(xx, yy);
+                SplitCubeUids[teamID][newCube.uid] = new SplitCubeData(xx, yy, this.MAX_SPLIT_DISTANCE);
                 AdjustPosition(newCube.uid);
             }
 
@@ -1000,11 +1000,11 @@ namespace AgCubio
             /// </summary>
             /// <param name="x">Vector direction in x plane</param>
             /// <param name="y">Vector direction in y plane</param>
-            public SplitCubeData(double x, double y)
+            public SplitCubeData(double x, double y, int countdown)
             {
                 X = x;
                 Y = y;
-                Countdown = 20;
+                Countdown = countdown;
                 Cooloff = 100;
             }
         }
