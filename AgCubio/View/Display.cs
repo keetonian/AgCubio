@@ -196,7 +196,6 @@ namespace AgCubio
                     MaxMass = totalMass;
                 this.MassValue.Text = "" + (int)totalMass;
 
-
                 // Set the scale, based on the (virtual) width of the player
                 double scale = 100 / Math.Sqrt(totalMass);
 

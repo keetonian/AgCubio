@@ -153,6 +153,7 @@ namespace AgCubio
             {
                 // Players get a little smaller each tick
                 World.PlayerAttrition();
+                World.MilitaryVirusMove();
 
                 // Move all players according to last mouse position
                 lock (DataReceived)
