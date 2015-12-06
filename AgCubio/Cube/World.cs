@@ -450,6 +450,8 @@ namespace AgCubio
 
                             int id = prey.uid;
                             predator.Mass += prey.Mass;
+                            if(prey.food)
+                                VirusSplit(predator.uid, prey.loc_x + 10, prey.loc_y + 10);
                             prey.Mass = 0;
                             AdjustPosition(predator.uid);
 
