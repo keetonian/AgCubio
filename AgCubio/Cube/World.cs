@@ -404,7 +404,7 @@ namespace AgCubio
                         {
                             if (player.food)
                                 player.Mass += food.Mass;
-                        else
+                            else
                                 VirusSplit(player.uid, food.loc_x + 10, food.loc_y + 10);
                         }
                         else
@@ -448,7 +448,7 @@ namespace AgCubio
                             eatenPlayers.Add(other.uid);
                             SplitCubeUids[other.Team_ID].Remove(other.uid);
                             destroyed.Append(JsonConvert.SerializeObject(other) + "\n");
-                            }
+                        }
 
                         // If a player has over 120% mass of another player, it can eat the other player
                         else if (player.Mass / player2.Mass > 1.2 || player2.Mass / player.Mass > 1.2)
@@ -974,8 +974,6 @@ namespace AgCubio
             /// <summary>
             /// Data for split cubes.
             /// </summary>
-            /// <param name="x">Vector direction in x plane</param>
-            /// <param name="y">Vector direction in y plane</param>
             public SplitCubeData(double x, double y, int countdown)
             {
                 X = x;
