@@ -763,19 +763,15 @@ namespace AgCubio
                 double relativeX = moving.loc_x - teammate.loc_x;
                 double relativeY = moving.loc_y - teammate.loc_y;
 
-                if (relativeX == 0)
-                { }   //Do nothing
                 else if (relativeX < 0)
-                    Cubes[movingUid].loc_x = teammate.left - (moving.width / 2);
-                else
-                    Cubes[movingUid].loc_x = teammate.right + (moving.width / 2);
+                    moving.loc_x = teammate.left - (moving.width / 2);
+                else if (relativeX > 0)
+                    moving.loc_x = teammate.right + (moving.width / 2);
 
-                if(relativeY == 0)
-                { } // Do nothing
                 else if (relativeY < 0)
-                    Cubes[movingUid].loc_y = teammate.top - (moving.width/2);
-                else
-                    Cubes[movingUid].loc_y = teammate.bottom + (moving.width / 2);
+                    moving.loc_y = teammate.top - (moving.width/2);
+                else if ( relativeY > 0)
+                    moving.loc_y = teammate.bottom + (moving.width / 2);
                 AdjustPosition(movingUid);
 
                 //FALLACIES:
@@ -857,15 +853,16 @@ namespace AgCubio
                 // Halve the mass of the original cube, create a new cube
                 Cubes[uid].Mass = mass / 2;
 
-                //## NOTE: NEEDS TO NOT PUT THE CUBE ALREADY AT X,Y. ##
+                // Get the directional vector
                 double xx = x - Cubes[uid].loc_x;
                 double yy = y - Cubes[uid].loc_y;
                 UnitVector(ref xx, ref yy);
 
-                // For use in putting into SplitCubeUids at the very bottom of this method. This is the direction vector the cube needs to go
+                // For use in putting into SplitCubeUids at the very bottom of this method. This is the direction vector the cube needs to keep going
                 double xxx = xx;
                 double yyy = yy;
 
+                // Get a starting position for the cube that isn't right in the center of the original cube and is in the direction that it needs to go.
                 xx = (xx < 0) ? Cubes[uid].left - (Cubes[uid].width + 1 / 2) : Cubes[uid].right + (Cubes[uid].width + 1 / 2);
                 yy = (yy < 0) ? Cubes[uid].top - (Cubes[uid].width + 1 / 2) : Cubes[uid].bottom + (Cubes[uid].width + 1 / 2);
 
