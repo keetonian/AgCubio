@@ -293,7 +293,7 @@ namespace AgCubio
                 this.GenerateFoodorVirus();
 
             // Make our military viruses
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < 4; i++)
             {
                 CreateMilitaryVirus();
 
@@ -545,6 +545,9 @@ namespace AgCubio
         }
 
 
+        /// <summary>
+        /// Generates a military virus.
+        /// </summary>
         public void CreateMilitaryVirus()
         {
             double x = Rand.Next(50,this.WORLD_WIDTH - 50);
@@ -616,13 +619,16 @@ namespace AgCubio
             else
             {
                 color = GetColor();
-                mass = (random > 96 && random < 99) ? FOOD_MASS * 2 : (random > 99) ? FOOD_MASS * 3 : FOOD_MASS; // 3% of food is double size, 1% of food is triple size
+                mass = (random > 960 && random < 990) ? FOOD_MASS * 2 : (random > 990) ? FOOD_MASS * 3 : FOOD_MASS; // 3% of food is double size, 1% of food is triple size
                 x = Rand.Next((int)FOOD_WIDTH, WORLD_WIDTH - (int)FOOD_WIDTH);
                 y = Rand.Next((int)FOOD_WIDTH, WORLD_HEIGHT - (int)FOOD_WIDTH);
             }
 
             Cube foodOrVirus = new Cube(x, y, GetUid(), true, "", mass, color, 0);
             Food.Add(foodOrVirus);
+            random = Rand.Next(1000);
+            if (random < 10)
+                CreateMilitaryVirus();
             return foodOrVirus;
         }
 
