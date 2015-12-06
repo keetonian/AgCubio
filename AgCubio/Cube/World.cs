@@ -592,7 +592,7 @@ namespace AgCubio
 
 
         /// <summary>
-        /// Adds a new food cube to the world
+        /// Adds a new food or virus cube to the world
         /// </summary>
         public Cube GenerateFoodorVirus()
         {
@@ -607,7 +607,7 @@ namespace AgCubio
                 mass = VIRUS_MASS;
                 width = (int)VIRUS_WIDTH;
 
-                // Make sure viruses can't spawn on top of players:
+                // Make sure viruses can't spawn on top of players
                 FindStartingCoords(out x, out y, true);
             }
             // Otherwise create food
