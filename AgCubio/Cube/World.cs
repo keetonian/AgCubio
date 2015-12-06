@@ -762,9 +762,9 @@ namespace AgCubio
                 double relative = Math.Abs(moving.loc_x - teammate.loc_x) - Math.Abs(moving.loc_y - teammate.loc_y);
 
                 if (relative < 0)
-                    Cubes[movingUid].loc_x = x0;
-                else if (relative > 0)
                     Cubes[movingUid].loc_y = y0;
+                else if (relative > 0)
+                    Cubes[movingUid].loc_x = x0;
                 else
                 {
                     Cubes[movingUid].loc_x = x0;
