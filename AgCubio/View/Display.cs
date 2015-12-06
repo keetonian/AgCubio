@@ -1,6 +1,16 @@
 ﻿// Created by Daniel Avery and Keeton Hodgson
 // November 2015
 
+/*FROM WEBSITE:
+As stated above, the Client GUI should not be changed for this project. 
+The one exception you may want to make is the following: 
+
+Allow the Client to press a magic key (the '!') and turn off the view scaling, allowing you to see the entire world. 
+This will allow the server developer to have a visual on what is happening. 
+
+Additionally, you could instrument your server so that if you send the magic name: "observer", no player cube is created.
+*/
+
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -21,11 +31,6 @@ namespace AgCubio
     public partial class Display : Form
     {
         /// <summary>
-        /// Callback delegate for networking
-        /// </summary>
-        private delegate void Callback(Preserved_State_Object state);
-
-        /// <summary>
         /// World model storing all the cubes
         /// </summary>
         private World World;
@@ -34,6 +39,10 @@ namespace AgCubio
         /// Our networking socket, saved so that it doesn't go out of scope
         /// </summary>
         private Socket socket;
+
+
+        private double WIDTH;
+        private double HEIGHT;
 
         /// <summary>
         /// Thread running networking code
@@ -73,7 +82,7 @@ namespace AgCubio
         public Display()
         {
             // Initialize the world model with display size, setup up a StringBuilder for getting data from server
-            World = new World(Width, Height);
+            World = new World();
             CubeData = new StringBuilder();
 
             // Set up the timer with a tick event that triggers every second (for FPS)
@@ -89,7 +98,7 @@ namespace AgCubio
             this.Resize += Display_Resize;
 
             // Background color. May be cool to have player control this.
-            this.BackColor = Color.WhiteSmoke;
+            //this.BackColor = Color.WhiteSmoke;
         }
 
 
@@ -154,7 +163,7 @@ namespace AgCubio
                 //Disconnection: proceed with this method call.
                 MessageBox.Show("You've been disconnected.");
                 ShowMainScreen();
-                
+
                 return;
             }
 
@@ -164,10 +173,18 @@ namespace AgCubio
             {
                 // Initialize total player mass to 0, get player x and y coordinates
                 double totalMass = 0;
+                double Px = 0, Py = 0;
 
                 // Iterate over split player cubes in the world and increment total player mass
                 foreach (int i in PlayerSplitID)
-                    totalMass += World.Cubes[i].Mass;
+                {
+                    Cube c = World.Cubes[i];
+                    totalMass += c.Mass;
+                    Px += (c.loc_x * c.Mass);
+                    Py += (c.loc_y * c.Mass);
+                }
+                Px /= totalMass;
+                Py /= totalMass;
 
                 // If the total mass of the player cube(s) is 0, it means that the game has ended
                 if (totalMass == 0)
@@ -179,29 +196,76 @@ namespace AgCubio
                     MaxMass = totalMass;
                 this.MassValue.Text = "" + (int)totalMass;
 
-
                 // Set the scale, based on the (virtual) width of the player
                 double scale = 100 / Math.Sqrt(totalMass);
 
                 // Get player coordinates, use to calculate actual mouse position
-                double Px = World.Cubes[PlayerID].loc_x, Py = World.Cubes[PlayerID].loc_y;
 
-                PrevMouseLoc_x = (int)((Display.MousePosition.X - Width / 2 )/scale + Px);
-                PrevMouseLoc_y = (int)((Display.MousePosition.Y - Height / 2 )/scale + Py );
+                PrevMouseLoc_x = (int)((Display.MousePosition.X - Width / 2) / scale + Px);
+                PrevMouseLoc_y = (int)((Display.MousePosition.Y - Height / 2) / scale + Py);
 
                 Brush brush;
                 RectangleF rectangle;
 
+                //Draw grid circles for the world
+                // Note: there is still a slight up/down movement for the grid when a player changes sizes
+                // Up: when size decreases
+                // Down: when size increases
+                int circleHeight = 8;
+                float ii = (float)(0 - (Px % (circleHeight + 1))); //Note: dividing this and jj by 2 creates an interesting, almost 3D-esque effect
+                float jj = (float)(0 - (Py % (circleHeight + 1)));
+                for (int i = 0; i < Width / 2; i += (circleHeight + 1))
+                {
+                    float xi = (float)((Width / 2 + ii * scale + i * scale));
+                    float xii = (float)((Width / 2 + ii * scale - i * scale));
+
+                    // Out of screen area, so break loop
+                    if (xii < (0 - circleHeight * 2 * scale))
+                        break;
+
+                    for (int j = 0; j < Height; j += (circleHeight + 1))
+                    {
+                        float yi = (float)((Width / 2 + jj * scale + j * scale));
+                        float yii = (float)((Width / 2 + jj * scale - j * scale));
+
+                        //DrawPen.Color = Color.FromArgb(World.GetColor()); // Wayy too wacky, but could be fun as an easter egg
+
+                        // out of screen area, so break loop
+                        if (yii < (0 - circleHeight * scale))
+                            break;
+
+                        // Draw the circles, in each of the 4 quadrants around the player.
+                        e.Graphics.DrawEllipse(Pens.LightGray, xi, yi, (float)(circleHeight * scale), (float)(circleHeight * scale));
+                        e.Graphics.DrawEllipse(Pens.LightGray, xii, yii, (float)(circleHeight * scale), (float)(circleHeight * scale));
+                        e.Graphics.DrawEllipse(Pens.LightGray, xi, yii, (float)(circleHeight * scale), (float)(circleHeight * scale));
+                        e.Graphics.DrawEllipse(Pens.LightGray, xii, yi, (float)(circleHeight * scale), (float)(circleHeight * scale));
+                    }
+                }
+
                 foreach (Cube c in World.Cubes.Values)
                 {
+                    // Try and get the world parameters.
+                    if (c.loc_x > WIDTH)
+                        WIDTH = c.loc_x;
+                    if (c.loc_y > HEIGHT)
+                        HEIGHT = c.loc_y;
+
                     if (c.Mass > 0) // Avoid painting if mass is 0 - also solves an issue where names are still displayed after some cubes are 'eaten'
                     {
+                        // Parameters for creating cubes
+                        int x = (int)((c.loc_x - Px - c.width / 2) * scale + Width / 2);
+                        int y = (int)((c.loc_y - Py - c.width / 2) * scale + Height / 2);
+                        int cubeWidth = (int)(c.width * scale);
+
+                        // If the cube is off the screen, don't draw it.
+                        if (x > Width || y > Height || x < (0 - cubeWidth) || y < (0 - cubeWidth))
+                            continue;
+
                         // Painting food
                         if (c.food)
                         {
                             // Food is scaled, and has an extra scaling factor (so we can see it at larger cube sizes - temporary design decision to deal with a faulty server)
-                            rectangle = new RectangleF((int)((c.loc_x - Px - c.width * scale * 3) * scale + Width / 2),
-                            (int)((c.loc_y - Py - c.width * scale * 3) * scale + Height / 2), (int)(c.width * scale * 6), (int)(c.width * scale * 6));
+                            rectangle = new RectangleF(x, y, cubeWidth, cubeWidth);
 
                             // Food is painted with solid colors
                             brush = new SolidBrush(Color.FromArgb(c.argb_color));
@@ -212,11 +276,11 @@ namespace AgCubio
                         else
                         {
                             // Location is calculated differently for user and other players - user is centered, other players' coordinates are scaled
-                            rectangle = (c.uid == PlayerID) ? new RectangleF((int)(Width / 2 - c.width / 2), (int)(Height / 2 - c.width / 2), (int)(c.width), (int)(c.width)) :
-                                new RectangleF((int)((c.loc_x - Px - c.width/4) * scale + Width / 2), (int)((c.loc_y - Py - c.width/4) * scale + Height / 2), (int)(c.width), (int)(c.width));
+                            rectangle = /*(c.uid == PlayerID) ? new RectangleF((int)(Width / 2 - c.width * scale / 2), (int)(Height / 2 - c.width * scale / 2), (int)(c.width * scale), (int)(c.width * scale)) :*/
+                                new RectangleF((int)((c.loc_x - Px - c.width / 2) * scale + Width / 2), (int)((c.loc_y - Py - c.width / 2) * scale + Height / 2), (int)(c.width * scale), (int)(c.width * scale));
 
                             // Players are painted with a diagonal gradient, ranging from the actual (server-defined) color to its negative
-                            brush = new LinearGradientBrush(rectangle, Color.FromArgb(c.argb_color), Color.FromArgb(c.argb_color^0xFFFFFF), 225);
+                            brush = new LinearGradientBrush(rectangle, Color.FromArgb(c.argb_color), Color.FromArgb(c.argb_color ^ 0xFFFFFF), 225);
                             e.Graphics.FillRectangle(brush, rectangle);
 
                             // Players also have their names printed on them, centered
@@ -271,16 +335,15 @@ namespace AgCubio
         private void ShowMainScreen()
         {
             // Reset the world
-            lock(World)
-                World = new World(Width, Height);
+            lock (World)
+                World = new World();
 
             // Get rid of the network thread so it isn't updating while no work is being done
-            if (NetworkThread != null)
-                NetworkThread.Abort();
+            //NetworkThread.Abort();
 
             // Close the socket, not being used until player signs in again.
             socket.Close();
-            
+
             // Prevent further painting (would be bad when there is no socket connection)
             this.Paint -= this.Display_Paint;
 
@@ -326,8 +389,8 @@ namespace AgCubio
             try
             {
                 // Save the socket so that it doesn't go out of scope or get garbage collected (happened a few times)
-                socket = Network.Connect_to_Server(new Callback(SendName), textBoxServer.Text);
-                
+                socket = Network.Connect_to_Server(new Network.Callback(SendName), textBoxServer.Text);
+
                 // Hide menu (and stat) items
                 this.connectButton.Hide();
                 this.textBoxName.Hide();
@@ -340,7 +403,7 @@ namespace AgCubio
                 this.MaxMassLabel.Hide();
                 this.PlaytimeLabel.Hide();
                 this.PlaytimeVal.Hide();
-                
+
                 // Start the game timer
                 FPStimer.Start();
                 Playtime = 0;
@@ -372,7 +435,7 @@ namespace AgCubio
             string name = (textBoxName.Text == "") ? " " : textBoxName.Text;
 
             // Provide the next callback and send the player name to the server
-            state.callback_function = new Callback(GetPlayerCube);
+            state.callback = new Network.Callback(GetPlayerCube);
             Network.Send(state.socket, name);
         }
 
@@ -383,7 +446,7 @@ namespace AgCubio
         private void GetPlayerCube(Preserved_State_Object state)
         {
             // Get the player cube (and add its uid to the set of split player cubes)
-            Cube c = JsonConvert.DeserializeObject<Cube>(state.cubedata);
+            Cube c = JsonConvert.DeserializeObject<Cube>(state.data.ToString());
             PlayerSplitID.Add(PlayerID = c.uid);
 
             // Set the max mass to the initial player mass
@@ -404,8 +467,17 @@ namespace AgCubio
             PrevMouseLoc_y = (int)c.loc_y;
 
             // Provide the next callback and start getting game data from the server
-            state.callback_function = new Callback(SendReceiveData);
+            state.callback = new Network.Callback(SendReceiveData);
             Network.I_Want_More_Data(state);
+        }
+
+        private void Display_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (this.socket != null && this.socket.Connected)
+            {
+                this.socket.Shutdown(SocketShutdown.Both);
+                this.socket.Close();
+            }
         }
 
         /// <summary>
@@ -418,8 +490,10 @@ namespace AgCubio
                 lock (CubeData)
                 {
                     // Use the StringBuilder to append the string received from the server
-                    CubeData.Append(state.cubedata);
+                    CubeData.Append(state.data);
                 }
+
+                state.data.Clear();
 
                 // Send a move request, following the convention: '(move, dest_x, dest_y)\n'
                 string move = "(move, " + PrevMouseLoc_x + ", " + PrevMouseLoc_y + ")\n";
@@ -451,6 +525,8 @@ namespace AgCubio
                     // Parse all cubes into the world except the last one
                     for (int i = 0; i < cubes.Length - 1; i++)
                     {
+                        if (cubes[i] == "") //Quick fix- sometimes gets a blank string. Needs to be fixed in server.
+                            continue;
                         Cube c = JsonConvert.DeserializeObject<Cube>(cubes[i]);
                         World.Cubes[c.uid] = c;
 
@@ -472,7 +548,7 @@ namespace AgCubio
                     if (lastCube.Length > 0 && lastCube.Last() == '}')
                     {
                         Cube c = JsonConvert.DeserializeObject<Cube>(lastCube);
-                        World.Cubes.Add(c.uid, c);
+                        World.Cubes[c.uid] = c;
                         lastCube = "";
                     }
                 }
@@ -507,5 +583,6 @@ namespace AgCubio
 
             return base.ProcessCmdKey(ref msg, keyData);
         }
+
     }
 }
