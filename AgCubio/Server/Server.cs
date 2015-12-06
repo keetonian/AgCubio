@@ -111,7 +111,7 @@ namespace AgCubio
             // Try to perform the last move or split action if it is complete, otherwise append what is there for later
             string lastAction = actions.Last();
 
-            if (lastAction.Length > 1 && lastAction?.Last() == ')')
+            if (lastAction.Length > 1 && lastAction.Last() == ')')
                 TryMoveOrSplit(lastAction, state);
             else
                 state.data = new StringBuilder(lastAction);
