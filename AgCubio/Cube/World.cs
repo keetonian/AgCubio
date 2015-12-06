@@ -295,7 +295,7 @@ namespace AgCubio
             // Make our military viruses
             for (int i = 0; i < 4; i++)
                 GenerateMilitaryVirus();
-        }
+            }
 
 
         /// <summary>
@@ -557,8 +557,8 @@ namespace AgCubio
             double x = Rand.Next(50,this.WORLD_WIDTH - 50);
             double y = Rand.Next(50, this.WORLD_HEIGHT - 50);
             
-            Cube mVirus = new Cube(x, y, GetUid(), true, "", VIRUS_MASS, Color.Red.ToArgb(), 0);
-            Cubes.Add(mVirus.uid, mVirus);
+                Cube mVirus = new Cube(x, y, GetUid(), true, "", VIRUS_MASS, Color.Red.ToArgb(), 0);
+                Cubes.Add(mVirus.uid, mVirus);
             MilitaryViruses.Add(mVirus.uid, 0);
         }
 
@@ -685,7 +685,7 @@ namespace AgCubio
                     if (SplitCubeUids[PlayerUid][uid].Countdown > 0)
                         MoveSplitCube(uid, x, y);
                     else
-                        MoveCube(uid, x, y);
+                    MoveCube(uid, x, y);
 
                     List<int> temp2 = new List<int>(SplitCubeUids[PlayerUid].Keys);
                     foreach (int team in temp2)
@@ -740,7 +740,6 @@ namespace AgCubio
 
         /// <summary>
         /// Helper method - checks for overlap between split cubes and cancels the directional movement that causes overlap
-        ///   x0 and y0 are the original positions
         /// </summary>
         public void CheckOverlap(int movingUid, Cube teammate)
         {
@@ -865,7 +864,7 @@ namespace AgCubio
 
                 SplitCubeUids[CubeUid][newCube.uid] = new SplitCubeData(xxx, yyy, MAX_SPLIT_DISTANCE);
             }
-        }
+            }
 
 
 
