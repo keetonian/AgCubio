@@ -553,16 +553,10 @@ namespace AgCubio
 
 
         /// <summary>
-        /// Adds a new food cube to the world
+        /// Adds a new food or virus cube to the world
         /// </summary>
         public Cube GenerateFoodorVirus()
         {
-            // On a random scale needs to create viruses too 
-            // Viruses: specific color, specific size or size range.
-            // Cool thought: viruses can move, become npc's that can try to chase players, or just move erratically
-
-            //Another thought: randomly allow a food piece to get 1 size bigger (mass++) each time this is called.
-
             int random = Rand.Next(100);
             int color, mass, width;
             double x, y;
@@ -574,7 +568,7 @@ namespace AgCubio
                 mass = VIRUS_MASS;
                 width = (int)VIRUS_WIDTH;
 
-                // Make sure viruses can't spawn on top of players:
+                // Make sure viruses can't spawn on top of players
                 FindStartingCoords(out x, out y, true);
             }
             // Otherwise create food
