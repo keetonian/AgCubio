@@ -302,7 +302,7 @@ namespace AgCubio
                     Cube mVirus = new Cube(x, y, GetUid(), true, "", VIRUS_MASS, Color.Red.ToArgb(), 0);
                     Cubes.Add(mVirus.uid, mVirus);
                     MilitaryViruses.Add(mVirus.uid, new Tuple<Tuple<double, double>, double>(new Tuple<double, double>(x, y), 0));
-                }
+        }
 
             }
         }
@@ -333,7 +333,7 @@ namespace AgCubio
 
         /// <summary>
         /// Serializes all players.
-        /// Players should all be (almost) constantly changing.
+        ///   Players should all be (almost) constantly changing
         /// </summary>
         public string SerializePlayers()
         {
@@ -358,15 +358,15 @@ namespace AgCubio
 
 
         /// <summary>
-        /// Collisions
-        /// c1 is the player cube
-        /// c2 is food
+        /// Collisions - checks if one cube's center is overlapped by another cube
+        ///   c1 is the potential predator
+        ///   c2 is the potential prey
         /// </summary>
-        /// <returns></returns>
         private bool Collide(Cube c1, Cube c2)
         {
             if (c2.loc_x > c1.left && c2.loc_x < c1.right && c2.loc_y > c1.top && c2.loc_y < c1.bottom)
                 return true;
+
             return false;
         }
 
@@ -381,19 +381,20 @@ namespace AgCubio
             List<int> eatenPlayers = new List<int>();
 
             // Get a data structure that can be used in a loop easily
-            List<int> cuids = new List<int>(Cubes.Keys);
+            List<Cube> playerList = new List<Cube>(Cubes.Values);
 
-            // Using for loops to make the algorithm a little less costly- check each player cube only once against each other.
-            for (int i = 0; i < cuids.Count; i++)
+            // Using for loops to make the algorithm a little less costly - check each player cube only once against each other
+            for (int i = 0; i < playerList.Count; i++)
             {
-                Cube player = Cubes[cuids[i]];
+                Cube player = playerList[i];
 
-                eatenFood = new List<Cube>();
                 if (player.Mass == 0)
                     continue;
 
-                // Check all of the food cubes.
-                // There has to be a faster way of doing this.
+                eatenFood = new List<Cube>();
+
+                // Check against all of the food cubes
+                //   There has to be a faster way of doing this
                 foreach (Cube food in Food)
                 {
                     if (Collide(player, food) && player.Mass > food.Mass && food.Mass != 0) // Added food.Mass != 0 check because there might sometime happen where two players hit the same food cube at the same time
@@ -417,10 +418,10 @@ namespace AgCubio
                     }
                 }
 
-                // Nested loop- checks all player cubes after the current cube.
-                for (int j = i + 1; j < cuids.Count; j++)
+                // Nested loop - check against all player cubes after the current cube.
+                for (int j = i + 1; j < playerList.Count; j++)
                 {
-                    Cube players = Cubes[cuids[j]];
+                    Cube players = playerList[j];
 
                     //If player has already been consumed in this collisions check.
                     if (player.Mass == 0 || players.Mass == 0)
@@ -469,7 +470,7 @@ namespace AgCubio
                                 else
                                     SplitCubeUids[players.Team_ID].Remove(players.uid);
                             }
-
+                            
 
                             eatenPlayers.Add(id);
                             destroyed.Append(JsonConvert.SerializeObject(Cubes[id]) + "\n");
@@ -489,7 +490,7 @@ namespace AgCubio
                                 else
                                     SplitCubeUids[player.Team_ID].Remove(player.uid);
                             }
-
+                            
 
                             eatenPlayers.Add(id);
                             destroyed.Append(JsonConvert.SerializeObject(Cubes[id]) + "\n");
@@ -521,15 +522,21 @@ namespace AgCubio
         /// <returns>ID to remove</returns>
         private int ReassignUid(int cubeUid)
         {
-            // METHOD NEEDS SOME HELP: NOT BEST SOLUTION
-            List<int> temp = new List<int>(SplitCubeUids[cubeUid].Keys);
-            int tempID = temp[1];
-            Cubes[cubeUid].uid = tempID;
-            Cubes[tempID].uid = cubeUid;
+            // Iterate through split cubes
+            foreach (int uid in SplitCubeUids[cubeUid].Keys)
+            {
+                // At the first new uid, swap uid's and exit
+                if (uid != cubeUid)
+                {
+                    int otherID = Cubes[cubeUid].uid = Cubes[uid].uid;
+                    Cubes[uid].uid = cubeUid;
+                    SplitCubeUids[cubeUid].Remove(otherID);
+                    return otherID;
+                }
+            }
 
-            SplitCubeUids[Cubes[cubeUid].Team_ID].Remove(tempID);
-            return tempID;
-
+            // Should never get here - there will always be multiple split cubes with unique uids when this method is called
+            return cubeUid;
         }
 
 
@@ -602,12 +609,6 @@ namespace AgCubio
         /// </summary>
         public Cube GenerateFoodorVirus()
         {
-            // On a random scale needs to create viruses too 
-            // Viruses: specific color, specific size or size range.
-            // Cool thought: viruses can move, become npc's that can try to chase players, or just move erratically
-
-            //Another thought: randomly allow a food piece to get 1 size bigger (mass++) each time this is called.
-
             int random = Rand.Next(100);
             int color, mass, width;
             double x, y;
@@ -662,17 +663,14 @@ namespace AgCubio
                 {
                     x += (20 * Math.Sin(angle * 2));
                     y += (70 * Math.Sin(angle));
-                    System.Diagnostics.Debug.WriteLine(Math.Sin(angle));
 
                     Cubes[i].loc_x = x;
                     Cubes[i].loc_y = y;
                 }
-
                 else
                 {
                     x += (70 * Math.Sin(angle));
                     y += (20 * Math.Sin(angle * 2));
-                    System.Diagnostics.Debug.WriteLine(Math.Sin(angle));
 
                     Cubes[i].loc_x = x;
                     Cubes[i].loc_y = y;
@@ -706,7 +704,7 @@ namespace AgCubio
                     if (SplitCubeUids[Cubes[uid].Team_ID][uid].Countdown > 0)
                         MoveSplitCube(uid, x, y);
                     else
-                        MoveCube(uid, x, y);
+                    MoveCube(uid, x, y);
 
                     List<int> temp2 = new List<int>(SplitCubeUids[PlayerUid].Keys);
                     foreach (int team in temp2)
@@ -817,17 +815,8 @@ namespace AgCubio
         /// </summary>
         public double GetSpeed(int CubeUid)
         {
-            Cube cube = Cubes[CubeUid];
-
-            //if (cube.Team_ID == 0)
-            //{
             double speed = SPEED_SLOPE * Cubes[CubeUid].Mass + SPEED_CONSTANT;
-            return speed = (speed < MIN_SPEED) ? MIN_SPEED : ((speed > MAX_SPEED) ? MAX_SPEED : speed);
-            //}
-            //else
-            //{
-
-            //}
+            return (speed < MIN_SPEED) ? MIN_SPEED : ((speed > MAX_SPEED) ? MAX_SPEED : speed);
         }
 
 
@@ -840,12 +829,13 @@ namespace AgCubio
             {
                 if (Cubes[CubeUid].Mass < this.MIN_SPLIT_MASS)
                     return;
+
                 Cubes[CubeUid].Team_ID = CubeUid;
                 SplitCubeUids[CubeUid] = new Dictionary<int, SplitCubeData>();
                 SplitCubeUids[CubeUid][CubeUid] = new SplitCubeData(Cubes[CubeUid].loc_y, Cubes[CubeUid].loc_y);
                 SplitCubeUids[CubeUid][CubeUid].Countdown = 0;
             }
-             
+
 
             List<int> temp = new List<int>(SplitCubeUids[CubeUid].Keys);
             foreach (int uid in temp)
@@ -854,6 +844,7 @@ namespace AgCubio
                     continue;
 
                 double mass = Cubes[uid].Mass;
+
                 if (mass < this.MIN_SPLIT_MASS)
                     continue;
 
@@ -879,77 +870,118 @@ namespace AgCubio
 
                 SplitCubeUids[CubeUid][newCube.uid] = new SplitCubeData(xxx, yyy);
             }
-        }
+            }
 
 
 
         /// <summary>
         /// Manages splitting when hit a virus
-        /// Non optimal code.
+        ///   Non optimal code
         /// </summary>
         public void VirusSplit(int CubeUid, double x, double y)
         {
-            if (!SplitCubeUids.ContainsKey(Cubes[CubeUid].Team_ID))
+            Cube cube = Cubes[CubeUid];
+
+            // If the cube's team id is not yet set and tracked in SplitCubeUids, set it up (because the cube is about to split)
+            if (!SplitCubeUids.ContainsKey(cube.Team_ID))
             {
                 Cubes[CubeUid].Team_ID = CubeUid;
-                //SplitCubeUids[CubeUid] = new Dictionary<int, Tuple<double, double>>();
+                SplitCubeUids[CubeUid] = new Dictionary<int, SplitCubeData>();
+                SplitCubeUids[CubeUid][CubeUid] = new SplitCubeData(cube.loc_x, cube.loc_y);
+                SplitCubeUids[CubeUid][CubeUid].Countdown = 0;
             }
 
-            int TeamID = Cubes[CubeUid].Team_ID;
-            if (SplitCubeUids[TeamID].Count >= this.MAX_SPLIT_COUNT)// If at max split, add on virus mass
+            // Store the team id, and number of split cubes
+            int teamID = cube.Team_ID;
+            int numSplitCubes = SplitCubeUids[teamID].Count;
+
+            // If at max split count, just add on virus mass and return
+            if (numSplitCubes >= this.MAX_SPLIT_COUNT)
             {
-                Cubes[CubeUid].Mass += VIRUS_MASS;
+                cube.Mass += VIRUS_MASS;
                 return;
-            }//Needs some work: can get to the max split count, either do 1-3 splits, or no splits, etc
+            }
 
-            double mass = Cubes[CubeUid].Mass;
+            // Store the original cube mass
+            double mass = cube.Mass;
 
-            // Halve the mass of the original cube, make it a little smaller as a penalty for eating a virus
-            Cubes[CubeUid].Mass = (mass - 10) / 2;
+            // Find the number of split cubes to make
+            int maxSplits = (int)(mass / PLAYER_START_MASS);
+            int numSplits = (maxSplits > MAX_SPLIT_COUNT - numSplitCubes) ? MAX_SPLIT_COUNT - numSplitCubes + 1 : maxSplits + 1; // +1 to account for reassigning original cube
 
-            //## NOTE: NEEDS TO NOT PUT THE CUBE ALREADY AT X,Y. ##
-            double xx = x - Cubes[CubeUid].loc_x;
-            double yy = y - Cubes[CubeUid].loc_y;
-            UnitVector(ref xx, ref yy);
+            // Find the leftover mass (if all split cubes get the player starting mass)
+            double leftoverMass = mass - (numSplits * PLAYER_START_MASS);
 
-            xx = (xx < 0) ? Cubes[CubeUid].left - (Cubes[CubeUid].width / 2) : Cubes[CubeUid].right + (Cubes[CubeUid].width / 2);
-            yy = (yy < 0) ? Cubes[CubeUid].top - (Cubes[CubeUid].width / 2) : Cubes[CubeUid].bottom + (Cubes[CubeUid].width / 2);
+            // Generate all but the last split cube (the last will 'replace' the original later)
+            while (numSplits > 1)
+            {
+                Cube newCube = GenerateSplitCube(ref numSplits, ref leftoverMass, teamID, CubeUid, x, y);
+
+                double xx = newCube.loc_x - Cubes[CubeUid].loc_x;
+                double yy = newCube.loc_y - Cubes[CubeUid].loc_y;
+                UnitVector(ref xx, ref yy);
+                // Add the new cube in to the world and the split set, and adjust its position
+                Cubes.Add(newCube.uid, newCube);
+                SplitCubeUids[teamID][newCube.uid] = new SplitCubeData(xx, yy);
+                AdjustPosition(newCube.uid);
+            }
+
+            // Alter the original cube to be a split cube now
+            Cube replacement = GenerateSplitCube(ref numSplits, ref leftoverMass, teamID, CubeUid, x, y);
+            cube.Mass  = replacement.Mass;
+            cube.loc_x = replacement.loc_x;
+            cube.loc_y = replacement.loc_y;
+            AdjustPosition(cube.uid);
+        }
 
 
-            // Viruses make 4 new cubes, each of 1/8 the player mass
-            Cube newCube = new Cube(x + MAX_SPLIT_DISTANCE, y + MAX_SPLIT_DISTANCE, GetUid(), false, Cubes[CubeUid].Name, mass / 8, Cubes[CubeUid].argb_color, TeamID);
-            Cube newCube2 = new Cube(x - MAX_SPLIT_DISTANCE, y - MAX_SPLIT_DISTANCE, GetUid(), false, Cubes[CubeUid].Name, mass / 8, Cubes[CubeUid].argb_color, TeamID);
-            Cube newCube3 = new Cube(x - MAX_SPLIT_DISTANCE, y + MAX_SPLIT_DISTANCE, GetUid(), false, Cubes[CubeUid].Name, mass / 8, Cubes[CubeUid].argb_color, TeamID);
-            Cube newCube4 = new Cube(x + MAX_SPLIT_DISTANCE, y - MAX_SPLIT_DISTANCE, GetUid(), false, Cubes[CubeUid].Name, mass / 8, Cubes[CubeUid].argb_color, TeamID);
+        /// <summary>
+        /// Generates a (virus-resultant) split cube:
+        ///   random mass (greater than player start mass, but plus a random remainder portion of the original cube mass, based on how many splits there will be)
+        ///   random start coordinates (within a certain distance of the original virus, based on determined mass)
+        /// </summary>
+        private Cube GenerateSplitCube(ref int numSplits, ref double leftoverMass, int teamID, int CubeUid, double x, double y)
+        {
+            // Randomly decide whether to add to or subtract from original coordinates
+            int xdir = Rand.Next(2) * 2 - 1;
+            int ydir = Rand.Next(2) * 2 - 1;
 
+            // Randomly allocate mass for the split cube
+            double splitMass;
 
-            // Add the new cube to the world
-            Cubes.Add(newCube.uid, newCube);
-            Cubes.Add(newCube2.uid, newCube2);
-            Cubes.Add(newCube3.uid, newCube3);
-            Cubes.Add(newCube4.uid, newCube4);
+            if (--numSplits == 0) // Last cube gets all leftover mass
+                splitMass = PLAYER_START_MASS + leftoverMass;
+            else
+            {
+                double portion = 1.0 / Rand.Next(3, 10) * leftoverMass;
+                splitMass = PLAYER_START_MASS + portion;
+                leftoverMass -= portion;
+            }
 
-            //Adjust position so it's inside world.
-            AdjustPosition(newCube.uid);
-            AdjustPosition(newCube2.uid);
-            AdjustPosition(newCube3.uid);
-            AdjustPosition(newCube4.uid);
+            // Calculate split distance based on mass
+            double splitDist = (splitMass > MIN_SPEED_MASS) ? MAX_SPLIT_DISTANCE : MAX_SPLIT_DISTANCE;
 
-            /*
-            // Add in the splitoff cubes
-            SplitCubeUids[TeamID].Add(newCube.uid,new Tuple<double, double>();
-            SplitCubeUids[TeamID].Add(newCube2.uid);
-            SplitCubeUids[TeamID].Add(newCube3.uid);
-            SplitCubeUids[TeamID].Add(newCube4.uid);*/
+            double xDelta = Math.Sqrt(splitDist * splitDist - Rand.Next((int)(splitDist * splitDist)));
+            double yDelta = Math.Sqrt(splitDist * splitDist - xDelta * xDelta);
+
+            return new Cube(x + xDelta * xdir, y + yDelta * ydir, GetUid(), false, Cubes[CubeUid].Name, splitMass, Cubes[CubeUid].argb_color, teamID);
         }
 
 
         class SplitCubeData
         {
+            /// <summary>
+            /// X directional vector
+            /// </summary>
             public double X
             { get; set; }
+
+            /// <summary>
+            /// Y directional vector
+            /// </summary>
             public double Y
             { get; set; }
+
             /// <summary>
             /// How long the cube goes on its trajectory
             /// </summary>
@@ -961,6 +993,13 @@ namespace AgCubio
             /// </summary>
             public int Cooloff
             { get; set; }
+
+
+            /// <summary>
+            /// Data for split cubes.
+            /// </summary>
+            /// <param name="x">Vector direction in x plane</param>
+            /// <param name="y">Vector direction in y plane</param>
             public SplitCubeData(double x, double y)
             {
                 X = x;
@@ -971,5 +1010,3 @@ namespace AgCubio
         }
     }
 }
-
-

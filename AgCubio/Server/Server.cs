@@ -65,11 +65,9 @@ namespace AgCubio
         /// </summary>
         private void SetUpClient(Preserved_State_Object state)
         {
-            
-
             Console.WriteLine("User " + state.data + " has connected to the server");
 
-            // Generate 2 random starting coords within our world, check if other players are there, then send if player won't get eaten immediately. (helper method)
+            // Generate 2 random starting coords within our world, check if other players are there, then send if player won't get eaten immediately (helper method)
             double x, y;
             Cube cube;
             string worldData;
@@ -105,36 +103,39 @@ namespace AgCubio
         /// </summary>
         private void ManageData(Preserved_State_Object state)
         {
-            // Action for parsing client requests into moves or splits
-            Action<String> TryMoveOrSplit = new Action<String>((str) =>
-            {
-                // Get the coordinates for the move or split
-                MatchCollection values = Regex.Matches(str, @"-*\d+");
-                double x = double.Parse(values[0].Value);
-                double y = double.Parse(values[1].Value);
-
-                // Handle moving or splitting
-                if (str[1] == 'm')
-                    lock (DataReceived) { DataReceived[state.CubeID] = new Tuple<double, double>(x, y); }
-                else if (str[1] == 's')
-                    lock (World) { World.Split(state.CubeID, x, y); }
-
-            });
-
             // Try to perform the complete move or split actions
             string[] actions = Regex.Split(state.data.ToString(), @"\n");
             for (int i = 0; i < actions.Length - 1; i++)
-                TryMoveOrSplit(actions[i]);
+                TryMoveOrSplit(actions[i], state);
 
             // Try to perform the last move or split action if it is complete, otherwise append what is there for later
             string lastAction = actions.Last();
+
             if (lastAction.Length > 1 && lastAction?.Last() == ')')
-                TryMoveOrSplit(lastAction);
+                TryMoveOrSplit(lastAction, state);
             else
                 state.data = new StringBuilder(lastAction);
 
             // Call for more client actions
             Network.I_Want_More_Data(state);
+        }
+
+
+        /// <summary>
+        /// Parses client requests into moves or splits
+        /// </summary>
+        private void TryMoveOrSplit(String str, Preserved_State_Object state)
+        {
+            // Get the coordinates for the move or split
+            MatchCollection values = Regex.Matches(str, @"-*\d+");
+            double x = double.Parse(values[0].Value);
+            double y = double.Parse(values[1].Value);
+
+            // Handle moving or splitting
+            if (str[1] == 'm')
+                lock (DataReceived) { DataReceived[state.CubeID] = new Tuple<double, double>(x, y); }
+            else if (str[1] == 's')
+                lock (World) { World.Split(state.CubeID, x, y); }
         }
 
 
@@ -175,10 +176,7 @@ namespace AgCubio
 
                 // Add food to the world if necessary and append it to the data stream
                 if (World.Food.Count < World.MAX_FOOD_COUNT)
-                {
-                    Cube food = World.GenerateFoodorVirus();
-                    data.Append(JsonConvert.SerializeObject(food) + "\n");
-                }
+                    data.Append(JsonConvert.SerializeObject(World.GenerateFoodorVirus()) + "\n");
 
                 // Appends all of the player cube data - they should be constantly changing (mass, position, or both), therefore, we send them every time
                 data.Append(World.SerializePlayers());
