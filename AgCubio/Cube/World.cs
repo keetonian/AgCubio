@@ -862,7 +862,10 @@ namespace AgCubio
             // Calculate split distance based on mass
             double splitDist = (splitMass > MIN_SPEED_MASS) ? MAX_SPLIT_DISTANCE : MAX_SPLIT_DISTANCE;
 
-            return new Cube(x + splitDist * xdir, y + splitDist * ydir, GetUid(), false, Cubes[CubeUid].Name, splitMass, Cubes[CubeUid].argb_color, teamID);
+            double xDelta = Math.Sqrt(splitDist * splitDist - Rand.Next((int)(splitDist * splitDist)));
+            double yDelta = Math.Sqrt(splitDist * splitDist - xDelta * xDelta);
+
+            return new Cube(x + xDelta * xdir, y + yDelta * ydir, GetUid(), false, Cubes[CubeUid].Name, splitMass, Cubes[CubeUid].argb_color, teamID);
         }
     }
 }
