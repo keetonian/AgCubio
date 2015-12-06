@@ -390,90 +390,69 @@ namespace AgCubio
                 // Nested loop - check against all player cubes after the current cube.
                 for (int j = i + 1; j < playerList.Count; j++)
                 {
-                    Cube players = playerList[j];
+                    Cube player2 = playerList[j];
 
-                    //If player has already been consumed in this collisions check.
-                    if (player.Mass == 0 || players.Mass == 0)
+                    // Check if player has already been consumed in this collisions check.
+                    if (player.Mass == 0 || player2.Mass == 0)
                         continue;
 
-                    if (Collide(player, players) || Collide(players, player))
+                    // Check if their will be a collision between player cubes
+                    if (Collide(player, player2) || Collide(player2, player))
                     {
                         // IF TEAMID = UID and COUNTDOWN < 0, then the player can eat its own split cube
 
-                        if (player.Team_ID != 0 && player.Team_ID == players.Team_ID)
+                        // Check if players are part of a split (same team)
+                        if (player.Team_ID != 0 && player.Team_ID == player2.Team_ID)
                         {
+                            // NEEDS A COUNTDOWN ----
+                            // Merge into the cube that has the focus (Uid == Team_ID)
+                            Cube focus = (player.uid == player.Team_ID) ? player  : player2;
+                            Cube other = (player.uid == player.Team_ID) ? player2 : player;
 
-                            //if countdown
-                            if (players.uid == players.Team_ID)
-                            {
-                                players.Mass += player.Mass;
-                                player.Mass = 0;
-                                AdjustPosition(players.uid);
+                            focus.Mass += other.Mass;
+                            other.Mass = 0;
+                            AdjustPosition(focus.uid);
 
-                                eatenPlayers.Add(player.uid);
-                                SplitCubeUids[player.Team_ID].Remove(player.uid);
-                                destroyed.Append(JsonConvert.SerializeObject(player) + "\n");
-                            }
-                            else
-                            {
-                                player.Mass += players.Mass;
-                                players.Mass = 0;
-                                AdjustPosition(player.uid);
-
-                                eatenPlayers.Add(players.uid);
-                                SplitCubeUids[players.Team_ID].Remove(players.uid);
-                                destroyed.Append(JsonConvert.SerializeObject(players) + "\n");
-                            }
+                            eatenPlayers.Add(other.uid);
+                            SplitCubeUids[other.Team_ID].Remove(other.uid);
+                            destroyed.Append(JsonConvert.SerializeObject(other) + "\n");
                         }
-                        else if (player.Mass > players.Mass)
+
+                        // If a player has over 120% mass of another player, it can eat the other player
+                        else if (player.Mass / player2.Mass > 1.2 || player2.Mass / player.Mass > 1.2)
                         {
-                            int id = players.uid;
-                            player.Mass += players.Mass;
-                            players.Mass = 0;
-                            AdjustPosition(player.uid);
+                            Cube predator = (player.Mass / player2.Mass > 1.2) ? player  : player2;
+                            Cube prey     = (player.Mass / player2.Mass > 1.2) ? player2 : player;
 
-                            if (SplitCubeUids.ContainsKey(players.Team_ID) && SplitCubeUids[players.Team_ID].Count > 1)
+                            int id = prey.uid;
+                            predator.Mass += prey.Mass;
+                            prey.Mass = 0;
+                            AdjustPosition(predator.uid);
+
+                            // If the eaten player cube is part of a split team, reassign the focus cube or remove the member's split id, as necessary
+                            if (SplitCubeUids.ContainsKey(prey.Team_ID) && SplitCubeUids[prey.Team_ID].Count > 1)
                             {
-                                if (players.uid == players.Team_ID)
-                                    id = ReassignUid(players.uid);
+                                if (prey.uid == prey.Team_ID)
+                                    id = ReassignUid(prey.uid);
                                 else
-                                    SplitCubeUids[players.Team_ID].Remove(players.uid);
+                                    SplitCubeUids[prey.Team_ID].Remove(prey.uid);
                             }
-
-
+                            
                             eatenPlayers.Add(id);
-                            destroyed.Append(JsonConvert.SerializeObject(players) + "\n");
-                        }
-                        else
-                        {
-                            int id = player.uid;
-
-                            players.Mass += player.Mass;
-                            player.Mass = 0;
-                            AdjustPosition(players.uid);
-
-                            if (SplitCubeUids.ContainsKey(player.Team_ID) && SplitCubeUids[player.Team_ID].Count > 1)
-                            {
-                                if (player.uid == player.Team_ID)
-                                    id = ReassignUid(player.uid);
-                                else
-                                    SplitCubeUids[player.Team_ID].Remove(player.uid);
-                            }
-
-
-                            eatenPlayers.Add(id);
-                            destroyed.Append(JsonConvert.SerializeObject(player) + "\n");
+                            destroyed.Append(JsonConvert.SerializeObject(prey) + "\n");
                         }
                     }
                 }
 
-                // Remove eaten food and players.
+                // Remove eaten food
                 foreach (Cube c in eatenFood)
                 {
                     Food.Remove(c);
                     Uids.Push(c.uid);
                 }
             }
+
+            // Remove eaten players
             foreach (int i in eatenPlayers)
             {
                 Cubes.Remove(i);
@@ -655,9 +634,9 @@ namespace AgCubio
                 double relative = Math.Abs(moving.loc_x - teammate.loc_x) - Math.Abs(moving.loc_y - teammate.loc_y);
 
                 if (relative < 0)
-                    Cubes[movingUid].loc_y = y0;
-                else if (relative > 0)
                     Cubes[movingUid].loc_x = x0;
+                else if (relative > 0)
+                    Cubes[movingUid].loc_y = y0;
                 else
                 {
                     Cubes[movingUid].loc_x = x0;
@@ -811,7 +790,7 @@ namespace AgCubio
         /// <summary>
         /// Generates a (virus-resultant) split cube:
         ///   random mass (greater than player start mass, but plus a random remainder portion of the original cube mass, based on how many splits there will be)
-        ///   random start coordinates (within a certain distance of the original virus, based on determined mass)
+        ///   random start coordinates (along a circle surrounding the original virus position)
         /// </summary>
         private Cube GenerateSplitCube(ref int numSplits, ref double leftoverMass, int teamID, int CubeUid, double x, double y)
         {
@@ -831,11 +810,8 @@ namespace AgCubio
                 leftoverMass -= portion;
             }
 
-            // Calculate split distance based on mass
-            double splitDist = (splitMass > MIN_SPEED_MASS) ? MAX_SPLIT_DISTANCE : MAX_SPLIT_DISTANCE;
-
-            double xDelta = Math.Sqrt(splitDist * splitDist - Rand.Next((int)(splitDist * splitDist)));
-            double yDelta = Math.Sqrt(splitDist * splitDist - xDelta * xDelta);
+            double xDelta = Math.Sqrt(MAX_SPLIT_DISTANCE * MAX_SPLIT_DISTANCE - Rand.Next((int)(MAX_SPLIT_DISTANCE * MAX_SPLIT_DISTANCE)));
+            double yDelta = Math.Sqrt(MAX_SPLIT_DISTANCE * MAX_SPLIT_DISTANCE - xDelta * xDelta);
 
             return new Cube(x + xDelta * xdir, y + yDelta * ydir, GetUid(), false, Cubes[CubeUid].Name, splitMass, Cubes[CubeUid].argb_color, teamID);
         }
