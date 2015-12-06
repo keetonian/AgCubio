@@ -760,17 +760,20 @@ namespace AgCubio
                 && ((moving.top < teammate.bottom && moving.top > teammate.top) // This is when the top of the moving cube is higher than the bottom of another cube
                 || (moving.bottom < teammate.bottom && moving.bottom > teammate.top))) // This is when the bottom of the moving cube is lower than the top of another cube
             {
-                double relative = Math.Abs(moving.loc_x - teammate.loc_x) - Math.Abs(moving.loc_y - teammate.loc_y);
+                double relativeX = moving.loc_x - teammate.loc_x;
+                double relativeY = moving.loc_y - teammate.loc_y;
 
-                if (relative < 0)
-                    Cubes[movingUid].loc_y = y0;
-                else if (relative > 0)
-                    Cubes[movingUid].loc_x = x0;
-                else
-                {
-                    Cubes[movingUid].loc_x = x0;
-                    Cubes[movingUid].loc_y = y0;
-                }
+                if (relativeX < 0)
+                    moving.loc_x = teammate.left - (moving.width / 2);
+                else if (relativeX > 0)
+                    moving.loc_x = teammate.right + (moving.width / 2);
+
+                if (relativeY < 0)
+                    moving.loc_y = teammate.top - (moving.width/2);
+                else if ( relativeY > 0)
+                    moving.loc_y = teammate.bottom + (moving.width / 2);
+
+                AdjustPosition(movingUid);
             }
         }
 
