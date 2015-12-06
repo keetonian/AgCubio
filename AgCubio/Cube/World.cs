@@ -703,10 +703,10 @@ namespace AgCubio
                         if (uid == team)
                             continue;
                         if (SplitCubeUids[PlayerUid][team].Cooloff > 0)
-                            CheckOverlap(uid, Cubes[team], x0, y0);
+                            CheckOverlap(uid, Cubes[team]);
                         else
                             if(SplitCubeUids[PlayerUid][uid].Cooloff > 0)
-                                CheckOverlap(uid, Cubes[team], x0, y0);
+                                CheckOverlap(uid, Cubes[team]);
                     }
                 }
             }
@@ -751,7 +751,7 @@ namespace AgCubio
         /// Helper method - checks for overlap between split cubes and cancels the directional movement that causes overlap
         /// x0 and y0 are the original positions
         /// </summary>
-        public void CheckOverlap(int movingUid, Cube teammate, double x0, double y0)
+        public void CheckOverlap(int movingUid, Cube teammate)
         {
             Cube moving = Cubes[movingUid];
 
@@ -763,12 +763,12 @@ namespace AgCubio
                 double relativeX = moving.loc_x - teammate.loc_x;
                 double relativeY = moving.loc_y - teammate.loc_y;
 
-                else if (relativeX < 0)
+                if (relativeX < 0)
                     moving.loc_x = teammate.left - (moving.width / 2);
                 else if (relativeX > 0)
                     moving.loc_x = teammate.right + (moving.width / 2);
 
-                else if (relativeY < 0)
+                if (relativeY < 0)
                     moving.loc_y = teammate.top - (moving.width/2);
                 else if ( relativeY > 0)
                     moving.loc_y = teammate.bottom + (moving.width / 2);
