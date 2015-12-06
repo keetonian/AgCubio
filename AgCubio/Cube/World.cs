@@ -142,8 +142,12 @@ namespace AgCubio
 
         /// <summary>
         /// (Server): Dictionary for tracking split cubes
+        /// Dictionary1: Team id, Dictionary2
+        /// Dictionary2: Cube id, Tuple
+        /// Tuple: Location where split cube will be going (add an inertia to it)
         /// </summary>
-        private Dictionary<int, HashSet<int>> SplitCubeUids;
+        private Dictionary<int, Dictionary<int, SplitCubeData>> SplitCubeUids;
+
 
         /// <summary>
         /// Our Uid counter
@@ -160,6 +164,12 @@ namespace AgCubio
         /// </summary>
         private Random Rand;
 
+        /// <summary>
+        /// int = uid
+        /// Tuple( (x,y) , angle)
+        /// </summary>
+        private Dictionary<int, Tuple<Tuple<double, double>, double>> MilitaryViruses;
+
         // --------------------------------------------------------------
 
 
@@ -169,12 +179,13 @@ namespace AgCubio
         public World(string filename)
         {
             // Initialize fields
-            SplitCubeUids = new Dictionary<int, HashSet<int>>();
+            SplitCubeUids = new Dictionary<int, Dictionary<int, SplitCubeData>>();
             Cubes = new Dictionary<int, Cube>();
             Food = new HashSet<Cube>();
             Rand = new Random();
             Uids = new Stack<int>();
             Uid = 1; // Start at 1 so that no cube has a uid of 0
+            MilitaryViruses = new Dictionary<int, Tuple<Tuple<double, double>, double>>();
 
             // Read parameters from xml
             using (XmlReader reader = XmlReader.Create(filename))
@@ -279,6 +290,21 @@ namespace AgCubio
             // Generate starting food
             while (this.Food.Count < this.MAX_FOOD_COUNT)
                 this.GenerateFoodorVirus();
+
+            // Make our military viruses
+            for (int i = 0; i < 2; i++)
+            {
+                double x = (i * WORLD_WIDTH / 2) + (WORLD_WIDTH / 4);
+                for (int j = 0; j < 2; j++)
+                {
+                    double y = (j * WORLD_HEIGHT / 2) + (WORLD_HEIGHT / 4);
+
+                    Cube mVirus = new Cube(x, y, GetUid(), true, "", VIRUS_MASS, Color.Red.ToArgb(), 0);
+                    Cubes.Add(mVirus.uid, mVirus);
+                    MilitaryViruses.Add(mVirus.uid, new Tuple<Tuple<double, double>, double>(new Tuple<double, double>(x, y), 0));
+                }
+
+            }
         }
 
 
@@ -374,7 +400,10 @@ namespace AgCubio
                     {
                         if (food.Mass == VIRUS_MASS)
                         {
-                            VirusSplit(player.uid, food.loc_x + 10, food.loc_y + 10);
+                            if (player.food)
+                                player.Mass += food.Mass;
+                            else
+                                VirusSplit(player.uid, food.loc_x + 10, food.loc_y + 10);
                         }
                         else
                             player.Mass += food.Mass;
@@ -440,10 +469,10 @@ namespace AgCubio
                                 else
                                     SplitCubeUids[players.Team_ID].Remove(players.uid);
                             }
-                            
+
 
                             eatenPlayers.Add(id);
-                            destroyed.Append(JsonConvert.SerializeObject(players) + "\n");
+                            destroyed.Append(JsonConvert.SerializeObject(Cubes[id]) + "\n");
                         }
                         else
                         {
@@ -460,10 +489,10 @@ namespace AgCubio
                                 else
                                     SplitCubeUids[player.Team_ID].Remove(player.uid);
                             }
-                            
+
 
                             eatenPlayers.Add(id);
-                            destroyed.Append(JsonConvert.SerializeObject(player) + "\n");
+                            destroyed.Append(JsonConvert.SerializeObject(Cubes[id]) + "\n");
                         }
                     }
                 }
@@ -493,7 +522,7 @@ namespace AgCubio
         private int ReassignUid(int cubeUid)
         {
             // METHOD NEEDS SOME HELP: NOT BEST SOLUTION
-            List<int> temp = new List<int>(SplitCubeUids[cubeUid]);
+            List<int> temp = new List<int>(SplitCubeUids[cubeUid].Keys);
             int tempID = temp[1];
             Cubes[cubeUid].uid = tempID;
             Cubes[tempID].uid = cubeUid;
@@ -609,21 +638,78 @@ namespace AgCubio
 
 
         /// <summary>
+        /// Moves the military viruses in a clover shape.
+        /// </summary>
+        public void MilitaryVirusMove()
+        {
+            //Dictionary<int, Tuple<Tuple<double,double>,double>>
+            List<int> keys = new List<int>(MilitaryViruses.Keys);
+            foreach (int i in keys)
+            {
+                double x = MilitaryViruses[i].Item1.Item1;
+                double y = MilitaryViruses[i].Item1.Item2;
+                double angle = MilitaryViruses[i].Item2;
+                angle += ((2 * Math.PI) / 180);
+
+                //Do a grade according to angle
+                // 0 - 2pi
+                if (angle > 4 * Math.PI)
+                    angle = 0;
+
+                MilitaryViruses[i] = new Tuple<Tuple<double, double>, double>(new Tuple<double, double>(x, y), angle);
+
+                if (angle < 2 * Math.PI)
+                {
+                    x += (20 * Math.Sin(angle * 2));
+                    y += (70 * Math.Sin(angle));
+                    System.Diagnostics.Debug.WriteLine(Math.Sin(angle));
+
+                    Cubes[i].loc_x = x;
+                    Cubes[i].loc_y = y;
+                }
+
+                else
+                {
+                    x += (70 * Math.Sin(angle));
+                    y += (20 * Math.Sin(angle * 2));
+                    System.Diagnostics.Debug.WriteLine(Math.Sin(angle));
+
+                    Cubes[i].loc_x = x;
+                    Cubes[i].loc_y = y;
+                }
+
+
+                // 2pi to 4pi opposite
+
+                //4 pi to 6 pi big x
+
+                // 6 pi to 8pi opposite
+
+
+            }
+        }
+
+
+        /// <summary>
         /// Controls a cube's movements
         /// </summary>
         public void Move(int PlayerUid, double x, double y)
         {
             if (SplitCubeUids.ContainsKey(PlayerUid) && SplitCubeUids[PlayerUid].Count > 1)
             {
-                foreach (int uid in SplitCubeUids[PlayerUid])
+                List<int> temp = new List<int>(SplitCubeUids[PlayerUid].Keys);
+                foreach (int uid in temp)
                 {
                     double x0 = Cubes[uid].loc_x;
                     double y0 = Cubes[uid].loc_y;
 
-                    MoveCube(uid, x, y);
+                    if (SplitCubeUids[Cubes[uid].Team_ID][uid].Countdown > 0)
+                        MoveSplitCube(uid, x, y);
+                    else
+                        MoveCube(uid, x, y);
 
-                    List<int> temp = new List<int>(SplitCubeUids[PlayerUid]);
-                    foreach (int team in temp)
+                    List<int> temp2 = new List<int>(SplitCubeUids[PlayerUid].Keys);
+                    foreach (int team in temp2)
                     {
                         if (uid == team)
                             continue;
@@ -634,6 +720,39 @@ namespace AgCubio
             }
             else
                 MoveCube(PlayerUid, x, y);
+        }
+
+        /// <summary>
+        /// Moves a split cube if it still has time left on it's countdown.
+        /// </summary>
+        public void MoveSplitCube(int CubeUid, double x, double y)
+        {
+
+            // Get the actual cube
+            Cube cube = Cubes[CubeUid];
+            SplitCubeUids[cube.Team_ID][cube.uid].Countdown--;
+
+            double cubeWidth = Cubes[CubeUid].width;
+
+            //Direction, in vector form
+            double xx = SplitCubeUids[cube.Team_ID][cube.uid].X;
+            double yy = SplitCubeUids[cube.Team_ID][cube.uid].Y;
+
+            x -= cube.loc_x;
+            y -= cube.loc_y;  
+            UnitVector(ref x, ref y);
+                        
+            double speed = GetSpeed(CubeUid);
+
+            // Normalize and scale the vector:
+
+            UnitVector(ref xx, ref yy);
+            xx *= (speed * 3);
+            yy *= (speed * 3);
+
+            // Set the new position
+            Cubes[CubeUid].loc_x += (cube.left + xx < 0 || cube.right + yy > this.WORLD_WIDTH) ? 0 : xx;
+            Cubes[CubeUid].loc_y += (cube.top + yy < 0 || cube.bottom + xx > this.WORLD_HEIGHT) ? 0 : yy;
         }
 
 
@@ -717,17 +836,18 @@ namespace AgCubio
         /// </summary>
         public void Split(int CubeUid, double x, double y)
         {
-            if (!SplitCubeUids.ContainsKey(Cubes[CubeUid].Team_ID)) // Should only need to go by the CubeID, right? Only the player can call a split?
+            if (!SplitCubeUids.ContainsKey(CubeUid)) // Should only need to go by the CubeID, right? Only the player can call a split?
             {
                 if (Cubes[CubeUid].Mass < this.MIN_SPLIT_MASS)
                     return;
                 Cubes[CubeUid].Team_ID = CubeUid;
-                SplitCubeUids[CubeUid] = new HashSet<int>() { CubeUid };
+                SplitCubeUids[CubeUid] = new Dictionary<int, SplitCubeData>();
+                SplitCubeUids[CubeUid][CubeUid] = new SplitCubeData(Cubes[CubeUid].loc_y, Cubes[CubeUid].loc_y);
+                SplitCubeUids[CubeUid][CubeUid].Countdown = 0;
             }
+             
 
-
-            List<int> temp = new List<int>(SplitCubeUids[CubeUid]);
-            List<int> remove = new List<int>();
+            List<int> temp = new List<int>(SplitCubeUids[CubeUid].Keys);
             foreach (int uid in temp)
             {
                 if (SplitCubeUids[CubeUid].Count >= this.MAX_SPLIT_COUNT)
@@ -740,18 +860,28 @@ namespace AgCubio
                 // Halve the mass of the original cube, create a new cube
                 Cubes[uid].Mass = mass / 2;
 
-                Cube newCube = new Cube(x, y, GetUid(), false, Cubes[CubeUid].Name, mass / 2, Cubes[CubeUid].argb_color, CubeUid);
+                //## NOTE: NEEDS TO NOT PUT THE CUBE ALREADY AT X,Y. ##
+                double xx = x - Cubes[uid].loc_x;
+                double yy = y - Cubes[uid].loc_y;
+                UnitVector(ref xx, ref yy);
+
+                // For use in putting into SplitCubeUids at the very bottom of this method. This is the direction vector the cube needs to go
+                double xxx = xx;
+                double yyy = yy;
+
+                xx = (xx < 0) ? Cubes[uid].left - (Cubes[uid].width + 1 / 2) : Cubes[uid].right + (Cubes[uid].width + 1 / 2);
+                yy = (yy < 0) ? Cubes[uid].top - (Cubes[uid].width + 1 / 2) : Cubes[uid].bottom + (Cubes[uid].width + 1 / 2);
+
+                Cube newCube = new Cube(xx, yy, GetUid(), false, Cubes[CubeUid].Name, mass / 2, Cubes[CubeUid].argb_color, CubeUid);
 
                 // Add the new cube to the world
                 Cubes.Add(newCube.uid, newCube);
 
-                SplitCubeUids[CubeUid].Add(newCube.uid);
+                SplitCubeUids[CubeUid][newCube.uid] = new SplitCubeData(xxx, yyy);
             }
-
-            foreach (int id in remove)
-                if (!Cubes.ContainsKey(id))
-                    SplitCubeUids[CubeUid].Remove(id);
         }
+
+
 
         /// <summary>
         /// Manages splitting when hit a virus
@@ -762,8 +892,9 @@ namespace AgCubio
             if (!SplitCubeUids.ContainsKey(Cubes[CubeUid].Team_ID))
             {
                 Cubes[CubeUid].Team_ID = CubeUid;
-                SplitCubeUids[CubeUid] = new HashSet<int>() { CubeUid };
+                //SplitCubeUids[CubeUid] = new Dictionary<int, Tuple<double, double>>();
             }
+
             int TeamID = Cubes[CubeUid].Team_ID;
             if (SplitCubeUids[TeamID].Count >= this.MAX_SPLIT_COUNT)// If at max split, add on virus mass
             {
@@ -775,6 +906,15 @@ namespace AgCubio
 
             // Halve the mass of the original cube, make it a little smaller as a penalty for eating a virus
             Cubes[CubeUid].Mass = (mass - 10) / 2;
+
+            //## NOTE: NEEDS TO NOT PUT THE CUBE ALREADY AT X,Y. ##
+            double xx = x - Cubes[CubeUid].loc_x;
+            double yy = y - Cubes[CubeUid].loc_y;
+            UnitVector(ref xx, ref yy);
+
+            xx = (xx < 0) ? Cubes[CubeUid].left - (Cubes[CubeUid].width / 2) : Cubes[CubeUid].right + (Cubes[CubeUid].width / 2);
+            yy = (yy < 0) ? Cubes[CubeUid].top - (Cubes[CubeUid].width / 2) : Cubes[CubeUid].bottom + (Cubes[CubeUid].width / 2);
+
 
             // Viruses make 4 new cubes, each of 1/8 the player mass
             Cube newCube = new Cube(x + MAX_SPLIT_DISTANCE, y + MAX_SPLIT_DISTANCE, GetUid(), false, Cubes[CubeUid].Name, mass / 8, Cubes[CubeUid].argb_color, TeamID);
@@ -795,81 +935,38 @@ namespace AgCubio
             AdjustPosition(newCube3.uid);
             AdjustPosition(newCube4.uid);
 
+            /*
             // Add in the splitoff cubes
-            SplitCubeUids[TeamID].Add(newCube.uid);
+            SplitCubeUids[TeamID].Add(newCube.uid,new Tuple<double, double>();
             SplitCubeUids[TeamID].Add(newCube2.uid);
             SplitCubeUids[TeamID].Add(newCube3.uid);
-            SplitCubeUids[TeamID].Add(newCube4.uid);
+            SplitCubeUids[TeamID].Add(newCube4.uid);*/
         }
 
 
-        /// <summary>
-        /// THIS MAY OR MAY NOT BE USED TO TRACK COUNTDOWNS AND INERTIA OF A SPLIT CUBE
-        /// Cube needs to gracefully slide to new position.
-        /// </summary>
         class SplitCubeData
         {
+            public double X
+            { get; set; }
+            public double Y
+            { get; set; }
             /// <summary>
-            /// Unit vector direction
+            /// How long the cube goes on its trajectory
             /// </summary>
-            public Tuple<double, double> direction;
+            public int Countdown
+            { get; set; }
 
             /// <summary>
-            /// Speed that it is going at- needs to decrease quick with time
+            /// Time before it can merge back to another cube.
             /// </summary>
-            public int inertia
+            public int Cooloff
+            { get; set; }
+            public SplitCubeData(double x, double y)
             {
-                get { return inertia--; }
-                set { }
-            }
-
-            /// <summary>
-            /// Countdown until it can merge again
-            /// </summary>
-            public int countdown
-            {
-                get { return countdown--; }
-                set { }
-            }
-
-            /// <summary>
-            /// 
-            /// </summary>
-            public int CubeUid;
-
-            /// <summary>
-            /// Passed in so that member variables can be accessed.
-            /// </summary>
-            World Parent;
-
-            /* Design notes:
-            Has an initial direction, multiplied by an initial scalar that decreases quickly. Mouse directions after this initial are added on to it, with their speed.
-            Has a max distance of where the cube can split to- that split needs to happen quickly, and quickly scale back down to normal speed once that spot is attained.
-            Everything needs to happen gradually.
-            Work out the storing of data here, and the actual moving in the Move() method in the World class.
-
-            This data structure needs to be stored in the hash set that right now just stores the splitcubeuid's.
-
-            */
-
-            /// <summary>
-            /// 
-            /// </summary>
-            public SplitCubeData(double x, double y, World parent, int cubeUid)
-            {
-                inertia = parent.MAX_SPLIT_DISTANCE;//initial speed
-                countdown = 200; //decremented each tick
-                Parent = parent;
-                int dist = Parent.MAX_SPLIT_DISTANCE;
-                CubeUid = cubeUid;
-
-                x -= Parent.Cubes[CubeUid].loc_x;
-                y -= Parent.Cubes[CubeUid].loc_y;
-
-                inertia = 2;//-(1 * Parent.Cubes[CubeUid].Mass / 58) + 59 / 58; // NEED A NEW SPEED SCALAR
-
-                UnitVector(ref x, ref y);
-                direction = new Tuple<double, double>(x, y);
+                X = x;
+                Y = y;
+                Countdown = 20;
+                Cooloff = 100;
             }
         }
     }
