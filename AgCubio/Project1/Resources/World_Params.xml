@@ -8,7 +8,7 @@
   <attrition_rate>0.0001</attrition_rate>
   <food_mass>1</food_mass>
   <player_start_mass>10</player_start_mass>
-  <max_food_count>5000</max_food_count>
+  <max_food_count>15000</max_food_count>
   <min_split_mass>25</min_split_mass>
   <max_split_count>20</max_split_count>
   <heartbeats_per_second>30</heartbeats_per_second>
