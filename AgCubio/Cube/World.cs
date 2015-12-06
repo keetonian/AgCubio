@@ -428,11 +428,11 @@ namespace AgCubio
                         // Check if players are part of a split (same team)
                         if (player.Team_ID != 0 && player.Team_ID == player2.Team_ID)
                         {
-                            // NEEDS A COUNTDOWN ----
                             // Merge into the cube that has the focus (Uid == Team_ID)
                             Cube focus = (player.uid == player.Team_ID) ? player  : player2;
                             Cube other = (player.uid == player.Team_ID) ? player2 : player;
-
+                            if (SplitCubeUids[focus.Team_ID][focus.uid].Cooloff > 0 || SplitCubeUids[focus.Team_ID][other.uid].Cooloff > 0)
+                                continue;
                             focus.Mass += other.Mass;
                             other.Mass = 0;
                             AdjustPosition(focus.uid);
@@ -695,6 +695,7 @@ namespace AgCubio
                 {
                     double x0 = Cubes[uid].loc_x;
                     double y0 = Cubes[uid].loc_y;
+                    SplitCubeUids[PlayerUid][uid].Cooloff--;
 
                     if (SplitCubeUids[Cubes[uid].Team_ID][uid].Countdown > 0)
                         MoveSplitCube(uid, x, y);
@@ -864,7 +865,7 @@ namespace AgCubio
 
                 SplitCubeUids[CubeUid][newCube.uid] = new SplitCubeData(xxx, yyy, this.MAX_SPLIT_DISTANCE);
             }
-            }
+        }
 
 
 
@@ -993,7 +994,7 @@ namespace AgCubio
                 X = x;
                 Y = y;
                 Countdown = countdown;
-                Cooloff = 100;
+                Cooloff = 2000;
             }
         }
     }
