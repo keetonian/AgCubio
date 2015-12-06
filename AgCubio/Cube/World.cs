@@ -702,8 +702,11 @@ namespace AgCubio
                     {
                         if (uid == team)
                             continue;
-
-                        CheckOverlap(uid, Cubes[team], x0, y0);
+                        if (SplitCubeUids[PlayerUid][team].Cooloff > 0)
+                            CheckOverlap(uid, Cubes[team], x0, y0);
+                        else
+                            if(SplitCubeUids[PlayerUid][uid].Cooloff > 0)
+                                CheckOverlap(uid, Cubes[team], x0, y0);
                     }
                 }
             }
@@ -752,8 +755,10 @@ namespace AgCubio
         {
             Cube moving = Cubes[movingUid];
 
-            if (((moving.left < teammate.right && moving.left > teammate.left) || (moving.right < teammate.right && moving.right > teammate.left)) &&
-                ((moving.top < teammate.bottom && moving.top > teammate.top) || (moving.bottom < teammate.bottom && moving.bottom > teammate.top)))
+            if (((moving.left < teammate.right && moving.left > teammate.left) // THis is when the left side of the moving cube intersects with the right side of another cube
+                || (moving.right < teammate.right && moving.right > teammate.left)) // This is when the right side of the moving cube intersects with the left side of another cube
+                && ((moving.top < teammate.bottom && moving.top > teammate.top) // This is when the top of the moving cube is higher than the bottom of another cube
+                || (moving.bottom < teammate.bottom && moving.bottom > teammate.top))) // This is when the bottom of the moving cube is lower than the top of another cube
             {
                 double relativeX = moving.loc_x - teammate.loc_x;
                 double relativeY = moving.loc_y - teammate.loc_y;
@@ -767,6 +772,7 @@ namespace AgCubio
                     Cubes[movingUid].loc_y = teammate.loc_y - ((teammate.width/2) + (Cubes[movingUid].width/2));
                 else
                     Cubes[movingUid].loc_y = teammate.loc_y + ((teammate.width / 2) + (Cubes[movingUid].width / 2));
+                AdjustPosition(movingUid);
 
             }
         }
@@ -991,7 +997,7 @@ namespace AgCubio
                 X = x;
                 Y = y;
                 Countdown = countdown;
-                Cooloff = 2000;
+                Cooloff = 800;
             }
         }
     }
