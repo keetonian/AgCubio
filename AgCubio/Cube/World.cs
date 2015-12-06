@@ -451,7 +451,11 @@ namespace AgCubio
                             int id = prey.uid;
                             predator.Mass += prey.Mass;
                             if(prey.food)
+                            {
+                                if (predator.food)
+                                    predator.Mass += prey.Mass;
                                 VirusSplit(predator.uid, prey.loc_x + 10, prey.loc_y + 10);
+                            }
                             prey.Mass = 0;
                             AdjustPosition(predator.uid);
 
@@ -627,7 +631,7 @@ namespace AgCubio
             Cube foodOrVirus = new Cube(x, y, GetUid(), true, "", mass, color, 0);
             Food.Add(foodOrVirus);
             random = Rand.Next(1000);
-            if (random < 10)
+            if (random < 2)
                 CreateMilitaryVirus();
             return foodOrVirus;
         }
@@ -638,7 +642,6 @@ namespace AgCubio
         /// </summary>
         public void MilitaryVirusMove()
         {
-            //Dictionary<int, Tuple<Tuple<double,double>,double>>
             List<int> keys = new List<int>(MilitaryViruses.Keys);
             foreach (int i in keys)
             {
@@ -648,7 +651,7 @@ namespace AgCubio
                 angle += ((2 * Math.PI) / 180);
 
                 //Do a grade according to angle
-                // 0 - 2pi
+                // Goes in a clover shape
                 if (angle > 4 * Math.PI)
                     angle = 0;
 
@@ -670,15 +673,7 @@ namespace AgCubio
                     Cubes[i].loc_x = x;
                     Cubes[i].loc_y = y;
                 }
-
-
-                // 2pi to 4pi opposite
-
-                //4 pi to 6 pi big x
-
-                // 6 pi to 8pi opposite
-
-
+               
             }
         }
 
