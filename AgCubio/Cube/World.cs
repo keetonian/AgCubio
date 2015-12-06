@@ -746,7 +746,7 @@ namespace AgCubio
 
         /// <summary>
         /// Helper method - checks for overlap between split cubes and cancels the directional movement that causes overlap
-        /// NOTE: NEEDS MORE WORK. THIS IS A LITTLE JERKY, DOESN'T QUITE WORK##########################################################
+        /// x0 and y0 are the original positions
         /// </summary>
         public void CheckOverlap(int movingUid, Cube teammate, double x0, double y0)
         {
@@ -755,17 +755,19 @@ namespace AgCubio
             if (((moving.left < teammate.right && moving.left > teammate.left) || (moving.right < teammate.right && moving.right > teammate.left)) &&
                 ((moving.top < teammate.bottom && moving.top > teammate.top) || (moving.bottom < teammate.bottom && moving.bottom > teammate.top)))
             {
-                double relative = Math.Abs(moving.loc_x - teammate.loc_x) - Math.Abs(moving.loc_y - teammate.loc_y);
+                double relativeX = moving.loc_x - teammate.loc_x;
+                double relativeY = moving.loc_y - teammate.loc_y;
 
-                if (relative < 0)
-                    Cubes[movingUid].loc_x = x0;
-                else if (relative > 0)
-                    Cubes[movingUid].loc_y = y0;
+                if (relativeX < 0)
+                    Cubes[movingUid].loc_x = teammate.loc_x - ((teammate.width/2) + (Cubes[movingUid].width/2));
                 else
-                {
-                    Cubes[movingUid].loc_x = x0;
-                    Cubes[movingUid].loc_y = y0;
-                }
+                    Cubes[movingUid].loc_x = teammate.loc_x + ((teammate.width / 2) + (Cubes[movingUid].width / 2));
+
+                if (relativeY < 0)
+                    Cubes[movingUid].loc_y = teammate.loc_y - ((teammate.width/2) + (Cubes[movingUid].width/2));
+                else
+                    Cubes[movingUid].loc_y = teammate.loc_y + ((teammate.width / 2) + (Cubes[movingUid].width / 2));
+
             }
         }
 
