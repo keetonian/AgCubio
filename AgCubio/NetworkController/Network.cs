@@ -149,6 +149,7 @@ namespace AgCubio
         {
             byte[] byteData = Encoding.UTF8.GetBytes(data);
             Tuple<Socket, byte[]> state = new Tuple<Socket, byte[]>(socket, byteData);
+
             try
             {
                 socket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallBack), state);
@@ -171,6 +172,7 @@ namespace AgCubio
         public static void SendCallBack(IAsyncResult state_in_an_ar_object)
         {
             Tuple<Socket, byte[]> state = (Tuple<Socket, byte[]>)state_in_an_ar_object.AsyncState;
+
             try
             {
                 int bytesSent = state.Item1.EndSend(state_in_an_ar_object);

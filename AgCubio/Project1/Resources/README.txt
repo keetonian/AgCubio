@@ -6,7 +6,6 @@ Keeton Hodgson
 
 Current state of the project:
 
-
 -----Server-----
 Current most up-to-date server is in the Server branch.
 
@@ -16,15 +15,61 @@ work on both versions of the server on remote and local hosts. If we did not spe
 We fixed several problems with our client code and are working on implementing everything in our server.
 
 
+Implemented Features:
+	Thread safety (locking)
+	Client and server connections and communications
+	Graceful socket disconnection and removal
+	Movement using vector math
+	Movement contained within world (invisible barriers - slide past)
+	Eating food and players (slow algorithm, but insufficient time for optimizations)
+	Attrition (players lose mass over time)
+	Randomly generated food with random but vibrant color
+	Players spawn at random starting coordinates where they won't be eaten
+	Viruses spawn at random starting coordinates where they won't split players
+	Start uid counter at 1 so that no player can have a uid of 0 and a teamid of 0 (give all cubes to his team)
+	Unique uid's and uid recovery/reuse
+	Food cubes: there are cubes of mass 1xfoodmass, 2x and 3x (increasing rarity)
+	If you have split the max amount, you can eat viruses with no ill effects: they are simply very big food items
+	Split inertia and remerging
+	Little/no overlap of split cubes - slide past
+	Player splits - each player cube with enough mass divides evenly in two, not compromising max split count
+	Virus splits - produces max number of split cubes possible without compromising player start mass and max split count
+		split cubes have purposefully uneven distribution of mass, and split in all directions randomly
 
-Needs work:
-	Splitting- moving in a decreasing speed towards a position, merging back together after a set time (Resolved)
-	Viruses- split player. (RESOLVED, but needs a better algorithm and mechanics)
+	Military Viruses: red viruses that move in a set pattern
+		Limited to a specific area (randomly chosen)
+		Move in a four-leaf clover shape
+		Eat food and viruses
+		Eat player cubes if players are smaller; otherwise split player cubes
+
+	World: 
+		Contains the state of the simulation. Most computations happen in the world class.
+		Reads an xml file of parameters (including new/custom parameters), located in the Resources folder
+
+	Server: 
+		Updates the world at a steady 'heartbeat' rate gained from the world
+		Async connection requests
+
+	Client(new):
+		Center of mass frame of reference
+		Circle grid background, drawn from center (maintains relative cube positions as player size changes)
+
+*Note: Absorbtion distance delta was unused due to ambiguity on meaning and a preferred alternative - a larger cube eats
+	a smaller cube when the larger overlaps the smaller's center
+
+-------------------------------------------------------------
+
+
+12/5/15 : Needs work :
+	Splitting - moving in a decreasing speed towards a position, merging back together after a set time (RESOLVED)
+	Viruses - split player (RESOLVED, beautifully)
 	Optimization of other algorithms (most are slow currently, but work at the small scale)
-	Polishing code
-	Splitting: a bug where sometimes split cubes are not put into our data structure for tracking them. (RESOLVED)
-	Collisions code: much of it is the same, can be put into helper methods.
-	bug: multiple players: eating cubes, sometimes a player cube gets left on the screen even after it is consumed.
+
+	--- Polishing code ---
+
+	Splitting: a bug where sometimes split cubes are not put into our data structure for tracking them (RESOLVED)
+	Collisions code: much of it is the same, can be put into helper methods (SIMPLIFIED)
+	bug: multiple players: eating cubes, sometimes a player cube gets left on the screen even after it is consumed
 		This happens when the main player cube gets eaten and the player has other split cubes still. Work in progress.
 	
 	
@@ -33,34 +78,6 @@ Needs work:
 		It seems that for most purposes, testing is very tricky and hard to implement, as edge cases are most easily reached by players testing the code instead of code testing the code.
 		We talk about each new implementation and draw/diagram it out, then test it several times by running the server and multiple clients.
 
-
-Implemented Features:
-	Thread safety (locking)
-	Moving- using vector math
-	Client and server connections and communications
-	Eating food (slow algorithm, but no time yet for optimizations)
-	Eating other players
-	Attrition (players lose size over time)
-	Randomly generated food
-	Players spawn at starting coordinates where they won't be eaten.
-	start uid counter at 1 so that no player can have a uid of 0 and a teamid of 0 (give all cubes to his team)
-	Food cubes: there are cubes of mass 1xfoodmass, 2x and 3x (increasing rarity)
-	If you have split the max amount, you can eat viruses with no ill effects: they are simply very big food items
-
-	Military Viruses: red viruses that move in a set pattern
-		Are limited to a specific area
-		Move in a flower/clover shape
-		Eat food and viruses
-		If it is bigger than a player cube, it eats it
-		If it is smaller than a player cube, it explodes(splits) it
-
-	World: 
-		contains the state of the simulation. Most computations happen in the world class.
-		Reads an xml file of parameters
-
-	Server: 
-		updates the world at a steady rate gained from the world
-		Async connection requests
 	
 
 
@@ -71,12 +88,7 @@ Implemented Features:
 
 ----------------
 
-
-
-
-
-
-
+::Client Assignment (LEGACY)
 
 Bugs(/Features!):
 		Mouse coordinates are a little off for non-fullscreen window and split cubes, but for fullscreen it is fine.
