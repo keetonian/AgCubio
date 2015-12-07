@@ -169,7 +169,7 @@ namespace AgCubio
         /// int = uid
         /// double = angle
         /// </summary>
-        private Dictionary<int, double> MilitaryViruses;
+        private Dictionary<int, MilitaryVirusData> MilitaryViruses;
 
         // --------------------------------------------------------------
 
@@ -186,7 +186,7 @@ namespace AgCubio
             Rand = new Random();
             Uids = new Stack<int>();
             Uid = 1; // Start at 1 so that no cube has a uid of 0
-            MilitaryViruses = new Dictionary<int, double>();
+            MilitaryViruses = new Dictionary<int, MilitaryVirusData>();
 
             // Read parameters from xml
             using (XmlReader reader = XmlReader.Create(filename))
@@ -537,13 +537,13 @@ namespace AgCubio
         private void AdjustPosition(int uid)
         {
             Cube player = Cubes[uid];
-            if (player.left < 0)
+            if (player.left <= 0)
                 player.loc_x = (1 + player.width/2);
-            else if (player.right > this.WORLD_WIDTH)
-                player.loc_x -= this.WORLD_WIDTH - (1 + player.width / 2);
-            if (player.top < 0)
-                player.loc_y = 0 - (1 + player.width / 2);
-            else if (player.bottom > this.WORLD_HEIGHT)
+            else if (player.right >= this.WORLD_WIDTH)
+                player.loc_x = this.WORLD_WIDTH - (1 + player.width / 2);
+            if (player.top <=  0)
+                player.loc_y = (1 + player.width / 2);
+            else if (player.bottom >= this.WORLD_HEIGHT)
                 player.loc_y = this.WORLD_HEIGHT - (1 + player.width / 2);
         }
 
@@ -566,10 +566,11 @@ namespace AgCubio
         {
             double x = Rand.Next(50,this.WORLD_WIDTH - 50);
             double y = Rand.Next(50, this.WORLD_HEIGHT - 50);
-            
-                Cube mVirus = new Cube(x, y, GetUid(), true, "", VIRUS_MASS, Color.Red.ToArgb(), Rand.Next(180));
-                Cubes.Add(mVirus.uid, mVirus);
-            MilitaryViruses.Add(mVirus.uid, 0);
+
+            Cube mVirus = new Cube(x, y, GetUid(), true, "", VIRUS_MASS, Color.Red.ToArgb(), 0);
+            Cubes.Add(mVirus.uid, mVirus);
+            double angle = Rand.Next(720) * 2 * Math.PI / 180;
+            MilitaryViruses.Add(mVirus.uid, new MilitaryVirusData(mVirus.loc_x, mVirus.loc_y, angle));
         }
 
 
@@ -654,26 +655,27 @@ namespace AgCubio
             List<int> keys = new List<int>(MilitaryViruses.Keys);
             foreach (int uid in keys)
             {
-                double angle = MilitaryViruses[uid];
-                angle += ((2 * Math.PI) / 180); // Convert to radians
+                double angle = MilitaryViruses[uid].Angle;
+                angle += ((Math.PI) / 180); 
 
                 // Do a grade according to angle
                 //   goes in a clover shape
-                if (angle > 8 * Math.PI)
+                if (angle > 4 * Math.PI)
                     angle = 0;
 
-                MilitaryViruses[uid] = angle;
+                MilitaryViruses[uid].Angle = angle;
 
-                if (angle < 4 * Math.PI)
+                if (angle < 2 * Math.PI)
                 {
-                    Cubes[uid].loc_x += (.5 * Math.Sin(angle * 2));//= x;
-                    Cubes[uid].loc_y += (2 * Math.Sin(angle));//= y;
+                    Cubes[uid].loc_x = MilitaryViruses[uid].X + (20 * Math.Sin(angle * 2));//= x;
+                    Cubes[uid].loc_y = MilitaryViruses[uid].Y + (70 * Math.Sin(angle));//= y;
                 }
                 else
                 {
-                    Cubes[uid].loc_x += (2 * Math.Sin(angle));
-                    Cubes[uid].loc_y += (.5 * Math.Sin(angle * 2));
+                    Cubes[uid].loc_x = MilitaryViruses[uid].X + (70 * Math.Sin(angle));
+                    Cubes[uid].loc_y = MilitaryViruses[uid].Y + (20 * Math.Sin(angle * 2));
                 }
+                AdjustPosition(uid);
             }
         }
 
@@ -695,7 +697,7 @@ namespace AgCubio
                     if (SplitCubeUids[PlayerUid][uid].Countdown > 0)
                         MoveSplitCube(uid, x, y);
                     else
-                    MoveCube(uid, x, y);
+                        MoveCube(uid, x, y);
 
                     List<int> temp2 = new List<int>(SplitCubeUids[PlayerUid].Keys);
                     foreach (int team in temp2)
@@ -745,6 +747,7 @@ namespace AgCubio
             // Set the new position, make sure it's within the world boundaries.
             Cubes[CubeUid].loc_x += (cube.left + xx < 0 || cube.right + yy > this.WORLD_WIDTH) ? 0 : xx;
             Cubes[CubeUid].loc_y += (cube.top + yy < 0 || cube.bottom + xx > this.WORLD_HEIGHT) ? 0 : yy;
+            AdjustPosition(CubeUid);
         }
 
 
@@ -809,6 +812,7 @@ namespace AgCubio
             // Set the new position
             Cubes[CubeUid].loc_x += (cube.left + x < 0 || cube.right + x > this.WORLD_WIDTH) ? 0 : x;
             Cubes[CubeUid].loc_y += (cube.top + y < 0 || cube.bottom + y > this.WORLD_HEIGHT) ? 0 : y;
+            AdjustPosition(CubeUid);
         }
 
 
@@ -864,8 +868,8 @@ namespace AgCubio
                 double yyy = yy;
 
                 // Get a starting position for the cube that isn't right in the center of the original cube and is in the direction that it needs to go.
-                xx = (xx < 0) ? Cubes[uid].left - (Cubes[uid].width + 1 / 2) : Cubes[uid].right + (Cubes[uid].width + 1 / 2);
-                yy = (yy < 0) ? Cubes[uid].top - (Cubes[uid].width + 1 / 2) : Cubes[uid].bottom + (Cubes[uid].width + 1 / 2);
+                xx = Cubes[uid].loc_x + (xx * Cubes[uid].width / 2);
+                yy = Cubes[uid].loc_y + (yy * Cubes[uid].width / 2);
 
                 Cube newCube = new Cube(xx, yy, GetUid(), false, Cubes[CubeUid].Name, mass / 2, Cubes[CubeUid].argb_color, CubeUid);
 
@@ -966,7 +970,24 @@ namespace AgCubio
 
             return new Cube(x + xDelta * xdir, y + yDelta * ydir, GetUid(), false, Cubes[CubeUid].Name, splitMass, Cubes[CubeUid].argb_color, teamID);
         }
+        class MilitaryVirusData
+        {
+            public double X
+            { get; set; }
 
+            public double Y
+            { get; set; }
+
+            public double Angle
+            { get; set; }
+
+            public MilitaryVirusData(double x, double y, double angle)
+            {
+                X = x;
+                Y = y;
+                Angle = angle;
+            }
+        }
 
         /// <summary>
         /// Stores directional and cooldown data for split cubes
