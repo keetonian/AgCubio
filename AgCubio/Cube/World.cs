@@ -471,7 +471,7 @@ namespace AgCubio
                             }
 
                             eatenPlayers.Add(id);
-                            destroyed.Append(JsonConvert.SerializeObject(prey) + "\n");
+                            destroyed.Append(JsonConvert.SerializeObject(Cubes[id]) + "\n");
                         }
                     }
                 }
@@ -507,12 +507,22 @@ namespace AgCubio
             foreach (int uid in SplitCubeUids[cubeUid].Keys)
             {
                 // At the first new uid, swap uid's and exit
-                if (uid != cubeUid)
+                if (uid != cubeUid && Cubes[uid].Mass != 0)
                 {
-                    int otherID = Cubes[cubeUid].uid = Cubes[uid].uid;
-                    Cubes[uid].uid = cubeUid;
-                    SplitCubeUids[cubeUid].Remove(otherID);
-                    return otherID;
+                    double x = Cubes[cubeUid].loc_x;
+                    double y = Cubes[cubeUid].loc_y;
+                    double mass = Cubes[cubeUid].Mass;
+
+                    Cubes[cubeUid].loc_y = Cubes[uid].loc_y;
+                    Cubes[cubeUid].loc_x = Cubes[uid].loc_x;
+                    Cubes[cubeUid].Mass = Cubes[uid].Mass;
+
+                    Cubes[uid].loc_x = x;
+                    Cubes[uid].loc_y = y;
+                    Cubes[uid].Mass = mass;
+
+                    SplitCubeUids[cubeUid].Remove(uid);
+                    return uid;
                 }
             }
 
@@ -557,7 +567,7 @@ namespace AgCubio
             double x = Rand.Next(50,this.WORLD_WIDTH - 50);
             double y = Rand.Next(50, this.WORLD_HEIGHT - 50);
             
-                Cube mVirus = new Cube(x, y, GetUid(), true, "", VIRUS_MASS, Color.Red.ToArgb(), 0);
+                Cube mVirus = new Cube(x, y, GetUid(), true, "", VIRUS_MASS, Color.Red.ToArgb(), Rand.Next(180));
                 Cubes.Add(mVirus.uid, mVirus);
             MilitaryViruses.Add(mVirus.uid, 0);
         }
@@ -649,20 +659,20 @@ namespace AgCubio
 
                 // Do a grade according to angle
                 //   goes in a clover shape
-                if (angle > 4 * Math.PI)
+                if (angle > 8 * Math.PI)
                     angle = 0;
 
                 MilitaryViruses[uid] = angle;
 
-                if (angle < 2 * Math.PI)
+                if (angle < 4 * Math.PI)
                 {
-                    Cubes[uid].loc_x += (20 * Math.Sin(angle * 2));//= x;
-                    Cubes[uid].loc_y += (70 * Math.Sin(angle));//= y;
+                    Cubes[uid].loc_x += (.5 * Math.Sin(angle * 2));//= x;
+                    Cubes[uid].loc_y += (2 * Math.Sin(angle));//= y;
                 }
                 else
                 {
-                    Cubes[uid].loc_x += (70 * Math.Sin(angle));
-                    Cubes[uid].loc_y += (20 * Math.Sin(angle * 2));
+                    Cubes[uid].loc_x += (2 * Math.Sin(angle));
+                    Cubes[uid].loc_y += (.5 * Math.Sin(angle * 2));
                 }
             }
         }
