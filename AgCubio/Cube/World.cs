@@ -538,13 +538,13 @@ namespace AgCubio
         {
             Cube player = Cubes[uid];
             if (player.left < 0)
-                player.loc_x -= player.left;
+                player.loc_x = (1 + player.width/2);
             else if (player.right > this.WORLD_WIDTH)
-                player.loc_x -= player.right - this.WORLD_WIDTH;
+                player.loc_x -= this.WORLD_WIDTH - (1 + player.width / 2);
             if (player.top < 0)
-                player.loc_y -= player.top;
+                player.loc_y = 0 - (1 + player.width / 2);
             else if (player.bottom > this.WORLD_HEIGHT)
-                player.loc_y -= player.bottom - this.WORLD_HEIGHT;
+                player.loc_y = this.WORLD_HEIGHT - (1 + player.width / 2);
         }
 
 
