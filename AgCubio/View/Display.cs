@@ -527,7 +527,7 @@ namespace AgCubio
                     {
                         if (cubes[i] == "") //Quick fix- sometimes gets a blank string. Needs to be fixed in server.
                             continue;
-                        Cube c = JsonConvert.DeserializeObject<Cube>(cubes[i]);
+                        Cube c = JsonConvert.DeserializeObject<Cube>(cubes[i]); //NOTE: SOMETIMES AFTER SEVERAL CONNECTIONS WE GET AN ERROR HERE: string starts with "{{" instead of "{"
                         World.Cubes[c.uid] = c;
 
                         // Keep track of split player cubes
