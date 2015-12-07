@@ -57,6 +57,7 @@ namespace AgCubio
             DataReceived = new Dictionary<int, Tuple<double, double>>();
 
             Network.Server_Awaiting_Client_Loop(new Network.Callback(SetUpClient));
+            Console.WriteLine("Server waiting client connection");
         }
 
 

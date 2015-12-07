@@ -210,8 +210,6 @@ namespace AgCubio
             Preserved_State_Object state = new Preserved_State_Object(server, callback);
 
             server.BeginAcceptSocket(new AsyncCallback(Accept_a_New_Client), state);
-
-            System.Diagnostics.Debug.WriteLine("Server Awaiting client");
         }
 
 
@@ -220,8 +218,6 @@ namespace AgCubio
         /// </summary>
         public static void Accept_a_New_Client(IAsyncResult ar)
         {
-            System.Diagnostics.Debug.WriteLine("Server Accept Client");
-
             Preserved_State_Object state = (Preserved_State_Object)ar.AsyncState;
             state.socket = state.server.EndAcceptSocket(ar);
 
