@@ -368,7 +368,7 @@ namespace AgCubio
 
 
         /// <summary>
-        /// Manages cubes colliding against each other
+        /// Manages cubes colliding against each other -- WAAAAAAAY TO COMPLICATED
         /// </summary>
         public string ManageCollisions()
         {
@@ -447,10 +447,10 @@ namespace AgCubio
                         }
 
                         // If a player has over 120% mass of another player, it can eat the other player
-                        else if (player.Mass / player2.Mass > 1.2 || player2.Mass / player.Mass > 1.2)
+                        else if (player.Mass / player2.Mass >= 1.2 || player2.Mass / player.Mass >= 1.2)
                         {
-                            Cube predator = (player.Mass / player2.Mass > 1.2) ? player  : player2;
-                            Cube prey     = (player.Mass / player2.Mass > 1.2) ? player2 : player;
+                            Cube predator = (player.Mass / player2.Mass >= 1.2) ? player  : player2;
+                            Cube prey     = (player.Mass / player2.Mass >= 1.2) ? player2 : player;
 
                             int id = prey.uid;
                             predator.Mass += prey.Mass;
@@ -471,7 +471,7 @@ namespace AgCubio
                             if (SplitCubeUids.ContainsKey(prey.Team_ID) && SplitCubeUids[prey.Team_ID].Count > 1)
                             {
                                 if (prey.uid == prey.Team_ID)
-                                    id = ReassignUid(prey.uid);
+                                    ReassignUid(prey.uid, ref id);
                                 else
                                     SplitCubeUids[prey.Team_ID].Remove(prey.uid);
                             }
@@ -495,6 +495,7 @@ namespace AgCubio
             {
                 Cubes.Remove(i);
                 Uids.Push(i);
+
                 if (MilitaryViruses.Remove(i))
                     GenerateMilitaryVirus();
             }
@@ -506,9 +507,8 @@ namespace AgCubio
         /// <summary>
         /// Reassigns the uid-bearing split cube (for when the original is eaten)
         /// </summary>
-        private int ReassignUid(int cubeUid)
+        private void ReassignUid(int cubeUid, ref int newUid)
         {
-            //TODO: MAKE THIS WORK
             // Iterate through split cubes
             foreach (int uid in SplitCubeUids[cubeUid].Keys)
             {
@@ -528,12 +528,10 @@ namespace AgCubio
                     Cubes[uid].Mass = mass;
 
                     SplitCubeUids[cubeUid].Remove(uid);
-                    return uid;
+                    newUid = uid;
+                    return;
                 }
             }
-
-            // Should never get here - there will always be multiple split cubes with unique uids when this method is called
-            return cubeUid;
         }
 
 
@@ -570,8 +568,8 @@ namespace AgCubio
         /// </summary>
         public void GenerateMilitaryVirus()
         {
-            double x = Rand.Next(50,this.WORLD_WIDTH - 50);
-            double y = Rand.Next(50, this.WORLD_HEIGHT - 50);
+            double x = Rand.Next(50, WORLD_WIDTH - 50);
+            double y = Rand.Next(50, WORLD_HEIGHT - 50);
 
             Cube mVirus = new Cube(x, y, GetUid(), true, "", VIRUS_MASS, Color.Red.ToArgb(), 0);
             Cubes.Add(mVirus.uid, mVirus);
@@ -639,16 +637,13 @@ namespace AgCubio
             else
             {
                 color = GetColor();
-                mass = (random > 960 && random < 990) ? FOOD_MASS * 2 : (random > 990) ? FOOD_MASS * 3 : FOOD_MASS; // 3% of food is double size, 1% of food is triple size
-                x = Rand.Next((int)FOOD_WIDTH, WORLD_WIDTH - (int)FOOD_WIDTH);
+                mass = (96 < random && random < 99) ? FOOD_MASS * 2 : ((random > 99) ? FOOD_MASS * 3 : FOOD_MASS); // 3% of food is double size, 1% of food is triple size
+                x = Rand.Next((int)FOOD_WIDTH, WORLD_WIDTH  - (int)FOOD_WIDTH);
                 y = Rand.Next((int)FOOD_WIDTH, WORLD_HEIGHT - (int)FOOD_WIDTH);
             }
 
             Cube foodOrVirus = new Cube(x, y, GetUid(), true, "", mass, color, 0);
             Food.Add(foodOrVirus);
-            random = Rand.Next(1000);
-            if (random < 2)
-                GenerateMilitaryVirus();
             return foodOrVirus;
         }
 
