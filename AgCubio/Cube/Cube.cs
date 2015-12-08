@@ -129,12 +129,32 @@ namespace AgCubio
 
 
         /// <summary>
-        /// Overrides hash code- gets the uid instead.
+        /// Overrides hash code - gets the uid instead.
         /// </summary>
-        /// <returns></returns>
         public override int GetHashCode()
         {
             return this.uid;
+        }
+
+
+        /// <summary>
+        /// Checks if this cube is overlapping the center of another given cube (parameter)
+        /// </summary>
+        public bool Collides(Cube other)
+        {
+            return (this.left < other.loc_x && other.loc_x < this.right) && (this.top < other.loc_y && other.loc_y < this.bottom);
+        }
+
+
+        /// <summary>
+        /// Checks if this cube is overlapping any part of another given cube (parameter)
+        /// </summary>
+        public bool Overlaps(Cube other)
+        {
+            return ((other.left < this.left   && this.left   < other.right )   // FIRST BLOCK: horizontal alignment - this cube's left or right
+                ||  (other.left < this.right  && this.right  < other.right ))  //   edge is between other's left and right edges
+                && ((other.top  < this.top    && this.top    < other.bottom)   // SECOND BLOCK: vertical alignment - this cube's top or bottom
+                ||  (other.top  < this.bottom && this.bottom < other.bottom)); //   edge is between other's top and bottom edges
         }
     }
 }

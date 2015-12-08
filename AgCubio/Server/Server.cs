@@ -17,7 +17,7 @@ namespace AgCubio
         /// <summary>
         /// Client connections
         /// </summary>
-        private HashSet<Socket> Sockets;
+        private List<Socket> Sockets;
 
         /// <summary>
         /// World object for storing and managing the game state
@@ -52,12 +52,12 @@ namespace AgCubio
         public Server()
         {
             World        = new World("..\\..\\..\\Project1/Resources/World_Params.xml");
-            Sockets      = new HashSet<Socket>();
+            Sockets      = new List<Socket>();
             Heartbeat    = new Timer(HeartBeatTick, null, 0, 1000 / World.HEARTBEATS_PER_SECOND);
             DataReceived = new Dictionary<int, Tuple<double, double>>();
 
             Network.Server_Awaiting_Client_Loop(new Network.Callback(SetUpClient));
-            Console.WriteLine("Server waiting client connection");
+            Console.WriteLine("Server awaiting client connection...");
         }
 
 
@@ -66,7 +66,7 @@ namespace AgCubio
         /// </summary>
         private void SetUpClient(Preserved_State_Object state)
         {
-            Console.WriteLine("User " + state.data + " has connected to the server");
+            Console.WriteLine("User " + state.data + " has connected to the server.");
 
             // Generate 2 random starting coords within our world, check if other players are there, then send if player won't get eaten immediately (helper method)
             double x, y;
@@ -106,6 +106,7 @@ namespace AgCubio
         {
             // Try to perform the complete move or split actions
             string[] actions = Regex.Split(state.data.ToString(), @"\n");
+
             for (int i = 0; i < actions.Length - 1; i++)
                 TryMoveOrSplit(actions[i], state);
 
@@ -133,6 +134,8 @@ namespace AgCubio
             double y = double.Parse(values[1].Value);
 
             // Handle moving or splitting
+            //   *NOTE: Cubes are not actually moved here, as that could lead to more or less movement per player in a given amount of time (based on connection speed)
+            //          - instead, movement direction is appended to a stringbuilder and dealt with all at the same time in the server's heartbeat tick
             if (str[1] == 'm')
                 lock (DataReceived) { DataReceived[state.CubeID] = new Tuple<double, double>(x, y); }
             else if (str[1] == 's')
@@ -152,31 +155,39 @@ namespace AgCubio
 
             lock (World)
             {
-                // Players get a little smaller each tick
+                // Players get a little smaller each tick, and military viruses move along their path
                 World.PlayerAttrition();
                 World.MilitaryVirusMove();
 
                 // Move all players according to last mouse position
                 lock (DataReceived)
                 {
-                    List<int> id = new List<int>(DataReceived.Keys);
-                    foreach (int i in id)
+                    // Uid's to be removed
+                    List<int> toBeRemoved = new List<int>();
+
+                    // Move all player cubes according to last mouse position
+                    foreach (int uid in DataReceived.Keys)
                     {
-                        if (!World.Cubes.ContainsKey(i))
+                        // If the cube has been removed from the world, mark it to be removed and skip moving
+                        if (!World.Cubes.ContainsKey(uid))
                         {
-                            DataReceived.Remove(i);
+                            toBeRemoved.Add(uid);
                             continue;
                         }
 
-                        World.Move(i, DataReceived[i].Item1, DataReceived[i].Item2); 
+                        World.Move(uid, DataReceived[uid].Item1, DataReceived[uid].Item2); 
                     }
+
+                    // Remove marked cubes
+                    foreach (int uid in toBeRemoved)
+                        DataReceived.Remove(uid);
                 }
 
                 // Check for collisions, eat some food
                 data.Append(World.ManageCollisions());
 
                 // Add food to the world if necessary and append it to the data stream
-                if (World.Food.Count < World.MAX_FOOD_COUNT)
+                for (int i = 0; i < World.FOOD_PER_HEARTBEAT && World.Food.Count < World.MAX_FOOD_COUNT; i++)
                     data.Append(JsonConvert.SerializeObject(World.GenerateFoodorVirus()) + "\n");
 
                 // Appends all of the player cube data - they should be constantly changing (mass, position, or both), therefore, we send them every time
@@ -186,23 +197,17 @@ namespace AgCubio
             // Send data to sockets
             lock (Sockets)
             {
-                List<Socket> disconnected = new List<Socket>();
-
-                foreach (Socket s in Sockets)
+                for (int i = Sockets.Count-1; i >= 0; i--)
                 {
-                    // Set disconnected sockets to be removed (don't send)
-                    if (!s.Connected)
+                    // Remove sockets that are no longer connected
+                    if (!Sockets[i].Connected)
                     {
-                        disconnected.Add(s);
+                        Sockets.RemoveAt(i);
                         continue;
                     }
 
-                    Network.Send(s, data.ToString());
+                    Network.Send(Sockets[i], data.ToString());
                 }
-
-                // Remove disconnected sockets
-                foreach (Socket s in disconnected)
-                    Sockets.Remove(s);
             }
         }
     }

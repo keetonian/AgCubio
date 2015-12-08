@@ -60,9 +60,19 @@ namespace AgCubio
         public readonly int VIRUS_PERCENT;
 
         /// <summary>
+        /// Maximum total military viruses in the world (integer 0-)
+        /// </summary>
+        public readonly int MAX_MILITARY_VIRUS_COUNT;
+
+        /// <summary>
         /// Maximum total food cubes in the world (integer 0-)
         /// </summary>
         public readonly int MAX_FOOD_COUNT;
+
+        /// <summary>
+        /// Maximum food to add to the world during each heartbeat tick (integer 0-)
+        /// </summary>
+        public readonly int FOOD_PER_HEARTBEAT;
 
         // ---------------------- PLAYER ATTRIBUTES ---------------------
 
@@ -242,6 +252,16 @@ namespace AgCubio
                                 int.TryParse(reader.Value, out this.MAX_FOOD_COUNT);
                                 break;
 
+                            case "max_military_virus_count":
+                                reader.Read();
+                                int.TryParse(reader.Value, out this.MAX_MILITARY_VIRUS_COUNT);
+                                break;
+
+                            case "food_per_heartbeat":
+                                reader.Read();
+                                int.TryParse(reader.Value, out this.FOOD_PER_HEARTBEAT);
+                                break;
+
                             case "min_split_mass":
                                 reader.Read();
                                 int.TryParse(reader.Value, out this.MIN_SPLIT_MASS);
@@ -282,18 +302,18 @@ namespace AgCubio
             }
 
             // Calculate remaining parameters
-            this.PLAYER_START_WIDTH = Math.Sqrt(this.PLAYER_START_MASS);
-            this.FOOD_WIDTH = Math.Sqrt(this.FOOD_MASS);
-            this.VIRUS_WIDTH = Math.Sqrt(this.VIRUS_MASS);
-            this.SPEED_SLOPE = (MIN_SPEED - MAX_SPEED) / (MIN_SPEED_MASS - PLAYER_START_MASS);
-            this.SPEED_CONSTANT = (MAX_SPEED - MIN_SPEED * (PLAYER_START_MASS / MIN_SPEED_MASS)) / (1 - PLAYER_START_MASS / MIN_SPEED_MASS);
+            PLAYER_START_WIDTH = Math.Sqrt(PLAYER_START_MASS);
+            FOOD_WIDTH         = Math.Sqrt(FOOD_MASS);
+            VIRUS_WIDTH        = Math.Sqrt(VIRUS_MASS);
+            SPEED_SLOPE        = (MIN_SPEED - MAX_SPEED) / (MIN_SPEED_MASS - PLAYER_START_MASS);
+            SPEED_CONSTANT     = (MAX_SPEED - MIN_SPEED * (PLAYER_START_MASS / MIN_SPEED_MASS)) / (1 - PLAYER_START_MASS / MIN_SPEED_MASS);
 
             // Generate starting food
-            while (this.Food.Count < this.MAX_FOOD_COUNT)
-                this.GenerateFoodorVirus();
+            while (Food.Count < MAX_FOOD_COUNT)
+                GenerateFoodorVirus();
 
-            // Make our military viruses
-            for (int i = 0; i < 4; i++)
+            // Generate military viruses
+            for (int i = 0; i < MAX_MILITARY_VIRUS_COUNT; i++)
                 GenerateMilitaryVirus();
             }
 
@@ -342,19 +362,8 @@ namespace AgCubio
         public void PlayerAttrition()
         {
             foreach (Cube c in Cubes.Values)
-                if ((c.Mass * (1 - ATTRITION_RATE)) > this.PLAYER_START_MASS)
-                    c.Mass *= (1 - this.ATTRITION_RATE);
-        }
-
-
-        /// <summary>
-        /// Collisions - checks if one cube's center is overlapped by another cube
-        ///   c1 is potential predator
-        ///   c2 is potential prey
-        /// </summary>
-        private bool Collide(Cube c1, Cube c2)
-        {
-            return ((c1.left < c2.loc_x && c2.loc_x < c1.right) && (c1.top < c2.loc_y && c2.loc_y < c1.bottom));
+                if ((c.Mass * (1 - ATTRITION_RATE)) > PLAYER_START_MASS)
+                    c.Mass *= (1 - ATTRITION_RATE);
         }
 
 
@@ -364,7 +373,7 @@ namespace AgCubio
         public string ManageCollisions()
         {
             StringBuilder destroyed = new StringBuilder();
-            List<int> eatenPlayers = new List<int>();
+            List<int> eatenPlayers  = new List<int>();
             List<Cube> eatenFood;
 
             // Get a data structure that can be used in a loop easily
@@ -384,7 +393,7 @@ namespace AgCubio
                 //   There has to be a faster way of doing this
                 foreach (Cube food in Food)
                 {
-                    if (Collide(player, food) && player.Mass > food.Mass && food.Mass != 0) // Added food.Mass != 0 check because there might sometime happen where two players hit the same food cube at the same time
+                    if (player.Collides(food) && player.Mass > food.Mass && food.Mass != 0) // Added food.Mass != 0 check because there might sometime happen where two players hit the same food cube at the same time
                     {
                         if (food.Mass == VIRUS_MASS)
                         {
@@ -415,7 +424,7 @@ namespace AgCubio
                         continue;
 
                     // Check if there will be a collision between player cubes
-                    if (Collide(player, player2) || Collide(player2, player))
+                    if (player.Collides(player2) || player2.Collides(player))
                     {
                         // Check if players are part of a split (same team)
                         if (player.Team_ID != 0 && player.Team_ID == player2.Team_ID)
@@ -702,11 +711,8 @@ namespace AgCubio
                         if (uid == team)
                             continue;
 
-                        if (SplitCubeUids[PlayerUid][team].Cooloff > 0)
-                            CheckOverlap(uid, Cubes[team]);
-                        else
-                            if(SplitCubeUids[PlayerUid][uid].Cooloff > 0)
-                                CheckOverlap(uid, Cubes[team]);
+                        if (SplitCubeUids[PlayerUid][uid].Cooloff > 0 || SplitCubeUids[PlayerUid][team].Cooloff > 0)
+                            CorrectOverlap(Cubes[uid], Cubes[team]);
                     }
                 }
             }
@@ -751,23 +757,15 @@ namespace AgCubio
         /// <summary>
         /// Helper method - checks for overlap between split cubes and cancels the directional movement that causes overlap
         /// </summary>
-        public void CheckOverlap(int movingUid, Cube teammate)
+        public void CorrectOverlap(Cube moving, Cube teammate)
         {
-            Cube moving = Cubes[movingUid];
-
-            // Check for overlap of cubes
-            if (
-                   ((teammate.left < moving.left   && moving.left   < teammate.right )  // FIRST BLOCK: horizontal alignment - moving's left or right
-                ||  (teammate.left < moving.right  && moving.right  < teammate.right )) //   edge is between teammate's left and right edges
-                && ((teammate.top  < moving.top    && moving.top    < teammate.bottom)  // SECOND BLOCK: vertical alignment - moving's top or bottom
-                ||  (teammate.top  < moving.bottom && moving.bottom < teammate.bottom)) //   edge is between teammate's top and bottom edges
-               )
+            if (moving.Overlaps(teammate))
             {
                 double relativeX = moving.loc_x - teammate.loc_x;
                 double relativeY = moving.loc_y - teammate.loc_y;
                 double relative  = Math.Abs(relativeX) - Math.Abs(relativeY);
 
-                // Reset moving cube's coordinates so cube edges touch
+                // Set moving cube's coordinates so slightly-overlapped cube edges touch instead
                 if (relative < 0)
                     moving.loc_y = (relativeY > 0) ? teammate.bottom + moving.width / 2 : teammate.top - moving.width / 2;
                 else if (relative > 0)
