@@ -349,15 +349,12 @@ namespace AgCubio
 
         /// <summary>
         /// Collisions - checks if one cube's center is overlapped by another cube
-        ///   c1 is the potential predator
-        ///   c2 is the potential prey
+        ///   c1 is potential predator
+        ///   c2 is potential prey
         /// </summary>
         private bool Collide(Cube c1, Cube c2)
         {
-            if (c2.loc_x > c1.left && c2.loc_x < c1.right && c2.loc_y > c1.top && c2.loc_y < c1.bottom)
-                return true;
-
-            return false;
+            return ((c1.left < c2.loc_x && c2.loc_x < c1.right) && (c1.top < c2.loc_y && c2.loc_y < c1.bottom));
         }
 
 
@@ -394,7 +391,7 @@ namespace AgCubio
                             if (player.food) // Military virus
                                 player.Mass += food.Mass;
                             else
-                                VirusSplit(player.uid, food.loc_x + 10, food.loc_y + 10);
+                                VirusSplit(player.uid, food.loc_x, food.loc_y);
                         }
                         else
                             player.Mass += food.Mass;
@@ -414,7 +411,7 @@ namespace AgCubio
                     Cube player2 = playerList[j];
 
                     // Check if player has already been consumed in this collisions check
-                    if (player.Mass == 0 || player2.Mass == 0)
+                    if (player2.Mass == 0)
                         continue;
 
                     // Check if there will be a collision between player cubes
@@ -455,7 +452,7 @@ namespace AgCubio
                                     predator.Mass += prey.Mass;
 
                                 // Otherwise predator splits
-                                VirusSplit(predator.uid, prey.loc_x + 10, prey.loc_y + 10);
+                                VirusSplit(predator.uid, prey.loc_x, prey.loc_y);
                             }
 
                             prey.Mass = 0;
@@ -612,7 +609,7 @@ namespace AgCubio
             if (random < VIRUS_PERCENT)
             {
                 color = Color.LightGreen.ToArgb();
-                mass = VIRUS_MASS;
+                mass  = VIRUS_MASS;
                 width = (int)VIRUS_WIDTH;
 
                 // Make sure viruses can't spawn on top of players
