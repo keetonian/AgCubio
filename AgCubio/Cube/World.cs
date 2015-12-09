@@ -488,116 +488,116 @@ namespace AgCubio
 
 
                 /*
-                // Using for loops to make the algorithm a little less costly - check each player cube only once against each other
-                for (int i = 0; i < playerList.Count; i++)
-                {
-                    Cube player = playerList[i];
+            // Using for loops to make the algorithm a little less costly - check each player cube only once against each other
+            for (int i = 0; i < playerList.Count; i++)
+            {
+                Cube player = playerList[i];
 
-                    if (player.Mass == 0)
+                if (player.Mass == 0)
+                    continue;
+
+                eatenFood = new List<Cube>();
+
+                // Check against all of the food cubes
+                //   There has to be a faster way of doing this
+                foreach (Cube food in Food) // THIS IS WHERE THE MOST TIME IS SPENT IN THIS CODE. THIS FOREACH LOOP- SPECIFICALLY THE NEXT IF STATEMENT FOR COLLISION CHECKING
+                {
+                    if (player.Collides(food) && player.Mass > food.Mass && food.Mass != 0) // Added food.Mass != 0 check because there might sometime happen where two players hit the same food cube at the same time
+                    {
+                        if (food.Mass == VIRUS_MASS)
+                        {
+                            if (player.food) // Military virus
+                                player.Mass += food.Mass;
+                            else
+                                VirusSplit(player.uid, food.loc_x, food.loc_y);
+                        }
+                        else
+                            player.Mass += food.Mass;
+
+                        // Adjust cube position if edges go out of bounds
+                        AdjustPosition(player.uid);
+
+                        food.Mass = 0;
+                        destroyed.Append(JsonConvert.SerializeObject(food) + "\n");
+                        eatenFood.Add(food);
+                    }
+                }
+
+                // Nested loop - check against all player cubes after the current cube
+                for (int j = i + 1; j < playerList.Count; j++)
+                {
+                    Cube player2 = playerList[j];
+
+                    // Check if player has already been consumed in this collisions check
+                    if (player2.Mass == 0 || player.Mass == 0)
                         continue;
 
-                    eatenFood = new List<Cube>();
-
-                    // Check against all of the food cubes
-                    //   There has to be a faster way of doing this
-                    foreach (Cube food in Food) // THIS IS WHERE THE MOST TIME IS SPENT IN THIS CODE. THIS FOREACH LOOP- SPECIFICALLY THE NEXT IF STATEMENT FOR COLLISION CHECKING
+                    // Check if there will be a collision between player cubes
+                    if (player.Collides(player2) || player2.Collides(player))
                     {
-                        if (player.Collides(food) && player.Mass > food.Mass && food.Mass != 0) // Added food.Mass != 0 check because there might sometime happen where two players hit the same food cube at the same time
+                        // Check if players are part of a split (same team)
+                        if (player.Team_ID != 0 && player.Team_ID == player2.Team_ID)
                         {
-                            if (food.Mass == VIRUS_MASS)
-                            {
-                                if (player.food) // Military virus
-                                    player.Mass += food.Mass;
-                                else
-                                    VirusSplit(player.uid, food.loc_x, food.loc_y);
-                            }
-                            else
-                                player.Mass += food.Mass;
-
-                            // Adjust cube position if edges go out of bounds
-                            AdjustPosition(player.uid);
-
-                            food.Mass = 0;
-                            destroyed.Append(JsonConvert.SerializeObject(food) + "\n");
-                            eatenFood.Add(food);
-                        }
-                    }
-
-                    // Nested loop - check against all player cubes after the current cube
-                    for (int j = i + 1; j < playerList.Count; j++)
-                    {
-                        Cube player2 = playerList[j];
-
-                        // Check if player has already been consumed in this collisions check
-                        if (player2.Mass == 0)
-                            continue;
-
-                        // Check if there will be a collision between player cubes
-                        if (player.Collides(player2) || player2.Collides(player))
-                        {
-                            // Check if players are part of a split (same team)
-                            if (player.Team_ID != 0 && player.Team_ID == player2.Team_ID)
-                            {
-                                // Merge into the cube that has the focus (Uid == Team_ID)
+                            // Merge into the cube that has the focus (Uid == Team_ID)
                                 Cube focus = (player.uid == player.Team_ID) ? player : player2;
-                                Cube other = (player.uid == player.Team_ID) ? player2 : player;
+                            Cube other = (player.uid == player.Team_ID) ? player2 : player;
 
-                                // But split cubes cannot merge unless their cooloff periods have expired
-                                if (SplitCubeUids[focus.Team_ID][focus.uid].Cooloff > 0 || SplitCubeUids[focus.Team_ID][other.uid].Cooloff > 0) //BUG! KEYNOTFOUND EXCPTION WHEN REMERGING- other.uid did not exist.
-                                    continue;
+                            // But split cubes cannot merge unless their cooloff periods have expired
+                            if (SplitCubeUids[focus.Team_ID][focus.uid].Cooloff > 0 || SplitCubeUids[focus.Team_ID][other.uid].Cooloff > 0) //BUG! (line 423 should fix= add another mass=0 check) KEYNOTFOUND EXCPTION WHEN REMERGING- other.uid did not exist.
+                                continue;
 
-                                focus.Mass += other.Mass;
-                                other.Mass = 0;
-                                AdjustPosition(focus.uid);
+                            focus.Mass += other.Mass;
+                            other.Mass = 0;
+                            AdjustPosition(focus.uid);
 
-                                eatenPlayers.Add(other.uid);
-                                SplitCubeUids[other.Team_ID].Remove(other.uid);
-                                destroyed.Append(JsonConvert.SerializeObject(other) + "\n");
-                            }
+                            eatenPlayers.Add(other.uid);
+                            SplitCubeUids[other.Team_ID].Remove(other.uid);
+                            destroyed.Append(JsonConvert.SerializeObject(other) + "\n");
+                        }
 
-                            // If a player has over 120% mass of another player, it can eat the other player
-                            else if (player.Mass / player2.Mass >= 1.2 || player2.Mass / player.Mass >= 1.2)
-                            {
+                        // If a player has over 120% mass of another player, it can eat the other player
+                        else if (player.Mass / player2.Mass >= 1.2 || player2.Mass / player.Mass >= 1.2)
+                        {
                                 Cube predator = (player.Mass / player2.Mass >= 1.2) ? player : player2;
                                 Cube prey = (player.Mass / player2.Mass >= 1.2) ? player2 : player;
 
-                                int id = prey.uid;
-                                predator.Mass += prey.Mass;
+                            int id = prey.uid;
+                            predator.Mass += prey.Mass;
 
                                 if (prey.food) // If prey is a military virus...
-                                {
-                                    if (predator.food) // ...and predator is a military virus, predator eats
-                                        predator.Mass += prey.Mass;
+                            {
+                                if (predator.food) // ...and predator is a military virus, predator eats
+                                    predator.Mass += prey.Mass;
 
-                                    // Otherwise predator splits
-                                    VirusSplit(predator.uid, prey.loc_x, prey.loc_y);
-                                }
-
-                                prey.Mass = 0;
-                                AdjustPosition(predator.uid);
-
-                                // If the eaten player cube is part of a split team, reassign the focus cube or remove the member's split id, as necessary
-                                if (SplitCubeUids.ContainsKey(prey.Team_ID) && SplitCubeUids[prey.Team_ID].Count > 1)
-                                {
-                                    if (prey.uid == prey.Team_ID)
-                                        ReassignUid(prey.uid, ref id);
-                                    else
-                                        SplitCubeUids[prey.Team_ID].Remove(prey.uid);
-                                }
-
-                                eatenPlayers.Add(id);
-                                destroyed.Append(JsonConvert.SerializeObject(Cubes[id]) + "\n");
+                                // Otherwise predator splits
+                                VirusSplit(predator.uid, prey.loc_x, prey.loc_y);
                             }
+
+                            prey.Mass = 0;
+                            AdjustPosition(predator.uid);
+
+                            // If the eaten player cube is part of a split team, reassign the focus cube or remove the member's split id, as necessary
+                            if (SplitCubeUids.ContainsKey(prey.Team_ID) && SplitCubeUids[prey.Team_ID].Count > 1)
+                            {
+                                if (prey.uid == prey.Team_ID)
+                                    ReassignUid(prey.uid, ref id);
+                                else
+                                    SplitCubeUids[prey.Team_ID].Remove(prey.uid);
+                            }
+
+                            eatenPlayers.Add(id);
+                            destroyed.Append(JsonConvert.SerializeObject(Cubes[id]) + "\n");
                         }
                     }
-
-                    // Remove eaten food
-                    foreach (Cube c in eatenFood)
-                    {
-                        Food.Remove(c);
-                        Uids.Push(c.uid);
-                    }
                 }
+
+                // Remove eaten food
+                foreach (Cube c in eatenFood)
+                {
+                    Food.Remove(c);
+                    Uids.Push(c.uid);
+                }
+            }
 
             // Remove eaten players
             foreach (int i in eatenPlayers)
@@ -839,7 +839,10 @@ namespace AgCubio
                     SplitCubeUids[PlayerUid][uid].Cooloff--;
 
                     if (SplitCubeUids[PlayerUid][uid].Countdown > 0)
+                    {
                         MoveSplitCube(uid, x, y);
+                        continue;
+                    }
                     else
                         MoveCube(uid, x, y);
 
@@ -849,7 +852,7 @@ namespace AgCubio
                         if (uid == team)
                             continue;
 
-                        if (SplitCubeUids[PlayerUid][uid].Cooloff > 0 || SplitCubeUids[PlayerUid][team].Cooloff > 0)
+                        if ((SplitCubeUids[PlayerUid][uid].Cooloff > 0 || SplitCubeUids[PlayerUid][team].Cooloff > 0) && SplitCubeUids[PlayerUid][team].Countdown <= 0)
                             CorrectOverlap(Cubes[uid], Cubes[team]);
                     }
                 }
@@ -866,6 +869,7 @@ namespace AgCubio
         {
             // Get the actual cube, decrement the countdown
             Cube cube = Cubes[CubeUid];
+            int countdown = SplitCubeUids[cube.Team_ID][cube.uid].Countdown;
             SplitCubeUids[cube.Team_ID][cube.uid].Countdown--;
 
             double cubeWidth = Cubes[CubeUid].width;
@@ -878,7 +882,7 @@ namespace AgCubio
             y -= cube.loc_y;  
             UnitVector(ref x, ref y);
                         
-            double speed = GetSpeed(CubeUid);
+            double speed = GetSpeed(CubeUid) * countdown/10;
 
             // Normalize and scale the vector:
             UnitVector(ref xx, ref yy);
@@ -1011,9 +1015,9 @@ namespace AgCubio
                 // Add the new cube to the world
                 Cubes.Add(newCube.uid, newCube);
 
-                SplitCubeUids[CubeUid][newCube.uid] = new SplitCubeData(xxx, yyy, MAX_SPLIT_DISTANCE);
+                SplitCubeUids[CubeUid][newCube.uid] = new SplitCubeData(xxx, yyy, (int)(MAX_SPLIT_DISTANCE * Math.Pow(10*mass,.05)));
             }
-        }
+            }
 
 
 
