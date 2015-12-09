@@ -418,7 +418,7 @@ namespace AgCubio
                             }
                             else // Player is a real player
                             {
-                                if (other.food) // Other is food or virus
+                                if (other.food && player.Mass > other.Mass) // Other is food or virus
                                 {
                                     if (other.Mass == VIRUS_MASS || MilitaryViruses.ContainsKey(other.uid)) // Other is a virus or military virus
                                     {
