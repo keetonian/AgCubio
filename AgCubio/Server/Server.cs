@@ -118,6 +118,7 @@ Content-Type: text/html; charset=UTF-8 \r\n
                 World.FindStartingCoords(out x, out y, false);
                 cube = new Cube(x, y, World.GetUid(), false, state.data.ToString(), World.PLAYER_START_MASS, World.GetColor(), 0);
                 World.Cubes[cube.uid] = cube;
+                World.CubesByCoords[(int)x, (int)y] = cube;
                 worldData = World.SerializeAllCubes();
             }
 
