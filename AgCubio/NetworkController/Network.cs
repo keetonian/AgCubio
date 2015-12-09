@@ -191,6 +191,13 @@ namespace AgCubio
 
         /// <summary>
         /// Helper method for Send - arranges for any leftover data to be sent
+        /// FROM WEBPAGE: THIS METHOD MAY NOT EVEN BE NEEDED- NEED TO UNDERSTAND THIS BETTER
+        /// 
+        /// If you do not close the socket the web browser will "assume" more data is coming and will not display your page!
+        /// If you close your socket before the send is complete, an error is likely to occur.
+        /// The correct solution is to modify your Networking::Send method to take an optional callback parameter representing a method to be called when the send is done.
+        /// If this optional parameter is not specified, then you will just use your default send callback.
+        /// When calling the modified Networking::Send function, you should use a lambda expression to specify a very simply function which reports success and closes the socket.
         /// </summary>
         public static void QueryCallback(IAsyncResult state_in_an_ar_object)
         {
@@ -200,7 +207,7 @@ namespace AgCubio
             {
                 int bytesSent = state.Item1.EndSend(state_in_an_ar_object);
 
-                if (bytesSent == state.Item2.Length)
+                if (bytesSent == state.Item2.Length) // if everything was sent, then close the socket
                 {
                     state.Item1.Shutdown(SocketShutdown.Both);
                     state.Item1.Close();

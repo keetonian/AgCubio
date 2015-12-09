@@ -69,17 +69,33 @@ namespace AgCubio
 
         private void HighScores(Preserved_State_Object state)
         {
-            string response = @"HTTP/1.1 200 OK \r\n
-                                Connection: close \r\n
-                                Content-Type: text/html; charset=UTF-8 \r\n
-                                \r\n
+            StringBuilder a = new StringBuilder();
+            string response =
+@"HTTP/1.1 200 OK \r\n
+Connection: close \r\n
+Content-Type: text/html; charset=UTF-8 \r\n
+\r\n
 <html>
-<head> </head>
+<head> Welcome to AgCubio score reporting</head>
 <body>
 <h1> Hello! </h1>
+
+<div align = ""center"">
+<h1><u> Daniel Avery </u></h1>
+<h4> Basic info:</h4>
+<ol align = ""center"">
+<li align = ""center""> Major: Computer Engineering</li>
+<li align = ""center""> Year: Sophomore </li>
+<li align = ""center""> Loves to play around with AgCubio </li>
+</ol>
+
+<a href = ""http://google.com""> google </a>
+                                     
+<p></p>
+</div>
 </body>
-</html>
-                                ";
+</html>";
+
             Network.Send(state.socket, response, true);
         }
 
