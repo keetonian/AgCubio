@@ -5,7 +5,7 @@
   <max_split_distance>15</max_split_distance>
   <max_speed>1</max_speed>
   <min_speed>0.4</min_speed>
-  <attrition_rate>0.0001</attrition_rate>
+  <attrition_rate>0.0003</attrition_rate>
   <food_mass>1</food_mass>
   <player_start_mass>10</player_start_mass>
   <max_food_count>5000</max_food_count>
