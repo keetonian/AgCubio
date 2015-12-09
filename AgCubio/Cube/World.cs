@@ -624,7 +624,9 @@ namespace AgCubio
             destroyed.Append(JsonConvert.SerializeObject(cube) + "\n");
             Food.Remove(cube);
             Cubes.Remove(cube.uid);
-            MilitaryViruses.Remove(cube.uid);
+
+            if (MilitaryViruses.Remove(cube.uid))
+                GenerateMilitaryVirus();
 
             if (SplitCubeUids.ContainsKey(cube.Team_ID))
             {
