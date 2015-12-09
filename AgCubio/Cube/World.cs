@@ -391,7 +391,7 @@ namespace AgCubio
 
                 // Check against all of the food cubes
                 //   There has to be a faster way of doing this
-                foreach (Cube food in Food)
+                foreach (Cube food in Food) // THIS IS WHERE THE MOST TIME IS SPENT IN THIS CODE. THIS FOREACH LOOP- SPECIFICALLY THE NEXT IF STATEMENT FOR COLLISION CHECKING
                 {
                     if (player.Collides(food) && player.Mass > food.Mass && food.Mass != 0) // Added food.Mass != 0 check because there might sometime happen where two players hit the same food cube at the same time
                     {
@@ -434,7 +434,7 @@ namespace AgCubio
                             Cube other = (player.uid == player.Team_ID) ? player2 : player;
 
                             // But split cubes cannot merge unless their cooloff periods have expired
-                            if (SplitCubeUids[focus.Team_ID][focus.uid].Cooloff > 0 || SplitCubeUids[focus.Team_ID][other.uid].Cooloff > 0)
+                            if (SplitCubeUids[focus.Team_ID][focus.uid].Cooloff > 0 || SplitCubeUids[focus.Team_ID][other.uid].Cooloff > 0) //BUG! KEYNOTFOUND EXCPTION WHEN REMERGING- other.uid did not exist.
                                 continue;
 
                             focus.Mass += other.Mass;
