@@ -420,7 +420,7 @@ namespace AgCubio
                     Cube player2 = playerList[j];
 
                     // Check if player has already been consumed in this collisions check
-                    if (player2.Mass == 0)
+                    if (player2.Mass == 0 || player.Mass == 0)
                         continue;
 
                     // Check if there will be a collision between player cubes
@@ -434,7 +434,7 @@ namespace AgCubio
                             Cube other = (player.uid == player.Team_ID) ? player2 : player;
 
                             // But split cubes cannot merge unless their cooloff periods have expired
-                            if (SplitCubeUids[focus.Team_ID][focus.uid].Cooloff > 0 || SplitCubeUids[focus.Team_ID][other.uid].Cooloff > 0) //BUG! KEYNOTFOUND EXCPTION WHEN REMERGING- other.uid did not exist.
+                            if (SplitCubeUids[focus.Team_ID][focus.uid].Cooloff > 0 || SplitCubeUids[focus.Team_ID][other.uid].Cooloff > 0) //BUG! (line 423 should fix= add another mass=0 check) KEYNOTFOUND EXCPTION WHEN REMERGING- other.uid did not exist.
                                 continue;
 
                             focus.Mass += other.Mass;
@@ -730,6 +730,7 @@ namespace AgCubio
         {
             // Get the actual cube, decrement the countdown
             Cube cube = Cubes[CubeUid];
+            int countdown = SplitCubeUids[cube.Team_ID][cube.uid].Countdown;
             SplitCubeUids[cube.Team_ID][cube.uid].Countdown--;
 
             double cubeWidth = Cubes[CubeUid].width;
@@ -742,7 +743,7 @@ namespace AgCubio
             y -= cube.loc_y;  
             UnitVector(ref x, ref y);
                         
-            double speed = GetSpeed(CubeUid);
+            double speed = GetSpeed(CubeUid) * countdown/10;
 
             // Normalize and scale the vector:
             UnitVector(ref xx, ref yy);
@@ -873,16 +874,16 @@ namespace AgCubio
                 // Add the new cube to the world
                 Cubes.Add(newCube.uid, newCube);
 
-                SplitCubeUids[CubeUid][newCube.uid] = new SplitCubeData(xxx, yyy, MAX_SPLIT_DISTANCE);
+                SplitCubeUids[CubeUid][newCube.uid] = new SplitCubeData(xxx, yyy, (int)(MAX_SPLIT_DISTANCE * Math.Pow(10*mass,.05)));
             }
-            }
+        }
 
 
 
         /// <summary>
         /// Manages splitting when hit a virus
         /// </summary>
-        public void VirusSplit(int CubeUid, double x, double y)
+        public void VirusSplit(int CubeUid, double x, double y) //BUG! SOMETIMES LOSES TRACK OF A CUBE
         {
             Cube cube = Cubes[CubeUid];
 
