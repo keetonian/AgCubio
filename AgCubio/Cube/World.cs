@@ -928,7 +928,7 @@ namespace AgCubio
                 // Add the new cube in to the world and the split set, and adjust its position
                 Cubes.Add(newCube.uid, newCube);
                 SplitCubeUids[teamID][newCube.uid] = new SplitCubeData(xx, yy, MAX_SPLIT_DISTANCE);
-                AdjustPosition(newCube.uid);
+                //AdjustPosition(newCube.uid);
             }
 
             // Alter the original cube to be a split cube now
@@ -936,7 +936,7 @@ namespace AgCubio
             cube.Mass  = replacement.Mass;
             cube.loc_x = replacement.loc_x;
             cube.loc_y = replacement.loc_y;
-            AdjustPosition(cube.uid);
+            //AdjustPosition(cube.uid);
         }
 
 

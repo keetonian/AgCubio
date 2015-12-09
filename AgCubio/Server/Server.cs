@@ -56,9 +56,33 @@ namespace AgCubio
             Heartbeat    = new Timer(HeartBeatTick, null, 0, 1000 / World.HEARTBEATS_PER_SECOND);
             DataReceived = new Dictionary<int, Tuple<double, double>>();
 
-            Network.Server_Awaiting_Client_Loop(new Network.Callback(SetUpClient));
+            // Set up game server
+            Network.Server_Awaiting_Client_Loop(new Network.Callback(SetUpClient),11000);
+
+            // Set up high scores server
+            Network.Server_Awaiting_Client_Loop(new Network.Callback(HighScores), 11100);
+
+            // Shows that the server is ready
             Console.WriteLine("Server awaiting client connection...");
         }
+
+
+        private void HighScores(Preserved_State_Object state)
+        {
+            string response = @"HTTP/1.1 200 OK \r\n
+                                Connection: close \r\n
+                                Content-Type: text/html; charset=UTF-8 \r\n
+                                \r\n
+<html>
+<head> </head>
+<body>
+<h1> Hello! </h1>
+</body>
+</html>
+                                ";
+            Network.Send(state.socket, response, true);
+        }
+
 
 
         /// <summary>
