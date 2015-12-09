@@ -700,7 +700,10 @@ namespace AgCubio
                     SplitCubeUids[PlayerUid][uid].Cooloff--;
 
                     if (SplitCubeUids[PlayerUid][uid].Countdown > 0)
+                    {
                         MoveSplitCube(uid, x, y);
+                        continue;
+                    }
                     else
                         MoveCube(uid, x, y);
 
@@ -710,7 +713,7 @@ namespace AgCubio
                         if (uid == team)
                             continue;
 
-                        if (SplitCubeUids[PlayerUid][uid].Cooloff > 0 || SplitCubeUids[PlayerUid][team].Cooloff > 0)
+                        if ((SplitCubeUids[PlayerUid][uid].Cooloff > 0 || SplitCubeUids[PlayerUid][team].Cooloff > 0) && SplitCubeUids[PlayerUid][team].Countdown <= 0)
                             CorrectOverlap(Cubes[uid], Cubes[team]);
                     }
                 }
