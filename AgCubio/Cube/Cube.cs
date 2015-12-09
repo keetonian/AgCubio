@@ -144,7 +144,7 @@ namespace AgCubio
         /// </summary>
         public bool Collides(Cube other)
         {
-            return (this.left < other.loc_x && other.loc_x < this.right) && (this.top < other.loc_y && other.loc_y < this.bottom);
+            return (this.left <= other.loc_x && other.loc_x <= this.right) && (this.top <= other.loc_y && other.loc_y <= this.bottom);
         }
 
 
