@@ -157,7 +157,7 @@ namespace AgCubio
             {
                 // Players get a little smaller each tick, and military viruses move along their path
                 World.PlayerAttrition();
-                World.MilitaryVirusMove();
+                World.MoveMilitaryVirus();
 
                 // Move all players according to last mouse position
                 lock (DataReceived)

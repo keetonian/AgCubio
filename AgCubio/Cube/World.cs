@@ -589,15 +589,16 @@ namespace AgCubio
         /// </summary>
         public void FindStartingCoords(out double x, out double y, bool virus)
         {
+            // Set width based on whether the cube is a virus or player
             double width = virus ? VIRUS_WIDTH : PLAYER_START_WIDTH;
 
             // Assign random coordinates
             x = Rand.Next((int)width, WORLD_WIDTH - (int)width);
             y = Rand.Next((int)width, WORLD_HEIGHT - (int)width);
 
-            // Retry if coordinates are contained by any other player cube
+            // Retry if new cube would be overlapped by another cube
             foreach (Cube player in Cubes.Values)
-                if ((x > player.left && x < player.right) && (y < player.bottom && y > player.top))
+                if (player.Overlaps(new Cube(x, y, width*width)))
                     FindStartingCoords(out x, out y, virus);
         }
 
@@ -657,11 +658,9 @@ namespace AgCubio
         /// <summary>
         /// Moves the military viruses in a four-leaf clover-shaped patrol
         /// </summary>
-        public void MilitaryVirusMove()
+        public void MoveMilitaryVirus()
         {
-            List<int> mUids = new List<int>(MilitaryViruses.Keys);
-
-            foreach (int uid in mUids)
+            foreach (int uid in new List<int>(MilitaryViruses.Keys))
             {
                 double angle = MilitaryViruses[uid].Angle;
                 angle += ((Math.PI) / 180); 
@@ -695,8 +694,7 @@ namespace AgCubio
             // Check if there are split cubes for the player
             if (SplitCubeUids.ContainsKey(PlayerUid) && SplitCubeUids[PlayerUid].Count > 1)
             {
-                List<int> temp = new List<int>(SplitCubeUids[PlayerUid].Keys);
-                foreach (int uid in temp)
+                foreach (int uid in new List<int>(SplitCubeUids[PlayerUid].Keys))
                 {
                     // Decrement the split cooloff period
                     SplitCubeUids[PlayerUid][uid].Cooloff--;

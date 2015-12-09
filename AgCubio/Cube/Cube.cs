@@ -129,6 +129,17 @@ namespace AgCubio
 
 
         /// <summary>
+        /// Constructs a simple Cube (only used for comparison purposes when finding start coords)
+        /// </summary>
+        public Cube(double x, double y, double mass)
+        {
+            loc_x = x;
+            loc_y = y;
+            Mass = mass;
+        }
+
+
+        /// <summary>
         /// Checks if this cube is overlapping the center of another given cube (parameter)
         /// </summary>
         public bool Collides(Cube other)

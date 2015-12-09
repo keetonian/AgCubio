@@ -162,7 +162,7 @@ namespace AgCubio
 
                 //Disconnection: proceed with this method call.
                 MessageBox.Show("You've been disconnected.");
-                ShowMainScreen();
+                EndGame();
 
                 return;
             }
@@ -309,6 +309,19 @@ namespace AgCubio
             // Stop the game timer
             FPStimer.Stop();
 
+            // Reset the world
+            lock (World)
+                World = new World();
+
+            // Close the socket, not being used until player signs in again.
+            socket.Close();
+
+            // Empty the CubeData stringbuilder of any potential incomplete data
+            CubeData = new StringBuilder();
+
+            // Prevent further painting (would be bad when there is no socket connection)
+            this.Paint -= this.Display_Paint;
+
             // Show endgame statistics
 
             // Exit button
@@ -334,19 +347,6 @@ namespace AgCubio
         /// </summary>
         private void ShowMainScreen()
         {
-            // Reset the world
-            lock (World)
-                World = new World();
-
-            // Get rid of the network thread so it isn't updating while no work is being done
-            //NetworkThread.Abort();
-
-            // Close the socket, not being used until player signs in again.
-            socket.Close();
-
-            // Prevent further painting (would be bad when there is no socket connection)
-            this.Paint -= this.Display_Paint;
-
             // Show the original items
 
             // Player name
