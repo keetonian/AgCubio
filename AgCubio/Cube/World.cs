@@ -132,7 +132,7 @@ namespace AgCubio
         /// </summary>
         public readonly int MAX_SPLIT_COUNT;
 
-        //We feel we don't need this- we feel that overlapping the center of another cube is good enough for now
+        // We feel we don't need this - instead, overlapping the center of another cube is good enough for now
         /*/// <summary>
         /// Distance between cubes before a larger eats a smaller
         /// </summary>
@@ -153,9 +153,9 @@ namespace AgCubio
 
         /// <summary>
         /// (Server): Dictionary for tracking split cubes
-        /// Dictionary1: Team id, Dictionary2
-        /// Dictionary2: Cube id, Tuple
-        /// Tuple: Location where split cube will be going (add an inertia to it)
+        ///   Dictionary1: Team id, Dictionary2
+        ///   Dictionary2: Cube id, Tuple
+        ///   Tuple: Location where split cube will be going (add an inertia to it)
         /// </summary>
         private Dictionary<int, Dictionary<int, SplitCubeData>> SplitCubeUids;
 
@@ -505,30 +505,35 @@ namespace AgCubio
 
 
         /// <summary>
-        /// Reassigns the uid-bearing split cube (for when the original is eaten)
+        /// Reassigns the uid-bearing split cube (for when the original is going to be eaten)
         /// </summary>
-        private void ReassignUid(int cubeUid, ref int newUid)
+        private void ReassignUid(int teamID, ref int standInUid)
         {
+            Cube original = Cubes[teamID];
+
             // Iterate through split cubes
-            foreach (int uid in SplitCubeUids[cubeUid].Keys)
+            foreach (int uid in SplitCubeUids[teamID].Keys)
             {
-                // At the first new uid, swap uid's and exit
-                if (uid != cubeUid && Cubes[uid].Mass != 0)
+                // At the first new uid, swap important cube info so that another cube gets eaten in the original's place
+                if (uid != teamID && Cubes[uid].Mass != 0)
                 {
-                    double x = Cubes[cubeUid].loc_x;
-                    double y = Cubes[cubeUid].loc_y;
-                    double mass = Cubes[cubeUid].Mass;
+                    Cube standIn = Cubes[uid];
 
-                    Cubes[cubeUid].loc_y = Cubes[uid].loc_y;
-                    Cubes[cubeUid].loc_x = Cubes[uid].loc_x;
-                    Cubes[cubeUid].Mass = Cubes[uid].Mass;
+                    double x = original.loc_x;
+                    double y = original.loc_y;
+                    double mass = original.Mass;
 
-                    Cubes[uid].loc_x = x;
-                    Cubes[uid].loc_y = y;
-                    Cubes[uid].Mass = mass;
+                    original.loc_y = standIn.loc_y;
+                    original.loc_x = standIn.loc_x;
+                    original.Mass = standIn.Mass;
 
-                    SplitCubeUids[cubeUid].Remove(uid);
-                    newUid = uid;
+                    standIn.loc_x = x;
+                    standIn.loc_y = y;
+                    standIn.Mass = mass;
+
+                    // Remove the stand-in's uid from the team
+                    SplitCubeUids[teamID].Remove(uid);
+                    standInUid = uid;
                     return;
                 }
             }
@@ -536,11 +541,12 @@ namespace AgCubio
 
 
         /// <summary>
-        /// Makes sure the player cannot leave the world
+        /// Adjust coordinates so that a player cannot leave the world
         /// </summary>
         private void AdjustPosition(int uid)
         {
             Cube player = Cubes[uid];
+
             if (player.left <= 0)
                 player.loc_x = (1 + player.width/2);
             else if (player.right >= this.WORLD_WIDTH)
@@ -568,8 +574,8 @@ namespace AgCubio
         /// </summary>
         public void GenerateMilitaryVirus()
         {
-            double x = Rand.Next(50, WORLD_WIDTH - 50);
-            double y = Rand.Next(50, WORLD_HEIGHT - 50);
+            double x = Rand.Next((int)(WORLD_WIDTH*.05), (int)(WORLD_WIDTH - WORLD_WIDTH*.05));
+            double y = Rand.Next((int)(WORLD_HEIGHT*.05), (int)(WORLD_HEIGHT - WORLD_HEIGHT*.05));
 
             Cube mVirus = new Cube(x, y, GetUid(), true, "", VIRUS_MASS, Color.Red.ToArgb(), 0);
             Cubes.Add(mVirus.uid, mVirus);
@@ -653,8 +659,9 @@ namespace AgCubio
         /// </summary>
         public void MilitaryVirusMove()
         {
-            List<int> keys = new List<int>(MilitaryViruses.Keys);
-            foreach (int uid in keys)
+            List<int> mUids = new List<int>(MilitaryViruses.Keys);
+
+            foreach (int uid in mUids)
             {
                 double angle = MilitaryViruses[uid].Angle;
                 angle += ((Math.PI) / 180); 
@@ -668,15 +675,14 @@ namespace AgCubio
 
                 if (angle < 2 * Math.PI)
                 {
-                    Cubes[uid].loc_x = MilitaryViruses[uid].X + (20 * Math.Sin(angle * 2));//= x;
-                    Cubes[uid].loc_y = MilitaryViruses[uid].Y + (70 * Math.Sin(angle));//= y;
+                    Cubes[uid].loc_x = MilitaryViruses[uid].X + (WORLD_WIDTH*.02 * Math.Sin(angle * 2));
+                    Cubes[uid].loc_y = MilitaryViruses[uid].Y + (WORLD_HEIGHT*.07 * Math.Sin(angle));
                 }
                 else
                 {
-                    Cubes[uid].loc_x = MilitaryViruses[uid].X + (70 * Math.Sin(angle));
-                    Cubes[uid].loc_y = MilitaryViruses[uid].Y + (20 * Math.Sin(angle * 2));
+                    Cubes[uid].loc_x = MilitaryViruses[uid].X + (WORLD_WIDTH*.07 * Math.Sin(angle));
+                    Cubes[uid].loc_y = MilitaryViruses[uid].Y + (WORLD_HEIGHT*.02 * Math.Sin(angle * 2));
                 }
-                AdjustPosition(uid);
             }
         }
 
