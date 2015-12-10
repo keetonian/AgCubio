@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using Newtonsoft.Json;
 using System.Text.RegularExpressions;
+using System.Diagnostics;
 
 namespace AgCubio
 {
@@ -15,9 +16,9 @@ namespace AgCubio
     public class Server
     {
         /// <summary>
-        /// Client connections
+        /// Contains our socket connections and stat trackers for each connection
         /// </summary>
-        private List<Socket> Sockets;
+        private Dictionary<Socket, ScoreInformation> Sockets;
 
         /// <summary>
         /// World object for storing and managing the game state
@@ -52,13 +53,61 @@ namespace AgCubio
         public Server()
         {
             World        = new World("..\\..\\..\\Project1/Resources/World_Params.xml");
-            Sockets      = new List<Socket>();
+            Sockets      = new Dictionary<Socket, ScoreInformation>();
             Heartbeat    = new Timer(HeartBeatTick, null, 0, 1000 / World.HEARTBEATS_PER_SECOND);
             DataReceived = new Dictionary<int, Tuple<double, double>>();
 
-            Network.Server_Awaiting_Client_Loop(new Network.Callback(SetUpClient));
+            // Set up game server
+            Network.Server_Awaiting_Client_Loop(new Network.Callback(SetUpClient), 11000);
+
+            // Set up web server
+            Network.Server_Awaiting_Client_Loop(new Network.Callback(HighScores), 11100);
+
             Console.WriteLine("Server awaiting client connection...");
         }
+
+
+        private void HighScores(Preserved_State_Object state)
+        {
+            string query = Regex.Split(state.data.ToString(), "\n")[0];
+            Console.WriteLine(query);
+            string response =
+@"HTTP/1.1 200 OK \r\n
+Connection: close \r\n
+Content-Type: text/html; charset=UTF-8 \r\n
+\r\n
+
+<!DOCTYPE html>
+
+<html lang=""en"" mlns=""http://www.w3.org/1999/xhtml"">
+    <head>
+        <meta charset=""utf-8""/>
+        <title>AgCubio High Scores</title>
+    </head>
+    <body>
+        <h1> Hello! </h1>
+
+        <div align = ""center"">
+            <h1><u> Daniel Avery </u></h1>
+            <h4> Basic info:</h4>
+            <ol align = ""center"">
+            <li align = ""center""> Major: Computer Engineering</li>
+            <li align = ""center""> Year: Sophomore </li>
+            <li align = ""center""> Loves to play around with AgCubio </li>
+            </ol>
+
+            <a href = ""http://google.com""> google </a>
+                                     
+            <p></p>
+        </div>
+    </body>
+</html>";
+
+            Network.Send(state.socket, response, true);
+        }
+
+
+
 
 
         /// <summary>
@@ -79,6 +128,8 @@ namespace AgCubio
                 cube = new Cube(x, y, World.GetUid(), false, state.data.ToString(), World.PLAYER_START_MASS, World.GetColor(), 0);
                 World.Cubes[cube.uid] = cube;
                 worldData = World.SerializeAllCubes();
+
+                World.DatabaseStats.Add(cube.uid, new World.StatTracker());
             }
 
             state.CubeID = cube.uid;
@@ -91,7 +142,7 @@ namespace AgCubio
 
             lock (Sockets)
             {
-                Sockets.Add(state.socket);
+                Sockets.Add(state.socket, new ScoreInformation(cube.uid));
             }
 
             // Ask for more data from client
@@ -164,7 +215,7 @@ namespace AgCubio
                 {
                     // Uid's to be removed
                     List<int> toBeRemoved = new List<int>();
-
+                    List<double> masses = new List<double>();
                     // Move all player cubes according to last mouse position
                     foreach (int uid in DataReceived.Keys)
                     {
@@ -174,6 +225,8 @@ namespace AgCubio
                             toBeRemoved.Add(uid);
                             continue;
                         }
+
+                        masses.Add(World.DatabaseStats[uid].MaxMass);
 
                         World.Move(uid, DataReceived[uid].Item1, DataReceived[uid].Item2); 
                     }
@@ -197,17 +250,67 @@ namespace AgCubio
             // Send data to sockets
             lock (Sockets)
             {
-                for (int i = Sockets.Count-1; i >= 0; i--)
+                List<Socket> disconnected = new List<Socket>();
+                foreach(Socket s in Sockets.Keys)
                 {
                     // Remove sockets that are no longer connected
-                    if (!Sockets[i].Connected)
+                    if (!s.Connected)
                     {
-                        Sockets.RemoveAt(i);
+                        disconnected.Add(s);
                         continue;
                     }
 
-                    Network.Send(Sockets[i], data.ToString());
+                    Network.Send(s, data.ToString());
                 }
+                foreach(Socket s in disconnected)
+                {
+                    // Add data to database
+                    TimeSpan playtime = Sockets[s].Playtime.Elapsed;
+                    World.StatTracker stats;
+                    lock (World) { stats = World.DatabaseStats[Sockets[s].Uid]; }
+
+                    Console.WriteLine("{0:hh\\:mm\\:ss}", playtime); //This is the playtime
+                    Console.WriteLine("Death Time: " + DateTime.Now);
+                    Console.WriteLine("Cubes consumed: " + stats.CubesConsumed);
+                    Console.WriteLine("Maximum mass achieved: " + stats.MaxMass);
+                    Console.WriteLine("Players that have been tasted:\n");
+                    foreach (string name in stats.PlayersEaten)
+                        Console.WriteLine(name);
+
+                    // highest rank?
+
+                    // Remove this player
+                    lock(World) { World.DatabaseStats.Remove(Sockets[s].Uid); }
+                    Sockets.Remove(s);
+                }
+            }
+        }
+
+        class ScoreInformation
+        {
+            /*
+            ◦The length of time a player was alive.
+◦The maximum mass the player achieved.
+◦The "highest rank" the player achieved (sort all players by mass at each update of the game). Only keep track of the top 5 players. Failure to rank in the top 5 should result in an "empty" rank being recorded. As you know, the way to encode "empty" information in a DB is to set a representational invariant stating that no data means the player did not achieve a top 5 ranking.
+◦The name of each player that the player ate.
+◦The number of cubes (food and other players) that a player ate.
+◦The time of death.
+
+    */
+            public int Uid;
+            public Stopwatch Playtime;
+            public double MaxMass; // Stick all cubes into the database, do a join or some sort of thing
+            public int HighestRank; // Can also do in the database, methinks
+            public List<string> PlayersEaten;
+            public int CubesEaten;
+
+            //Save all of these things when a player dies
+
+            public ScoreInformation(int uid)
+            {
+                Uid = uid;
+                Playtime = new Stopwatch();
+                Playtime.Start();
             }
         }
     }

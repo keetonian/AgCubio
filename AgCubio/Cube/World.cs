@@ -181,6 +181,10 @@ namespace AgCubio
         /// </summary>
         private Dictionary<int, MilitaryVirusData> MilitaryViruses;
 
+        // ------------------- DATABASE STAT TRACKER --------------------
+
+        public Dictionary<int, StatTracker> DatabaseStats;
+
         // --------------------------------------------------------------
 
 
@@ -197,6 +201,8 @@ namespace AgCubio
             Uids = new Stack<int>();
             Uid = 1; // Start at 1 so that no cube has a uid of 0
             MilitaryViruses = new Dictionary<int, MilitaryVirusData>();
+
+            DatabaseStats = new Dictionary<int, StatTracker>();
 
             // Read parameters from xml
             using (XmlReader reader = XmlReader.Create(filename))
@@ -378,7 +384,7 @@ namespace AgCubio
 
             // Get a data structure that can be used in a loop easily
             List<Cube> playerList = new List<Cube>(Cubes.Values);
-
+            
             // Using for loops to make the algorithm a little less costly - check each player cube only once against each other
             for (int i = 0; i < playerList.Count; i++)
             {
@@ -404,6 +410,13 @@ namespace AgCubio
                         }
                         else
                             player.Mass += food.Mass;
+
+                        // Counter for cubes consumed
+                        if (!player.food)
+                        {
+                            int id = (player.Team_ID != 0) ? player.Team_ID : player.uid;
+                            DatabaseStats[id].CubesConsumed++;
+                        }
 
                         // Adjust cube position if edges go out of bounds
                         AdjustPosition(player.uid);
@@ -460,8 +473,8 @@ namespace AgCubio
                                 if (predator.food) // ...and predator is a military virus, predator eats
                                     predator.Mass += prey.Mass;
 
-                                // Otherwise predator splits
-                                VirusSplit(predator.uid, prey.loc_x, prey.loc_y);
+                                else// Otherwise predator splits
+                                    VirusSplit(predator.uid, prey.loc_x, prey.loc_y);
                             }
 
                             prey.Mass = 0;
@@ -474,6 +487,16 @@ namespace AgCubio
                                     ReassignUid(prey.uid, ref id);
                                 else
                                     SplitCubeUids[prey.Team_ID].Remove(prey.uid);
+                            }
+
+                            // Counter for cubes consumed
+                            if (!player.food)
+                            {
+                                int iD = (predator.Team_ID != 0) ? predator.Team_ID : predator.uid;
+
+                                if (!prey.food && !DatabaseStats[iD].PlayersEaten.Contains(prey.Name))
+                                    DatabaseStats[iD].PlayersEaten.Add(prey.Name);
+                                DatabaseStats[iD].CubesConsumed++;
                             }
 
                             eatenPlayers.Add(id);
@@ -694,8 +717,10 @@ namespace AgCubio
             // Check if there are split cubes for the player
             if (SplitCubeUids.ContainsKey(PlayerUid) && SplitCubeUids[PlayerUid].Count > 1)
             {
+                double mass = 0;
                 foreach (int uid in new List<int>(SplitCubeUids[PlayerUid].Keys))
                 {
+                    mass += Cubes[uid].Mass;
                     // Decrement the split cooloff period
                     SplitCubeUids[PlayerUid][uid].Cooloff--;
 
@@ -717,10 +742,18 @@ namespace AgCubio
                             CorrectOverlap(Cubes[uid], Cubes[team]);
                     }
                 }
+                // BUG: if socket disconnects key will no longer exist
+                if (mass > DatabaseStats[PlayerUid].MaxMass)
+                    DatabaseStats[PlayerUid].MaxMass = mass;
             }
             // Normal movement:
             else
+            {
                 MoveCube(PlayerUid, x, y);
+
+                if (Cubes[PlayerUid].Mass > DatabaseStats[PlayerUid].MaxMass)
+                    DatabaseStats[PlayerUid].MaxMass = Cubes[PlayerUid].Mass;
+            }
         }
 
         /// <summary>
@@ -1026,6 +1059,23 @@ namespace AgCubio
                 Y = y;
                 Countdown = countdown;
                 Cooloff = 800;
+            }
+        }
+
+
+        public class StatTracker
+        {
+            public int CubesConsumed;
+
+            public List<string> PlayersEaten;
+
+            public double MaxMass;
+
+            public double CurrentMass;
+
+            public StatTracker()
+            {
+                PlayersEaten = new List<string>();
             }
         }
     }
