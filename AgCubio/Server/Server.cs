@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using Newtonsoft.Json;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
+using System.Timers;
+using MySql.Data.MySqlClient;
 
 namespace AgCubio
 {
@@ -30,11 +31,17 @@ namespace AgCubio
         /// </summary>
         private Timer Heartbeat;
 
-        /// <summary>
+
         /// Move requests for players, updated with each timer tick
         ///   cube uid => coordinates
         /// </summary>
         private Dictionary<int, Tuple<double, double>> DataReceived;
+
+
+        /// <summary>
+        /// String we need to connect to our database
+        /// </summary>
+        private const string connectionString = "server=atr.eng.utah.edu;database=cs3500_hodgson;uid=cs3500_hodgson;password=AveryIsMyPassword";
 
 
         /// <summary>
@@ -54,8 +61,12 @@ namespace AgCubio
         {
             World        = new World("..\\..\\..\\Project1/Resources/World_Params.xml");
             Sockets      = new Dictionary<Socket, ScoreInformation>();
-            Heartbeat    = new Timer(HeartBeatTick, null, 0, 1000 / World.HEARTBEATS_PER_SECOND);
             DataReceived = new Dictionary<int, Tuple<double, double>>();
+            Heartbeat    = new Timer(1000 / World.HEARTBEATS_PER_SECOND);
+            Heartbeat.Elapsed += new ElapsedEventHandler(HeartBeatTick);
+            Heartbeat.Start();
+
+            CreateDatabaseTables();
 
             // Set up game server
             Network.Server_Awaiting_Client_Loop(new Network.Callback(SetUpClient), 11000);
@@ -67,6 +78,95 @@ namespace AgCubio
         }
 
 
+        private void SetUpDB()
+        {
+            using (MySqlConnection conn = new MySqlConnection(connectionString))
+            {
+                try
+                {
+                    // Open a connection
+                    conn.Open();
+
+                    // Create a command
+                    MySqlCommand command = conn.CreateCommand();
+                    command.CommandText = "select ID, Name from People";
+
+                    // Execute the command and cycle through the DataReader object
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            Console.WriteLine(reader["ID"] + " " + reader["Name"]);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+            }
+        }
+
+
+
+        private void CreateDatabaseTables()
+        {
+            string dropOldTables = "DROP TABLE IF EXISTS Players;";
+            string createNewTables = @"CREATE TABLE Players(Id INT PRIMARY KEY AUTO_INCREMENT, Name VARCHAR(25), Lifetime VARCHAR(25),
+                MaxMass DOUBLE (10,2), HighestRank INT, PlayersTasted VARCHAR(25), CubesEaten INT, TimeofDeath VARCHAR(25));";
+
+            using (MySqlConnection conn = new MySqlConnection(connectionString))
+            {
+                try
+                {
+                    MySqlCommand dropTables = new MySqlCommand(dropOldTables, conn);
+                    MySqlCommand createTables = new MySqlCommand(createNewTables, conn);
+
+                    conn.Open();
+                    dropTables.ExecuteNonQuery();
+                    createTables.ExecuteNonQuery();
+                    conn.Close();
+                }
+                catch (Exception e)
+                { Console.WriteLine(e.Message); }
+            }
+        }
+
+
+        /// <summary>
+        /// LAB SAMPLE
+        /// </summary>
+        /// <param name="command"></param>
+        private void SqlCommand(MySqlCommand command)
+        {
+            using (MySqlConnection conn = new MySqlConnection(connectionString))
+            {
+                try
+                {
+                    // Open a connection
+                    conn.Open();
+
+                    // Execute the command and cycle through the DataReader object
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            Console.WriteLine(reader["ID"] + " " + reader["Name"]);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="state"></param>
         private void HighScores(Preserved_State_Object state)
         {
             string query = Regex.Split(state.data.ToString(), "\n")[0];
@@ -85,7 +185,7 @@ Content-Type: text/html; charset=UTF-8 \r\n
         <title>AgCubio High Scores</title>
     </head>
     <body>
-        <h1> Hello! </h1>
+        <h1>Hello!</h1>
 
         <div align = ""center"">
             <h1><u> Daniel Avery </u></h1>
@@ -129,7 +229,7 @@ Content-Type: text/html; charset=UTF-8 \r\n
                 World.Cubes[cube.uid] = cube;
                 worldData = World.SerializeAllCubes();
 
-                World.DatabaseStats.Add(cube.uid, new World.StatTracker());
+                World.DatabaseStats.Add(cube.uid, new World.StatTracker(state.data.ToString()));
             }
 
             state.CubeID = cube.uid;
@@ -199,10 +299,14 @@ Content-Type: text/html; charset=UTF-8 \r\n
         ///   Updates the world (adds food, etc)
         ///   Sends updates to the clients
         /// </summary>
-        private void HeartBeatTick(object state)
+        private void HeartBeatTick(object state, ElapsedEventArgs e)
         {
+            // Prevent this eventhandler from firing again while we're handling it
+            Heartbeat.Enabled = false;
+
             // Data to send to all of the clients
             StringBuilder data = new StringBuilder();
+            List<double> masses = new List<double>();
 
             lock (World)
             {
@@ -215,7 +319,6 @@ Content-Type: text/html; charset=UTF-8 \r\n
                 {
                     // Uid's to be removed
                     List<int> toBeRemoved = new List<int>();
-                    List<double> masses = new List<double>();
                     // Move all player cubes according to last mouse position
                     foreach (int uid in DataReceived.Keys)
                     {
@@ -226,7 +329,7 @@ Content-Type: text/html; charset=UTF-8 \r\n
                             continue;
                         }
 
-                        masses.Add(World.DatabaseStats[uid].MaxMass);
+                        masses.Add(World.DatabaseStats[uid].CurrentMass);
 
                         World.Move(uid, DataReceived[uid].Item1, DataReceived[uid].Item2); 
                     }
@@ -247,6 +350,8 @@ Content-Type: text/html; charset=UTF-8 \r\n
                 data.Append(World.SerializePlayers());
             }
 
+            masses.Sort();
+
             // Send data to sockets
             lock (Sockets)
             {
@@ -262,10 +367,12 @@ Content-Type: text/html; charset=UTF-8 \r\n
 
                     Network.Send(s, data.ToString());
                 }
+
                 foreach(Socket s in disconnected)
                 {
                     // Add data to database
                     TimeSpan playtime = Sockets[s].Playtime.Elapsed;
+                    String formattedPlaytime = (playtime.Days * 24 + playtime.Hours) + "h " + playtime.Minutes + "m " + playtime.Seconds + "s";
                     World.StatTracker stats;
                     lock (World) { stats = World.DatabaseStats[Sockets[s].Uid]; }
 
@@ -273,19 +380,45 @@ Content-Type: text/html; charset=UTF-8 \r\n
                     Console.WriteLine("Death Time: " + DateTime.Now);
                     Console.WriteLine("Cubes consumed: " + stats.CubesConsumed);
                     Console.WriteLine("Maximum mass achieved: " + stats.MaxMass);
-                    Console.WriteLine("Players that have been tasted:\n");
+                    Console.WriteLine("Players that have been tasted:");
                     foreach (string name in stats.PlayersEaten)
                         Console.WriteLine(name);
 
                     // highest rank?
 
-                    // Remove this player
-                    lock(World) { World.DatabaseStats.Remove(Sockets[s].Uid); }
+                    string insertPlayerData = String.Format("INSERT INTO Players(Name, Lifetime, MaxMass, HighestRank, PlayersTasted, CubesEaten, TimeofDeath) "
+                        + "VALUES('{0}', '{1}', {2}, {3}, '{4}', {5}, '{6}');",
+                        stats.Name, formattedPlaytime, stats.MaxMass, 1, "Just Keeton"/*stats.PlayersEaten*/, stats.CubesConsumed, DateTime.Now);
+
+                    using (MySqlConnection conn = new MySqlConnection(connectionString))
+                    {
+                        try
+                        {
+                            MySqlCommand insertData = new MySqlCommand(insertPlayerData, conn);
+
+                            conn.Open();
+                            insertData.ExecuteNonQuery();
+                            conn.Close();
+                        }
+                        catch(Exception ex)
+                        { Console.WriteLine(ex.Message); }
+                    }
+
+                        // Remove this player
+                        lock (World) { World.DatabaseStats.Remove(Sockets[s].Uid); }
+                    lock(DataReceived) { DataReceived.Remove(Sockets[s].Uid); }
                     Sockets.Remove(s);
                 }
             }
+
+            // Event can now fire again
+            Heartbeat.Enabled = true;
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
         class ScoreInformation
         {
             /*
@@ -299,10 +432,7 @@ Content-Type: text/html; charset=UTF-8 \r\n
     */
             public int Uid;
             public Stopwatch Playtime;
-            public double MaxMass; // Stick all cubes into the database, do a join or some sort of thing
             public int HighestRank; // Can also do in the database, methinks
-            public List<string> PlayersEaten;
-            public int CubesEaten;
 
             //Save all of these things when a player dies
 

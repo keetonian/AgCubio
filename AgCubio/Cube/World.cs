@@ -714,13 +714,17 @@ namespace AgCubio
         /// </summary>
         public void Move(int PlayerUid, double x, double y)
         {
+            // Used for tracking the current mass of the player
+            double mass = 0;
+
             // Check if there are split cubes for the player
             if (SplitCubeUids.ContainsKey(PlayerUid) && SplitCubeUids[PlayerUid].Count > 1)
             {
-                double mass = 0;
                 foreach (int uid in new List<int>(SplitCubeUids[PlayerUid].Keys))
                 {
+                    // Add each slit's mass to the player's mass
                     mass += Cubes[uid].Mass;
+
                     // Decrement the split cooloff period
                     SplitCubeUids[PlayerUid][uid].Cooloff--;
 
@@ -742,17 +746,23 @@ namespace AgCubio
                             CorrectOverlap(Cubes[uid], Cubes[team]);
                     }
                 }
-                // BUG: if socket disconnects key will no longer exist
-                if (mass > DatabaseStats[PlayerUid].MaxMass)
-                    DatabaseStats[PlayerUid].MaxMass = mass;
             }
             // Normal movement:
             else
             {
                 MoveCube(PlayerUid, x, y);
 
-                if (Cubes[PlayerUid].Mass > DatabaseStats[PlayerUid].MaxMass)
-                    DatabaseStats[PlayerUid].MaxMass = Cubes[PlayerUid].Mass;
+                // One cube - just set the player's mass
+                mass = Cubes[PlayerUid].Mass;
+            }
+
+            // If the player is active, store their current mass (and reset their max mass if needed)
+            if (DatabaseStats.ContainsKey(PlayerUid))
+            {
+                DatabaseStats[PlayerUid].CurrentMass = mass;
+
+                if (mass > DatabaseStats[PlayerUid].MaxMass)
+                    DatabaseStats[PlayerUid].MaxMass = mass;
             }
         }
 
@@ -1065,6 +1075,8 @@ namespace AgCubio
 
         public class StatTracker
         {
+            public string Name;
+
             public int CubesConsumed;
 
             public List<string> PlayersEaten;
@@ -1073,9 +1085,10 @@ namespace AgCubio
 
             public double CurrentMass;
 
-            public StatTracker()
+            public StatTracker(string name)
             {
                 PlayersEaten = new List<string>();
+                Name = name;
             }
         }
     }
