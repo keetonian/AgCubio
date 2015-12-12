@@ -32,6 +32,7 @@ namespace AgCubio
         /// </summary>
         private Timer Heartbeat;
 
+        /// <summary>
         /// Move requests for players, updated with each timer tick
         ///   cube uid => coordinates
         /// </summary>
@@ -49,7 +50,7 @@ namespace AgCubio
 
 
         /// <summary>
-        /// Create a server and pause the console
+        /// Create a server, keep the console open
         /// </summary>
         public static void Main(string[] args)
         {
@@ -81,9 +82,7 @@ namespace AgCubio
             Console.WriteLine("Server awaiting client connection...");
         }
 
-
-
-
+        
         /// <summary>
         /// Sets up the database for the web server
         /// </summary>
@@ -121,8 +120,8 @@ namespace AgCubio
         private void HighScores(Preserved_State_Object state)
         {
             string query = Regex.Split(state.data.ToString(), "\r\n")[0];
-            string score = @"GET /scores";//actually just test if matches string
-            string games = @"GET /games\?player="; // Maybe?
+            string score = @"GET /scores";
+            string games = @"GET /games\?player=";
             string eaten = @"GET /eaten\?id=";
             string ending = @" HTTP/1.1";
 
@@ -170,10 +169,9 @@ namespace AgCubio
             }
             else
             {
-
+                // Show an error page if the first line of text browser sends the server
                 /*If the first line of text sent by the browser to the server is anything else, the server should send back an HTML page containing an error message. The error message should be meaningful and contain a summary of valid options.*/
                 Network.Send(state.socket, HTMLGenerator.GenerateError("Invalid web address"), true);
-
             }
 
         }
