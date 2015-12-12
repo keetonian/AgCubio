@@ -64,10 +64,10 @@ namespace AgCubio
         /// </summary>
         public Server()
         {
-            World        = new World("..\\..\\..\\Project1/Resources/World_Params.xml");
-            Sockets      = new Dictionary<Socket, ScoreInformation>();
+            World = new World("..\\..\\..\\Project1/Resources/World_Params.xml");
+            Sockets = new Dictionary<Socket, ScoreInformation>();
             DataReceived = new Dictionary<int, Tuple<double, double>>();
-            Heartbeat    = new Timer(1000 / World.HEARTBEATS_PER_SECOND);
+            Heartbeat = new Timer(1000 / World.HEARTBEATS_PER_SECOND);
             Heartbeat.Elapsed += new ElapsedEventHandler(HeartBeatTick);
             Heartbeat.Start();
 
@@ -82,7 +82,7 @@ namespace AgCubio
             Console.WriteLine("Server awaiting client connection...");
         }
 
-        
+
         /// <summary>
         /// Sets up the database for the web server
         /// </summary>
@@ -159,7 +159,7 @@ namespace AgCubio
 
                 string dbQuery = "Select * from Eaten natural join Players where GameId = " + query;
 
-                Network.Send(state.socket, StatsHTML(new MySqlCommand(dbQuery), 3, "AgCubio Stats | Game ID: " + query), true );
+                Network.Send(state.socket, StatsHTML(new MySqlCommand(dbQuery), 3, "AgCubio Stats | Game ID: " + query), true);
             }
             else
             {
@@ -221,7 +221,7 @@ namespace AgCubio
                                HTMLGenerator.TableHData("Number of Cubes Eaten") +
                                HTMLGenerator.TableHData("Time Of Death") +
                                HTMLGenerator.TableHData("Number of Players Eaten")));
-                            
+
                             while (reader.Read())
                             {
                                 string id = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/eaten?id=" + reader["GameId"].ToString(), reader["GameId"].ToString()));
@@ -272,7 +272,7 @@ namespace AgCubio
                             others += HTMLGenerator.TableData(eaten.ToString());
                             rows.Append(HTMLGenerator.TableRow(others));
                         }
-                        
+
                         // Assemble all the html together
                         table = HTMLGenerator.Table(rows.ToString());
                         body = HTMLGenerator.Body(table, title);
@@ -411,7 +411,7 @@ namespace AgCubio
                         // Get all of the current masses for ranking purposes
                         sortedByMass.Add(new Tuple<int, double>(uid, World.DatabaseStats[uid].CurrentMass));
 
-                        World.Move(uid, DataReceived[uid].Item1, DataReceived[uid].Item2); 
+                        World.Move(uid, DataReceived[uid].Item1, DataReceived[uid].Item2);
                     }
 
                     // Remove marked cubes
@@ -431,14 +431,14 @@ namespace AgCubio
             }
 
             sortedByMass.Sort((a, b) => b.Item2.CompareTo(a.Item2));
-            
+
             // Send data to sockets
             lock (Sockets)
             {
-                
+
 
                 List<Socket> disconnected = new List<Socket>();
-                foreach(Socket s in Sockets.Keys)
+                foreach (Socket s in Sockets.Keys)
                 {
                     for (int i = 0; i < 5 && i < sortedByMass.Count; i++)
                     {
@@ -456,7 +456,7 @@ namespace AgCubio
                     Network.Send(s, data.ToString());
                 }
 
-                foreach(Socket s in disconnected)
+                foreach (Socket s in disconnected)
                 {
                     // Add data to database
                     ScoreInformation score = Sockets[s];
@@ -464,7 +464,7 @@ namespace AgCubio
                     String formattedPlaytime = (playtime.Days * 24 + playtime.Hours) + "h " + playtime.Minutes + "m " + playtime.Seconds + "s";
                     World.StatTracker stats;
                     lock (World) { stats = World.DatabaseStats[Sockets[s].Uid]; }
-                                        
+
                     // A little tricky here - we don't actually want to set the highest rank in the DB if it has not been set in the server. String magic does the job
                     string highestRankColumn = (score.HighestRank == 0) ? "" : " HighestRank,";
                     string highestRankValue = (score.HighestRank == 0) ? "" : " " + score.HighestRank + ",";
@@ -472,7 +472,7 @@ namespace AgCubio
                     string insertPlayerData = String.Format("INSERT INTO Players(GameId, Name, Lifetime, MaxMass,{0} CubesEaten, TimeofDeath, NumPlayersEaten) "
                         + "VALUES({1}, '{2}', '{3}', {4},{5} {6}, '{7}',{8});",
                         highestRankColumn, ++GameIdCounter, stats.Name, formattedPlaytime, stats.MaxMass, highestRankValue, stats.CubesConsumed, DateTime.Now, stats.PlayersEaten.Count);
-                    
+
                     // Now connect to the DB and execute the commands
                     using (MySqlConnection conn = new MySqlConnection(connectionString))
                     {
@@ -486,7 +486,7 @@ namespace AgCubio
                             insertData.ExecuteNonQuery();
 
                             // Insert row(s) into Eaten table (at least one for the player, and then one for all players it ate)
-                            if(stats.PlayersEaten.Count == 0)
+                            if (stats.PlayersEaten.Count == 0)
                                 (new MySqlCommand(String.Format("INSERT INTO Eaten(GameId, Name) VALUES({0}, '{1}');",
                                   GameIdCounter, stats.Name), conn)).ExecuteNonQuery();
                             else
@@ -496,7 +496,7 @@ namespace AgCubio
 
                             conn.Close();
                         }
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
                             Console.WriteLine(ex.Message);
                         }
@@ -504,7 +504,7 @@ namespace AgCubio
 
                     // Remove this player
                     lock (World) { World.DatabaseStats.Remove(Sockets[s].Uid); }
-                    lock(DataReceived) { DataReceived.Remove(Sockets[s].Uid); }
+                    lock (DataReceived) { DataReceived.Remove(Sockets[s].Uid); }
                     Sockets.Remove(s);
                 }
             }

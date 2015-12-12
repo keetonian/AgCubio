@@ -309,10 +309,10 @@ namespace AgCubio
 
             // Calculate remaining parameters
             PLAYER_START_WIDTH = Math.Sqrt(PLAYER_START_MASS);
-            FOOD_WIDTH         = Math.Sqrt(FOOD_MASS);
-            VIRUS_WIDTH        = Math.Sqrt(VIRUS_MASS);
-            SPEED_SLOPE        = (MIN_SPEED - MAX_SPEED) / (MIN_SPEED_MASS - PLAYER_START_MASS);
-            SPEED_CONSTANT     = (MAX_SPEED - MIN_SPEED * (PLAYER_START_MASS / MIN_SPEED_MASS)) / (1 - PLAYER_START_MASS / MIN_SPEED_MASS);
+            FOOD_WIDTH = Math.Sqrt(FOOD_MASS);
+            VIRUS_WIDTH = Math.Sqrt(VIRUS_MASS);
+            SPEED_SLOPE = (MIN_SPEED - MAX_SPEED) / (MIN_SPEED_MASS - PLAYER_START_MASS);
+            SPEED_CONSTANT = (MAX_SPEED - MIN_SPEED * (PLAYER_START_MASS / MIN_SPEED_MASS)) / (1 - PLAYER_START_MASS / MIN_SPEED_MASS);
 
             // Generate starting food
             while (Food.Count < MAX_FOOD_COUNT)
@@ -321,7 +321,7 @@ namespace AgCubio
             // Generate military viruses
             for (int i = 0; i < MAX_MILITARY_VIRUS_COUNT; i++)
                 GenerateMilitaryVirus();
-            }
+        }
 
 
         /// <summary>
@@ -377,14 +377,14 @@ namespace AgCubio
         /// Manages cubes colliding against each other -- WAAAAAAAY TO COMPLICATED
         /// </summary>
         public string ManageCollisions()
-        {/*
+        {
             StringBuilder destroyed = new StringBuilder();
-            List<int> eatenPlayers  = new List<int>();
+            List<int> eatenPlayers = new List<int>();
             List<Cube> eatenFood;
 
             // Get a data structure that can be used in a loop easily
             List<Cube> playerList = new List<Cube>(Cubes.Values);
-            
+
             // Using for loops to make the algorithm a little less costly - check each player cube only once against each other
             for (int i = 0; i < playerList.Count; i++)
             {
@@ -415,7 +415,7 @@ namespace AgCubio
                         if (!player.food)
                         {
                             int id = (player.Team_ID != 0) ? player.Team_ID : player.uid;
-                            if(DatabaseStats.ContainsKey(id)) DatabaseStats[id].CubesConsumed++;
+                            if (DatabaseStats.ContainsKey(id)) DatabaseStats[id].CubesConsumed++;
                         }
 
                         // Adjust cube position if edges go out of bounds
@@ -443,7 +443,7 @@ namespace AgCubio
                         if (player.Team_ID != 0 && player.Team_ID == player2.Team_ID)
                         {
                             // Merge into the cube that has the focus (Uid == Team_ID)
-                            Cube focus = (player.uid == player.Team_ID) ? player  : player2;
+                            Cube focus = (player.uid == player.Team_ID) ? player : player2;
                             Cube other = (player.uid == player.Team_ID) ? player2 : player;
 
                             // But split cubes cannot merge unless their cooloff periods have expired
@@ -462,13 +462,13 @@ namespace AgCubio
                         // If a player has over 120% mass of another player, it can eat the other player
                         else if (player.Mass / player2.Mass >= 1.2 || player2.Mass / player.Mass >= 1.2)
                         {
-                            Cube predator = (player.Mass / player2.Mass >= 1.2) ? player  : player2;
-                            Cube prey     = (player.Mass / player2.Mass >= 1.2) ? player2 : player;
+                            Cube predator = (player.Mass / player2.Mass >= 1.2) ? player : player2;
+                            Cube prey = (player.Mass / player2.Mass >= 1.2) ? player2 : player;
 
                             int id = prey.uid;
                             predator.Mass += prey.Mass;
 
-                            if(prey.food) // If prey is a military virus...
+                            if (prey.food) // If prey is a military virus...
                             {
                                 if (predator.food) // ...and predator is a military virus, predator eats
                                     predator.Mass += prey.Mass;
@@ -525,8 +525,7 @@ namespace AgCubio
                     GenerateMilitaryVirus();
             }
 
-            return destroyed.ToString();*/
-            return "";
+            return destroyed.ToString();
         }
 
 
@@ -574,10 +573,10 @@ namespace AgCubio
             Cube player = Cubes[uid];
 
             if (player.left <= 0)
-                player.loc_x = (1 + player.width/2);
+                player.loc_x = (1 + player.width / 2);
             else if (player.right >= this.WORLD_WIDTH)
                 player.loc_x = this.WORLD_WIDTH - (1 + player.width / 2);
-            if (player.top <=  0)
+            if (player.top <= 0)
                 player.loc_y = (1 + player.width / 2);
             else if (player.bottom >= this.WORLD_HEIGHT)
                 player.loc_y = this.WORLD_HEIGHT - (1 + player.width / 2);
@@ -600,8 +599,8 @@ namespace AgCubio
         /// </summary>
         public void GenerateMilitaryVirus()
         {
-            double x = Rand.Next((int)(WORLD_WIDTH*.05), (int)(WORLD_WIDTH - WORLD_WIDTH*.05));
-            double y = Rand.Next((int)(WORLD_HEIGHT*.05), (int)(WORLD_HEIGHT - WORLD_HEIGHT*.05));
+            double x = Rand.Next((int)(WORLD_WIDTH * .05), (int)(WORLD_WIDTH - WORLD_WIDTH * .05));
+            double y = Rand.Next((int)(WORLD_HEIGHT * .05), (int)(WORLD_HEIGHT - WORLD_HEIGHT * .05));
 
             Cube mVirus = new Cube(x, y, GetUid(), true, "", VIRUS_MASS, Color.Red.ToArgb(), 0);
             Cubes.Add(mVirus.uid, mVirus);
@@ -624,7 +623,7 @@ namespace AgCubio
 
             // Retry if new cube would be overlapped by another cube
             foreach (Cube player in Cubes.Values)
-                if (player.Overlaps(new Cube(x, y, width*width)))
+                if (player.Overlaps(new Cube(x, y, width * width)))
                     FindStartingCoords(out x, out y, virus);
         }
 
@@ -660,7 +659,7 @@ namespace AgCubio
             if (random < VIRUS_PERCENT)
             {
                 color = Color.LightGreen.ToArgb();
-                mass  = VIRUS_MASS;
+                mass = VIRUS_MASS;
                 width = (int)VIRUS_WIDTH;
 
                 // Make sure viruses can't spawn on top of players
@@ -671,7 +670,7 @@ namespace AgCubio
             {
                 color = GetColor();
                 mass = (96 < random && random < 99) ? FOOD_MASS * 2 : ((random > 99) ? FOOD_MASS * 3 : FOOD_MASS); // 3% of food is double size, 1% of food is triple size
-                x = Rand.Next((int)FOOD_WIDTH, WORLD_WIDTH  - (int)FOOD_WIDTH);
+                x = Rand.Next((int)FOOD_WIDTH, WORLD_WIDTH - (int)FOOD_WIDTH);
                 y = Rand.Next((int)FOOD_WIDTH, WORLD_HEIGHT - (int)FOOD_WIDTH);
             }
 
@@ -689,7 +688,7 @@ namespace AgCubio
             foreach (int uid in new List<int>(MilitaryViruses.Keys))
             {
                 double angle = MilitaryViruses[uid].Angle;
-                angle += ((Math.PI) / 180); 
+                angle += ((Math.PI) / 180);
 
                 // Do a grade according to angle
                 //   goes in a clover shape
@@ -700,13 +699,13 @@ namespace AgCubio
 
                 if (angle < 2 * Math.PI)
                 {
-                    Cubes[uid].loc_x = MilitaryViruses[uid].X + (WORLD_WIDTH*.02 * Math.Sin(angle * 2));
-                    Cubes[uid].loc_y = MilitaryViruses[uid].Y + (WORLD_HEIGHT*.07 * Math.Sin(angle));
+                    Cubes[uid].loc_x = MilitaryViruses[uid].X + (WORLD_WIDTH * .02 * Math.Sin(angle * 2));
+                    Cubes[uid].loc_y = MilitaryViruses[uid].Y + (WORLD_HEIGHT * .07 * Math.Sin(angle));
                 }
                 else
                 {
-                    Cubes[uid].loc_x = MilitaryViruses[uid].X + (WORLD_WIDTH*.07 * Math.Sin(angle));
-                    Cubes[uid].loc_y = MilitaryViruses[uid].Y + (WORLD_HEIGHT*.02 * Math.Sin(angle * 2));
+                    Cubes[uid].loc_x = MilitaryViruses[uid].X + (WORLD_WIDTH * .07 * Math.Sin(angle));
+                    Cubes[uid].loc_y = MilitaryViruses[uid].Y + (WORLD_HEIGHT * .02 * Math.Sin(angle * 2));
                 }
             }
         }
@@ -786,10 +785,10 @@ namespace AgCubio
             double yy = SplitCubeUids[cube.Team_ID][cube.uid].Y;
 
             x -= cube.loc_x;
-            y -= cube.loc_y;  
+            y -= cube.loc_y;
             UnitVector(ref x, ref y);
-                        
-            double speed = GetSpeed(CubeUid) * countdown/10;
+
+            double speed = GetSpeed(CubeUid) * countdown / 10;
 
             // Normalize and scale the vector:
             UnitVector(ref xx, ref yy);
@@ -812,16 +811,16 @@ namespace AgCubio
             {
                 double relativeX = moving.loc_x - teammate.loc_x;
                 double relativeY = moving.loc_y - teammate.loc_y;
-                double relative  = Math.Abs(relativeX) - Math.Abs(relativeY);
+                double relative = Math.Abs(relativeX) - Math.Abs(relativeY);
 
                 // Set moving cube's coordinates so slightly-overlapped cube edges touch instead
                 if (relative < 0)
                     moving.loc_y = (relativeY > 0) ? teammate.bottom + moving.width / 2 : teammate.top - moving.width / 2;
                 else if (relative > 0)
-                    moving.loc_x = (relativeX > 0) ? teammate.right + moving.width / 2  : teammate.left - moving.width / 2;
+                    moving.loc_x = (relativeX > 0) ? teammate.right + moving.width / 2 : teammate.left - moving.width / 2;
                 else
                 {
-                    moving.loc_x = (relativeX > 0) ? teammate.right + moving.width / 2  : teammate.left - moving.width / 2;
+                    moving.loc_x = (relativeX > 0) ? teammate.right + moving.width / 2 : teammate.left - moving.width / 2;
                     moving.loc_y = (relativeY > 0) ? teammate.bottom + moving.width / 2 : teammate.top - moving.width / 2;
                 }
             }
@@ -920,7 +919,7 @@ namespace AgCubio
                 // Add the new cube to the world
                 Cubes.Add(newCube.uid, newCube);
 
-                SplitCubeUids[CubeUid][newCube.uid] = new SplitCubeData(xxx, yyy, (int)(MAX_SPLIT_DISTANCE * Math.Pow(10*mass,.05)));
+                SplitCubeUids[CubeUid][newCube.uid] = new SplitCubeData(xxx, yyy, (int)(MAX_SPLIT_DISTANCE * Math.Pow(10 * mass, .05)));
             }
         }
 
@@ -954,7 +953,7 @@ namespace AgCubio
 
             // Store the original cube mass
             double mass = cube.Mass;
-            
+
             // Find the number of split cubes to make
             int maxSplits = (int)(mass / PLAYER_START_MASS);
             int numSplits = (maxSplits > MAX_SPLIT_COUNT - numSplitCubes) ? MAX_SPLIT_COUNT - numSplitCubes + 1 : maxSplits + 1; // +1 to account for reassigning original cube
@@ -979,7 +978,7 @@ namespace AgCubio
 
             // Alter the original cube to be a split cube now
             Cube replacement = GenerateSplitCube(ref numSplits, ref leftoverMass, teamID, CubeUid, x, y);
-            cube.Mass  = replacement.Mass;
+            cube.Mass = replacement.Mass;
             cube.loc_x = replacement.loc_x;
             cube.loc_y = replacement.loc_y;
             AdjustPosition(cube.uid);
