@@ -1075,16 +1075,15 @@ namespace AgCubio
         }
 
 
+        /// <summary>
+        /// Keeps track of many of the player stats elements that world finds during calculations
+        /// </summary>
         public class StatTracker
         {
             public string Name;
-
             public int CubesConsumed;
-
             public List<string> PlayersEaten;
-
             public double MaxMass;
-
             public double CurrentMass;
 
             public StatTracker(string name)

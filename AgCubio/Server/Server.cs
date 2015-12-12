@@ -77,7 +77,7 @@ namespace AgCubio
             Network.Server_Awaiting_Client_Loop(new Network.Callback(SetUpClient), 11000);
 
             // Set up web server
-            Network.Server_Awaiting_Client_Loop(new Network.Callback(HighScores), 11100);
+            Network.Server_Awaiting_Client_Loop(new Network.Callback(CreateWebPage), 11100);
 
             Console.WriteLine("Server awaiting client connection...");
         }
@@ -115,9 +115,9 @@ namespace AgCubio
 
 
         /// <summary>
-        /// 
+        /// Callback for web server - builds webpages based off of queries received from the browser
         /// </summary>
-        private void HighScores(Preserved_State_Object state)
+        private void CreateWebPage(Preserved_State_Object state)
         {
             string query = Regex.Split(state.data.ToString(), "\r\n")[0];
             string score = @"GET /scores";
@@ -132,12 +132,9 @@ namespace AgCubio
                 The HTML table should have one row for each player/game in the database and one column for each of the above required pieces of information.
                 A superior solution would create links in this table to the information described below (e.g., clicking on a players name would invoke case 2 below).*/
 
-
-                //scores
-                string dbQuery = "Select * from Players";// Id can link to players eaten?
+                string dbQuery = "Select * from Players";
 
                 Network.Send(state.socket, StatsHTML(new MySqlCommand(dbQuery), 1, "AgCubio Stats | High Scores"), true);
-
             }
             else if (Regex.IsMatch(query, games))
             {
@@ -146,12 +143,11 @@ namespace AgCubio
                 In addition to the above information, the time of death should be shown and the number of players eaten should be shown.
                 A superior solution would also have links to the main score table page and to the list of eaten players for a particular game.*/
 
-                query = Regex.Replace(query, "(" + games + ")|(" + ending + ")", "");// get the name
+                query = Regex.Replace(query, "(" + games + ")|(" + ending + ")", ""); // Get the player name
 
                 string dbQuery = "Select * from Players where name = '" + query + "'";
 
                 Network.Send(state.socket, StatsHTML(new MySqlCommand(dbQuery), 2, "AgCubio Stats | Player: " + query), true);
-
             }
             else if (Regex.IsMatch(query, eaten))
             {
@@ -159,26 +155,22 @@ namespace AgCubio
                 The page should contain all information about the players game, but most importantly highlight the names of players who were eaten. A superior solution would turn "eaten player" names into links to their high scores.
                 If there the specified game does not exist, treat this as an "anything else" case as discussed below. As always, a superior solution will have links from this page to other related pages.*/
 
-                // eaten
-                query = Regex.Replace(query, "(" + eaten + ")|(" + ending + ")", ""); //get the id
+                query = Regex.Replace(query, "(" + eaten + ")|(" + ending + ")", ""); // Get the game id
 
                 string dbQuery = "Select * from Eaten natural join Players where GameId = " + query;
 
                 Network.Send(state.socket, StatsHTML(new MySqlCommand(dbQuery), 3, "AgCubio Stats | Game ID: " + query), true );
-
             }
             else
             {
-                // Show an error page if the first line of text browser sends the server
-                /*If the first line of text sent by the browser to the server is anything else, the server should send back an HTML page containing an error message. The error message should be meaningful and contain a summary of valid options.*/
+                // Show an error page if the first line of text the browser sends the server is invalid
                 Network.Send(state.socket, HTMLGenerator.GenerateError("Invalid web address"), true);
             }
-
         }
 
 
         /// <summary>
-        /// 
+        /// Queries the database and returns a large string of html for the webpage, based on the query
         /// </summary>
         private string StatsHTML(MySqlCommand query, int queryNum = 0, string title = "")
         {
@@ -198,7 +190,7 @@ namespace AgCubio
                         string table;
                         StringBuilder rows = new StringBuilder();
 
-                        if (queryNum == 1)
+                        if (queryNum == 1) // High Scores web page
                         {
                             rows.Append(HTMLGenerator.TableRow(HTMLGenerator.TableHData("Game Id") +
                                 HTMLGenerator.TableHData("Name") +
@@ -219,7 +211,7 @@ namespace AgCubio
                                 rows.Append(HTMLGenerator.TableRow(id + name + lifetime + maxmass + highestRank + cubesEaten));
                             }
                         }
-                        else if (queryNum == 2)
+                        else if (queryNum == 2) // Game Id Stats web page
                         {
                             rows.Append(HTMLGenerator.TableRow(HTMLGenerator.TableHData("GameId") +
                                HTMLGenerator.TableHData("Name") +
@@ -230,7 +222,6 @@ namespace AgCubio
                                HTMLGenerator.TableHData("Time Of Death") +
                                HTMLGenerator.TableHData("Number of Players Eaten")));
                             
-
                             while (reader.Read())
                             {
                                 string id = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/eaten?id=" + reader["GameId"].ToString(), reader["GameId"].ToString()));
@@ -245,7 +236,7 @@ namespace AgCubio
                                 rows.Append(HTMLGenerator.TableRow(id + name + lifetime + maxmass + highestRank + cubesEaten + timeofdeath + numplayerseat));
                             }
                         }
-                        else if (queryNum == 3)
+                        else if (queryNum == 3) // Player Name Stats web page
                         {
                             rows.Append(HTMLGenerator.TableRow(HTMLGenerator.TableHData("GameId") +
                               HTMLGenerator.TableHData("Name") +
@@ -260,6 +251,7 @@ namespace AgCubio
                             int add = 0;
                             StringBuilder eaten = new StringBuilder();
                             string others = "";
+
                             while (reader.Read())
                             {
                                 string id = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/eaten?id=" + reader["GameId"].ToString(), reader["GameId"].ToString()));
@@ -276,17 +268,15 @@ namespace AgCubio
                                     others = id + name + lifetime + maxmass + highestRank + cubesEaten + timeofdeath + numplayerseat;
                                 add++;
                             }
+
                             others += HTMLGenerator.TableData(eaten.ToString());
                             rows.Append(HTMLGenerator.TableRow(others));
                         }
-                        else
-                        {
-
-                        }
                         
+                        // Assemble all the html together
                         table = HTMLGenerator.Table(rows.ToString());
                         body = HTMLGenerator.Body(table, title);
-                        html = HTMLGenerator.GenerateHeader(title, body);
+                        html = HTMLGenerator.GenerateWebpage(title, body);
                     }
                 }
                 catch (Exception e)
@@ -295,6 +285,7 @@ namespace AgCubio
                     html = HTMLGenerator.GenerateError("Something went wrong in the database query");
                 }
             }
+
             return html;
         }
 
@@ -482,6 +473,7 @@ namespace AgCubio
                         + "VALUES({1}, '{2}', '{3}', {4},{5} {6}, '{7}',{8});",
                         highestRankColumn, ++GameIdCounter, stats.Name, formattedPlaytime, stats.MaxMass, highestRankValue, stats.CubesConsumed, DateTime.Now, stats.PlayersEaten.Count);
                     
+                    // Now connect to the DB and execute the commands
                     using (MySqlConnection conn = new MySqlConnection(connectionString))
                     {
                         try
@@ -489,8 +481,11 @@ namespace AgCubio
                             MySqlCommand insertData = new MySqlCommand(insertPlayerData, conn);
 
                             conn.Open();
+
+                            // Insert row of player stats in Players table
                             insertData.ExecuteNonQuery();
 
+                            // Insert row(s) into Eaten table (at least one for the player, and then one for all players it ate)
                             if(stats.PlayersEaten.Count == 0)
                                 (new MySqlCommand(String.Format("INSERT INTO Eaten(GameId, Name) VALUES({0}, '{1}');",
                                   GameIdCounter, stats.Name), conn)).ExecuteNonQuery();
@@ -502,7 +497,9 @@ namespace AgCubio
                             conn.Close();
                         }
                         catch(Exception ex)
-                        { Console.WriteLine(ex.Message); }
+                        {
+                            Console.WriteLine(ex.Message);
+                        }
                     }
 
                     // Remove this player
@@ -539,15 +536,25 @@ namespace AgCubio
     }
 
 
+
+    /// <summary>
+    /// Our very own custom HTMLGenerator nested class - tuned for making specifically-styled tables (not good generically, but good for simplification here)
+    /// </summary>
     public static class HTMLGenerator
     {
-
+        /// <summary>
+        /// Creates an error webpage
+        /// </summary>
         public static string GenerateError(string message)
         {
-            return HTMLGenerator.GenerateHeader("Error", HTMLGenerator.Body("<p>" + message + "</p>", "Error!"));
+            return HTMLGenerator.GenerateWebpage("Error", HTMLGenerator.Body("<p>" + message + "</p>", "Error!"));
         }
 
-        public static string GenerateHeader(string title, string content = "")
+
+        /// <summary>
+        /// Places other html within a broad outline to return all the html for a webpage
+        /// </summary>
+        public static string GenerateWebpage(string title, string content = "")
         {
             return @"HTTP/1.1 200 OK \r\n
 Connection: close \r\n
@@ -565,15 +572,17 @@ Content-Type: text/html; charset=UTF-8 \r\n
         }
 
         /// <summary>
-        /// Data cells inside of table rows
+        /// Creates a table data tag
         /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
         public static string TableData(string data)
         {
             return @"<td style=""white-space: nowrap;"" bgcolor=""efefef"">" + data + "</td>";
         }
 
+
+        /// <summary>
+        /// Creates a table hdata tag
+        /// </summary>
         public static string TableHData(string data)
         {
             return @"<th bgcolor=""red"">" + data + "</th>";
@@ -581,21 +590,26 @@ Content-Type: text/html; charset=UTF-8 \r\n
 
 
         /// <summary>
-        /// Table rows, contains table datas
+        /// Creates a table row tag
         /// </summary>
-        /// <param name="rowContents"></param>
-        /// <returns></returns>
         public static string TableRow(string rowContents)
         {
             return @"<tr align=""center"">" + rowContents + "</tr>";
         }
 
 
+        /// <summary>
+        /// Creates a table tag
+        /// </summary>
         public static string Table(string tableContents)
         {
             return @"<div align=""center""><table border=""1"" style=""border-collapse: collapse; font-size: 30px;"" cellpadding=""10"">" + tableContents + "</table></div>";
         }
 
+
+        /// <summary>
+        /// Creates a body tag
+        /// </summary>
         public static string Body(string bodyContents, string title = "")
         {
             return @"<body><div align=""center""><h1>" + title + "</h1>" + bodyContents + "<h1>" + HTMLGenerator.GenerateLink("http://localhost:11100/scores", "High Scores") + "</h1></div></body>";
@@ -603,11 +617,8 @@ Content-Type: text/html; charset=UTF-8 \r\n
 
 
         /// <summary>
-        /// Creates a link
+        /// Creates a link tag
         /// </summary>
-        /// <param name="link"></param>
-        /// <param name="info"></param>
-        /// <returns></returns>
         public static string GenerateLink(string link, string info)
         {
             return String.Format(@"<a href=""{0}"">{1}</a>", link, info);

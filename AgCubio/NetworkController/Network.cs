@@ -214,7 +214,7 @@ namespace AgCubio
             {
                 int bytesSent = state.Item1.EndSend(state_in_an_ar_object);
 
-                if (bytesSent == state.Item2.Length) // if everything was sent, then close the socket
+                if (bytesSent == state.Item2.Length) // If everything was sent, then close the socket
                 {
                     state.Item1.Shutdown(SocketShutdown.Both);
                     state.Item1.Close();
