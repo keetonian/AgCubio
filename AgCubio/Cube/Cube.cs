@@ -129,12 +129,71 @@ namespace AgCubio
 
 
         /// <summary>
-        /// Overrides hash code- gets the uid instead.
+        /// Constructs a simple Cube (only used for comparison purposes when finding start coords)
         /// </summary>
-        /// <returns></returns>
+        public Cube(double x, double y, double mass)
+        {
+            loc_x = x;
+            loc_y = y;
+            Mass = mass;
+        }
+
+
+        /// <summary>
+        /// Checks if this cube is overlapping the center of another given cube (parameter)
+        /// </summary>
+        public bool Collides(Cube other)
+        {
+            return (this.left < other.loc_x && other.loc_x < this.right) && (this.top < other.loc_y && other.loc_y < this.bottom);
+        }
+
+
+        /// <summary>
+        /// Checks if this cube is overlapping any part of another given cube (parameter)
+        /// </summary>
+        public bool Overlaps(Cube other)
+        {
+            return ((other.left < this.left   && this.left   < other.right )   // FIRST BLOCK: horizontal alignment - this cube's left or right
+                ||  (other.left < this.right  && this.right  < other.right ))  //   edge is between other's left and right edges
+                && ((other.top  < this.top    && this.top    < other.bottom)   // SECOND BLOCK: vertical alignment - this cube's top or bottom
+                ||  (other.top  < this.bottom && this.bottom < other.bottom)); //   edge is between other's top and bottom edges
+        }
+
+
+        /// <summary>
+        /// Overrides Object.GetHashCode based on uid
+        /// </summary>
         public override int GetHashCode()
         {
             return this.uid;
+        }
+
+
+        /// <summary>
+        /// Overrides Object.Equals based on uid
+        /// </summary>
+        public override bool Equals(object obj)
+        {
+            return (obj != null && (obj is Cube) && this.uid == ((Cube)obj).uid);
+        }
+
+
+        /// <summary>
+        /// Overrides == operator based on uid
+        /// </summary>
+        public static bool operator ==(Cube c1, Cube c2)
+        {
+            return (((object)c1 == null && (object)c2 == null)
+                ||  ((object)c1 != null && c1.Equals(c2)));
+        }
+
+
+        /// <summary>
+        /// Overrides != operator based on uid
+        /// </summary>
+        public static bool operator !=(Cube c1, Cube c2)
+        {
+            return !(c1 == c2);
         }
     }
 }

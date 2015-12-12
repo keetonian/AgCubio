@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
@@ -145,14 +146,17 @@ namespace AgCubio
         /// <summary>
         /// Sends encoded data to the server
         /// </summary>
-        public static void Send(Socket socket, String data)
+        public static void Send(Socket socket, String data, bool dbQuery = false)
         {
+            // Set callback based on whether this is a DB send or a normal send
+            AsyncCallback callback = dbQuery ? new AsyncCallback(QueryCallback) : new AsyncCallback(SendCallBack);
+
             byte[] byteData = Encoding.UTF8.GetBytes(data);
             Tuple<Socket, byte[]> state = new Tuple<Socket, byte[]>(socket, byteData);
 
             try
             {
-                socket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallBack), state);
+                socket.BeginSend(byteData, 0, byteData.Length, 0, callback, state);
             }
             catch(Exception)
             {
@@ -200,11 +204,48 @@ namespace AgCubio
 
 
         /// <summary>
+        /// Helper method for a DB Send - arranges for any leftover data to be sent, and the socket is then closed
+        /// </summary>
+        public static void QueryCallback(IAsyncResult state_in_an_ar_object)
+        {
+            Tuple<Socket, byte[]> state = (Tuple<Socket, byte[]>)state_in_an_ar_object.AsyncState;
+
+            try
+            {
+                int bytesSent = state.Item1.EndSend(state_in_an_ar_object);
+
+                if (bytesSent == state.Item2.Length) // If everything was sent, then close the socket
+                {
+                    state.Item1.Shutdown(SocketShutdown.Both);
+                    state.Item1.Close();
+                    return;
+                }
+                else
+                {
+                    byte[] bytes = new byte[state.Item2.Length - bytesSent];
+                    Array.ConstrainedCopy(state.Item2, bytesSent, bytes, 0, bytes.Length);
+                    Tuple<Socket, byte[]> newState = new Tuple<Socket, byte[]>(state.Item1, bytes);
+                    state.Item1.BeginSend(state.Item2, bytesSent, state.Item2.Length, 0, new AsyncCallback(QueryCallback), newState);
+                }
+            }
+            catch (Exception)
+            {
+                // If there is a problem with the socket, gracefully close it down
+                if (state.Item1.Connected)
+                {
+                    state.Item1.Shutdown(SocketShutdown.Both);
+                    state.Item1.Close();
+                }
+            }
+        }
+
+
+        /// <summary>
         /// Heart of the server code. Creates an async loop for accepting new clients.
         /// </summary>
-        public static void Server_Awaiting_Client_Loop(Delegate callback)
+        public static void Server_Awaiting_Client_Loop(Delegate callback, int port)
         {
-            TcpListener server = TcpListener.Create(11000);
+            TcpListener server = TcpListener.Create(port);
 
             server.Start();
             Preserved_State_Object state = new Preserved_State_Object(server, callback);
