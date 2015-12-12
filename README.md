@@ -1,4 +1,4 @@
 # base2
 Co-op repository for Daniel Avery and Keeton Hodgson
 
-AgCubio server v.1.0 now online
+Database & web stats implemented. If for some reason 'master' branch doesn't work, try 'database' branch (they should be equivalent)
