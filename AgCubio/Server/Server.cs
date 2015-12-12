@@ -8,8 +8,8 @@ using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.Timers;
 using MySql.Data.MySqlClient;
-using System.Net;
 
+// Created by Keeton Hodgson and Daniel Avery
 namespace AgCubio
 {
     /// <summary>
@@ -137,7 +137,7 @@ namespace AgCubio
                 //scores
                 string dbQuery = "Select * from Players";// Id can link to players eaten?
 
-                Network.Send(state.socket, HighScoresHTML(new MySqlCommand(dbQuery), 1), true);
+                Network.Send(state.socket, StatsHTML(new MySqlCommand(dbQuery), 1, "AgCubio Stats | High Scores"), true);
 
             }
             else if (Regex.IsMatch(query, games))
@@ -148,12 +148,10 @@ namespace AgCubio
                 A superior solution would also have links to the main score table page and to the list of eaten players for a particular game.*/
 
                 query = Regex.Replace(query, "(" + games + ")|(" + ending + ")", "");// get the name
-                Console.WriteLine(query + " has requested a score");
-                // games?player=
 
                 string dbQuery = "Select * from Players where name = '" + query + "'";
 
-                Network.Send(state.socket, HighScoresHTML(new MySqlCommand(dbQuery), 2), true);
+                Network.Send(state.socket, StatsHTML(new MySqlCommand(dbQuery), 2, "AgCubio Stats | Player: " + query), true);
 
             }
             else if (Regex.IsMatch(query, eaten))
@@ -167,14 +165,14 @@ namespace AgCubio
 
                 string dbQuery = "Select * from Eaten natural join Players where GameId = " + query;
 
-                Network.Send(state.socket, HighScoresHTML(new MySqlCommand(dbQuery), 3), true);
+                Network.Send(state.socket, StatsHTML(new MySqlCommand(dbQuery), 3, "AgCubio Stats | Game ID: " + query), true );
 
             }
             else
             {
 
                 /*If the first line of text sent by the browser to the server is anything else, the server should send back an HTML page containing an error message. The error message should be meaningful and contain a summary of valid options.*/
-                Network.Send(state.socket, HTMLGenerator.GenerateError(), true);
+                Network.Send(state.socket, HTMLGenerator.GenerateError("Invalid web address"), true);
 
             }
 
@@ -184,7 +182,7 @@ namespace AgCubio
         /// <summary>
         /// 
         /// </summary>
-        private string HighScoresHTML(MySqlCommand query, int queryNum = 0)
+        private string StatsHTML(MySqlCommand query, int queryNum = 0, string title = "")
         {
             string html = "";
             using (MySqlConnection conn = new MySqlConnection(connectionString))
@@ -204,7 +202,7 @@ namespace AgCubio
 
                         if (queryNum == 1)
                         {
-                            rows.Append(HTMLGenerator.TableRow(HTMLGenerator.TableHData("GameId") +
+                            rows.Append(HTMLGenerator.TableRow(HTMLGenerator.TableHData("Game Id") +
                                 HTMLGenerator.TableHData("Name") +
                                 HTMLGenerator.TableHData("Lifetime") +
                                 HTMLGenerator.TableHData("Max Mass") +
@@ -261,7 +259,9 @@ namespace AgCubio
                               HTMLGenerator.TableHData("Number of Players Eaten") +
                               HTMLGenerator.TableHData("Eaten Player Names")));
 
-
+                            int add = 0;
+                            StringBuilder eaten = new StringBuilder();
+                            string others = "";
                             while (reader.Read())
                             {
                                 string id = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/eaten?id=" + reader["GameId"].ToString(), reader["GameId"].ToString()));
@@ -273,22 +273,28 @@ namespace AgCubio
                                 string timeofdeath = HTMLGenerator.TableData(reader["TimeofDeath"].ToString());
                                 string numplayerseat = HTMLGenerator.TableData(reader["NumPlayersEaten"].ToString());
                                 string eatenname = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/games?player=" + reader["EatenPlayer"].ToString(), reader["EatenPlayer"].ToString()));
-
-                                rows.Append(HTMLGenerator.TableRow(id + name + lifetime + maxmass + highestRank + cubesEaten + timeofdeath + numplayerseat));
+                                eaten.Append("<p>" + HTMLGenerator.GenerateLink("http://localhost:11100/games?player=" + reader["EatenPlayer"].ToString(), reader["EatenPlayer"].ToString()) + "</p>");
+                                if (add < 1)
+                                    others = id + name + lifetime + maxmass + highestRank + cubesEaten + timeofdeath + numplayerseat;
+                                add++;
                             }
+                            others += HTMLGenerator.TableData(eaten.ToString());
+                            rows.Append(HTMLGenerator.TableRow(others));
                         }
                         else
                         {
 
                         }
+                        
                         table = HTMLGenerator.Table(rows.ToString());
-                        body = HTMLGenerator.Body(table, "High Scores");
-                        html = HTMLGenerator.GenerateHeader("High Scores", body);
+                        body = HTMLGenerator.Body(table, title);
+                        html = HTMLGenerator.GenerateHeader(title, body);
                     }
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
+                    html = HTMLGenerator.GenerateError("Something went wrong in the database query");
                 }
             }
             return html;
@@ -469,16 +475,7 @@ namespace AgCubio
                     String formattedPlaytime = (playtime.Days * 24 + playtime.Hours) + "h " + playtime.Minutes + "m " + playtime.Seconds + "s";
                     World.StatTracker stats;
                     lock (World) { stats = World.DatabaseStats[Sockets[s].Uid]; }
-
-                    Console.WriteLine("{0:hh\\:mm\\:ss}", playtime); //This is the playtime
-                    Console.WriteLine("Death Time: " + DateTime.Now);
-                    Console.WriteLine("Cubes consumed: " + stats.CubesConsumed);
-                    Console.WriteLine("Maximum mass achieved: " + stats.MaxMass);
-                    Console.WriteLine("Players that have been tasted:");
-                    Console.WriteLine("Highest rank: " + score.HighestRank);
-                    foreach (string name in stats.PlayersEaten)
-                        Console.WriteLine(name);
-                    
+                                        
                     // A little tricky here - we don't actually want to set the highest rank in the DB if it has not been set in the server. String magic does the job
                     string highestRankColumn = (score.HighestRank == 0) ? "" : " HighestRank,";
                     string highestRankValue = (score.HighestRank == 0) ? "" : " " + score.HighestRank + ",";
@@ -547,9 +544,9 @@ namespace AgCubio
     public static class HTMLGenerator
     {
 
-        public static string GenerateError()
+        public static string GenerateError(string message)
         {
-            return HTMLGenerator.GenerateHeader("Error", HTMLGenerator.Body(HTMLGenerator.GenerateLink("http://localhost:11100/scores", "Return to High Scores"), "Error!"));
+            return HTMLGenerator.GenerateHeader("Error", HTMLGenerator.Body("<p>" + message + "</p>", "Error!"));
         }
 
         public static string GenerateHeader(string title, string content = "")
@@ -576,12 +573,12 @@ Content-Type: text/html; charset=UTF-8 \r\n
         /// <returns></returns>
         public static string TableData(string data)
         {
-            return @"<td style=""white-space: nowrap;"">" + data + "</td>";
+            return @"<td style=""white-space: nowrap;"" bgcolor=""efefef"">" + data + "</td>";
         }
 
         public static string TableHData(string data)
         {
-            return @"<th>" + data + "</th>";
+            return @"<th bgcolor=""red"">" + data + "</th>";
         }
 
 
