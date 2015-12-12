@@ -447,7 +447,7 @@ namespace AgCubio
                             Cube other = (player.uid == player.Team_ID) ? player2 : player;
 
                             // But split cubes cannot merge unless their cooloff periods have expired
-                            if (SplitCubeUids[focus.Team_ID][focus.uid].Cooloff > 0 || SplitCubeUids[focus.Team_ID][other.uid].Cooloff > 0) //BUG! (line 423 should fix= add another mass=0 check) KEYNOTFOUND EXCPTION WHEN REMERGING- other.uid did not exist.
+                            if (SplitCubeUids[focus.Team_ID][focus.uid].Cooloff > 0 || SplitCubeUids[focus.Team_ID][other.uid].Cooloff > 0) //BUG! (line 423 should fix= add another mass=0 check) KEYNOTFOUND EXCPTION WHEN REMERGING- other.uid did not exist. A virus split the player, and half of the player cubes were lost (didn't track them anymore with moving).
                                 continue;
 
                             focus.Mass += other.Mass;
@@ -494,7 +494,7 @@ namespace AgCubio
                             {
                                 int iD = (predator.Team_ID != 0) ? predator.Team_ID : predator.uid;
 
-                                if (!prey.food && !DatabaseStats[iD].PlayersEaten.Contains(prey.Name))
+                                if (!prey.food && DatabaseStats.ContainsKey(iD) && !DatabaseStats[iD].PlayersEaten.Contains(prey.Name))
                                     DatabaseStats[iD].PlayersEaten.Add(prey.Name);
                                 DatabaseStats[iD].CubesConsumed++;
                             }

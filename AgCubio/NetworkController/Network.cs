@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
@@ -145,14 +146,17 @@ namespace AgCubio
         /// <summary>
         /// Sends encoded data to the server
         /// </summary>
-        public static void Send(Socket socket, String data)
+        public static void Send(Socket socket, String data, bool dbQuery = false)
         {
+            // Set callback based on whether this is a DB send or a normal send
+            AsyncCallback callback = dbQuery ? new AsyncCallback(QueryCallback) : new AsyncCallback(SendCallBack);
+
             byte[] byteData = Encoding.UTF8.GetBytes(data);
             Tuple<Socket, byte[]> state = new Tuple<Socket, byte[]>(socket, byteData);
 
             try
             {
-                socket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallBack), state);
+                socket.BeginSend(byteData, 0, byteData.Length, 0, callback, state);
             }
             catch(Exception)
             {
@@ -199,39 +203,8 @@ namespace AgCubio
         }
 
 
-
         /// <summary>
-        /// Modified send method for database query
-        /// </summary>
-        public static void Send(Socket socket, String data, bool Query)
-        {
-            byte[] byteData = Encoding.UTF8.GetBytes(data);
-            Tuple<Socket, byte[]> state = new Tuple<Socket, byte[]>(socket, byteData);
-
-            try
-            {
-                socket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(QueryCallback), state);
-            }
-            catch (Exception)
-            {
-                // If there is a problem with the socket, gracefully close it down
-                if (socket.Connected)
-                {
-                    socket.Shutdown(SocketShutdown.Both);
-                    socket.Close();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Helper method for Send - arranges for any leftover data to be sent
-        /// FROM WEBPAGE: THIS METHOD MAY NOT EVEN BE NEEDED- NEED TO UNDERSTAND THIS BETTER
-        /// 
-        /// If you do not close the socket the web browser will "assume" more data is coming and will not display your page!
-        /// If you close your socket before the send is complete, an error is likely to occur.
-        /// The correct solution is to modify your Networking::Send method to take an optional callback parameter representing a method to be called when the send is done.
-        /// If this optional parameter is not specified, then you will just use your default send callback.
-        /// When calling the modified Networking::Send function, you should use a lambda expression to specify a very simple function which reports success and closes the socket.
+        /// Helper method for a DB Send - arranges for any leftover data to be sent, and the socket is then closed
         /// </summary>
         public static void QueryCallback(IAsyncResult state_in_an_ar_object)
         {
@@ -265,20 +238,6 @@ namespace AgCubio
                 }
             }
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
         /// <summary>
