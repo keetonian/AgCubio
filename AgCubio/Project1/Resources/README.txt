@@ -6,7 +6,34 @@ Keeton Hodgson
 
 Current state of the project:
 
+-----Database----- 12/11/15
+
+AgCubio now updates a database (and in turn a webpage) on the death of a player
+
+Front-end
+	The following browser entries work with AgCubio:
+		http://[ipaddress]:11100/players - shows the game stats for every player
+		http://[ipaddress]:11100/games?player=[playername] - shows stats for a single player for all games the player was in
+		http://[ipaddress]:11100/eaten?id=[gameid] - shows elaborated stats, including list of other players eaten, for a single player game
+	In addition, entries on all webpages link to the other corresponding web pages
+
+	Invalid browser requests to the server link to an error page, which links to the main “High Scores” page (first above)
+	Invalid player names or id’s in corresponding browser entries link to a webpage with an empty table signifying no available info.
+		This page links back to the main page
+	All webpages are cleanly designed and tables look nice
+
+Back-end
+	Database uses two tables: Players (most stats) and Eaten (eaten players). This seemed like better practice than using one table and appending
+		eaten player names in a long string that might get concatenated depending on allocated DB column space
+	Database tables are reset when a server is closed and opened again.
+	Stats values for a player are obtained from both the World class and the Server class, depending on where stats are more accessible. Stats are
+		compiled in the server and added to the database upon player socket disconnection
+	In Network, the Send method was modified with an optional parameter to distinguish between game server and web server sends (callback changes)
+	A custom html-generating static class in Server aids with creating webpages, also done in server based on the query received in the web browser
+
+
 -----Server-----
+
 Current most up-to-date server is in the Server branch.
 
 This project is only close to completion due to hours spent on compatibility. It took a lot of time and study to figure out how to make our client and the class client
