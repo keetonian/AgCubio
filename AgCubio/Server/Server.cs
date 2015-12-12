@@ -91,7 +91,7 @@ namespace AgCubio
         {
             string dropOldTables = "DROP TABLE IF EXISTS Eaten, Players;";
             string createPlayerTable = @"CREATE TABLE Players(GameId INT PRIMARY KEY, Name VARCHAR(25), Lifetime VARCHAR(25),
-                MaxMass DOUBLE (10,2), HighestRank INT, CubesEaten INT, TimeofDeath VARCHAR(25));";
+                MaxMass DOUBLE (10,2), HighestRank INT, CubesEaten INT, NumPlayersEaten INT, TimeofDeath VARCHAR(25));";
             string createEatenTable = @"CREATE TABLE Eaten(Id INT PRIMARY KEY AUTO_INCREMENT, GameId INT, Name VARCHAR(25),
                 EatenPlayer VARCHAR(25), FOREIGN KEY(GameId) REFERENCES Players(GameId) ON DELETE CASCADE)";
 
@@ -153,6 +153,8 @@ namespace AgCubio
 
                 string dbQuery = "Select * from Players where name = '" + query + "'";
 
+                Network.Send(state.socket, HighScoresHTML(new MySqlCommand(dbQuery), 2), true);
+
             }
             else if (Regex.IsMatch(query, eaten))
             {
@@ -163,7 +165,10 @@ namespace AgCubio
                 // eaten
                 query = Regex.Replace(query, "(" + eaten + ")|(" + ending + ")", ""); //get the id
 
-                string dbQuery = "Select * from Players natural join Eaten where GameId = " + query;
+                string dbQuery = "Select * from Eaten natural join Players where GameId = " + query;
+
+                Network.Send(state.socket, HighScoresHTML(new MySqlCommand(dbQuery), 3), true);
+
             }
             else
             {
@@ -227,11 +232,57 @@ namespace AgCubio
                         }
                         else if (queryNum == 2)
                         {
+                            rows.Append(HTMLGenerator.TableRow(HTMLGenerator.TableHData("GameId") +
+                               HTMLGenerator.TableHData("Name") +
+                               HTMLGenerator.TableHData("Lifetime") +
+                               HTMLGenerator.TableHData("Max Mass") +
+                               HTMLGenerator.TableHData("Highest Rank") +
+                               HTMLGenerator.TableHData("Number of Cubes Eaten") +
+                               HTMLGenerator.TableHData("Time Of Death") +
+                               HTMLGenerator.TableHData("Number of Players Eaten")));
+                            
 
+                            while (reader.Read())
+                            {
+                                string id = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/games?id=" + reader["GameId"].ToString(), reader["GameId"].ToString()));
+                                string name = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/games?name=" + reader["Name"].ToString(), reader["Name"].ToString()));
+                                string lifetime = HTMLGenerator.TableData(reader["Lifetime"].ToString());
+                                string maxmass = HTMLGenerator.TableData(reader["MaxMass"].ToString());
+                                string highestRank = HTMLGenerator.TableData(reader["HighestRank"].ToString());
+                                string cubesEaten = HTMLGenerator.TableData(reader["CubesEaten"].ToString());
+                                string timeofdeath = HTMLGenerator.TableData(reader["TimeofDeath"].ToString());
+                                string numplayerseat = HTMLGenerator.TableData(reader["NumPlayersEaten"].ToString());
+
+                                rows.Append(HTMLGenerator.TableRow(id + name + lifetime + maxmass + highestRank + cubesEaten + timeofdeath + numplayerseat));
+                            }
                         }
                         else if (queryNum == 3)
                         {
+                            rows.Append(HTMLGenerator.TableRow(HTMLGenerator.TableHData("GameId") +
+                              HTMLGenerator.TableHData("Name") +
+                              HTMLGenerator.TableHData("Lifetime") +
+                              HTMLGenerator.TableHData("Max Mass") +
+                              HTMLGenerator.TableHData("Highest Rank") +
+                              HTMLGenerator.TableHData("Number of Cubes Eaten") +
+                              HTMLGenerator.TableHData("Time Of Death") +
+                              HTMLGenerator.TableHData("Number of Players Eaten") +
+                              HTMLGenerator.TableHData("Eaten Player Names")));
 
+
+                            while (reader.Read())
+                            {
+                                string id = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/games?id=" + reader["GameId"].ToString(), reader["GameId"].ToString()));
+                                string name = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/games?name=" + reader["Name"].ToString(), reader["Name"].ToString()));
+                                string lifetime = HTMLGenerator.TableData(reader["Lifetime"].ToString());
+                                string maxmass = HTMLGenerator.TableData(reader["MaxMass"].ToString());
+                                string highestRank = HTMLGenerator.TableData(reader["HighestRank"].ToString());
+                                string cubesEaten = HTMLGenerator.TableData(reader["CubesEaten"].ToString());
+                                string timeofdeath = HTMLGenerator.TableData(reader["TimeofDeath"].ToString());
+                                string numplayerseat = HTMLGenerator.TableData(reader["NumPlayersEaten"].ToString());
+                                string eatenname = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/games?name=" + reader["EatenPlayer"].ToString(), reader["EatenPlayer"].ToString()));
+
+                                rows.Append(HTMLGenerator.TableRow(id + name + lifetime + maxmass + highestRank + cubesEaten + timeofdeath + numplayerseat));
+                            }
                         }
                         else
                         {
@@ -439,9 +490,9 @@ namespace AgCubio
                     string highestRankColumn = (score.HighestRank == 0) ? "" : " HighestRank,";
                     string highestRankValue = (score.HighestRank == 0) ? "" : " " + score.HighestRank + ",";
 
-                    string insertPlayerData = String.Format("INSERT INTO Players(GameId, Name, Lifetime, MaxMass,{0} CubesEaten, TimeofDeath) "
-                        + "VALUES({1}, '{2}', '{3}', {4},{5} {6}, '{7}');",
-                        highestRankColumn, ++GameIdCounter, stats.Name, formattedPlaytime, stats.MaxMass, highestRankValue, stats.CubesConsumed, DateTime.Now);
+                    string insertPlayerData = String.Format("INSERT INTO Players(GameId, Name, Lifetime, MaxMass,{0} CubesEaten, TimeofDeath, NumPlayersEaten) "
+                        + "VALUES({1}, '{2}', '{3}', {4},{5} {6}, '{7}',{8});",
+                        highestRankColumn, ++GameIdCounter, stats.Name, formattedPlaytime, stats.MaxMass, highestRankValue, stats.CubesConsumed, DateTime.Now, stats.PlayersEaten.Count);
                     
                     using (MySqlConnection conn = new MySqlConnection(connectionString))
                     {

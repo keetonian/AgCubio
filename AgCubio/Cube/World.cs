@@ -415,7 +415,7 @@ namespace AgCubio
                         if (!player.food)
                         {
                             int id = (player.Team_ID != 0) ? player.Team_ID : player.uid;
-                            DatabaseStats[id].CubesConsumed++;
+                            if(DatabaseStats.ContainsKey(id)) DatabaseStats[id].CubesConsumed++;
                         }
 
                         // Adjust cube position if edges go out of bounds
@@ -495,8 +495,10 @@ namespace AgCubio
                                 int iD = (predator.Team_ID != 0) ? predator.Team_ID : predator.uid;
 
                                 if (!prey.food && DatabaseStats.ContainsKey(iD) && !DatabaseStats[iD].PlayersEaten.Contains(prey.Name))
+                                {
                                     DatabaseStats[iD].PlayersEaten.Add(prey.Name);
-                                DatabaseStats[iD].CubesConsumed++;
+                                    DatabaseStats[iD].CubesConsumed++;
+                                }
                             }
 
                             eatenPlayers.Add(id);
