@@ -362,7 +362,7 @@ namespace AgCubio
         /// Manages cubes colliding against each other
         /// </summary>
         public string ManageCollisions()
-        {
+        {/*
             StringBuilder destroyed = new StringBuilder();
             List<int> eatenPlayers = new List<int>();
             List<Cube> eatenFood;
@@ -490,7 +490,8 @@ namespace AgCubio
                     GenerateMilitaryVirus();
             }
 
-            return destroyed.ToString();
+            return destroyed.ToString();*/
+            return "";
         }
 
 
