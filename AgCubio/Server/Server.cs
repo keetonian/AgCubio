@@ -136,7 +136,7 @@ namespace AgCubio
 
                 //scores
                 string dbQuery = "Select * from Players";// Id can link to players eaten?
-                
+
                 Network.Send(state.socket, HighScoresHTML(new MySqlCommand(dbQuery), 1), true);
 
             }
@@ -174,16 +174,9 @@ namespace AgCubio
             {
 
                 /*If the first line of text sent by the browser to the server is anything else, the server should send back an HTML page containing an error message. The error message should be meaningful and contain a summary of valid options.*/
-
+                Network.Send(state.socket, HTMLGenerator.GenerateError(), true);
 
             }
-
-            //"GET /scores HTTP/1.1"
-            //"GET /games?player=Joe HTTP/1.1"
-            //"GET /eaten?id=35 HTTP/1.1" 
-            // Others- return an error page
-            Console.WriteLine(query);
-   
 
         }
 
@@ -220,8 +213,8 @@ namespace AgCubio
 
                             while (reader.Read())
                             {
-                                string id = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/games?id=" + reader["GameId"].ToString(), reader["GameId"].ToString()));
-                                string name = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/games?name=" + reader["Name"].ToString(), reader["Name"].ToString()));
+                                string id = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/eaten?id=" + reader["GameId"].ToString(), reader["GameId"].ToString()));
+                                string name = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/games?player=" + reader["Name"].ToString(), reader["Name"].ToString()));
                                 string lifetime = HTMLGenerator.TableData(reader["Lifetime"].ToString());
                                 string maxmass = HTMLGenerator.TableData(reader["MaxMass"].ToString());
                                 string highestRank = HTMLGenerator.TableData(reader["HighestRank"].ToString());
@@ -244,8 +237,8 @@ namespace AgCubio
 
                             while (reader.Read())
                             {
-                                string id = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/games?id=" + reader["GameId"].ToString(), reader["GameId"].ToString()));
-                                string name = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/games?name=" + reader["Name"].ToString(), reader["Name"].ToString()));
+                                string id = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/eaten?id=" + reader["GameId"].ToString(), reader["GameId"].ToString()));
+                                string name = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/games?player=" + reader["Name"].ToString(), reader["Name"].ToString()));
                                 string lifetime = HTMLGenerator.TableData(reader["Lifetime"].ToString());
                                 string maxmass = HTMLGenerator.TableData(reader["MaxMass"].ToString());
                                 string highestRank = HTMLGenerator.TableData(reader["HighestRank"].ToString());
@@ -271,15 +264,15 @@ namespace AgCubio
 
                             while (reader.Read())
                             {
-                                string id = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/games?id=" + reader["GameId"].ToString(), reader["GameId"].ToString()));
-                                string name = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/games?name=" + reader["Name"].ToString(), reader["Name"].ToString()));
+                                string id = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/eaten?id=" + reader["GameId"].ToString(), reader["GameId"].ToString()));
+                                string name = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/games?player=" + reader["Name"].ToString(), reader["Name"].ToString()));
                                 string lifetime = HTMLGenerator.TableData(reader["Lifetime"].ToString());
                                 string maxmass = HTMLGenerator.TableData(reader["MaxMass"].ToString());
                                 string highestRank = HTMLGenerator.TableData(reader["HighestRank"].ToString());
                                 string cubesEaten = HTMLGenerator.TableData(reader["CubesEaten"].ToString());
                                 string timeofdeath = HTMLGenerator.TableData(reader["TimeofDeath"].ToString());
                                 string numplayerseat = HTMLGenerator.TableData(reader["NumPlayersEaten"].ToString());
-                                string eatenname = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/games?name=" + reader["EatenPlayer"].ToString(), reader["EatenPlayer"].ToString()));
+                                string eatenname = HTMLGenerator.TableData(HTMLGenerator.GenerateLink("http://localhost:11100/games?player=" + reader["EatenPlayer"].ToString(), reader["EatenPlayer"].ToString()));
 
                                 rows.Append(HTMLGenerator.TableRow(id + name + lifetime + maxmass + highestRank + cubesEaten + timeofdeath + numplayerseat));
                             }
@@ -503,11 +496,13 @@ namespace AgCubio
                             conn.Open();
                             insertData.ExecuteNonQuery();
 
-                            foreach (string eatenName in stats.PlayersEaten)
-                            {
-                                (new MySqlCommand(String.Format("INSERT INTO Eaten(GameId, Name, EatenPlayer) VALUES({0}, '{1}', '{2}');",
-                                  GameIdCounter, stats.Name, eatenName), conn)).ExecuteNonQuery();
-                            }
+                            if(stats.PlayersEaten.Count == 0)
+                                (new MySqlCommand(String.Format("INSERT INTO Eaten(GameId, Name) VALUES({0}, '{1}');",
+                                  GameIdCounter, stats.Name), conn)).ExecuteNonQuery();
+                            else
+                                foreach (string eatenName in stats.PlayersEaten)
+                                    (new MySqlCommand(String.Format("INSERT INTO Eaten(GameId, Name, EatenPlayer) VALUES({0}, '{1}', '{2}');",
+                                     GameIdCounter, stats.Name, eatenName), conn)).ExecuteNonQuery();
 
                             conn.Close();
                         }
@@ -551,6 +546,12 @@ namespace AgCubio
 
     public static class HTMLGenerator
     {
+
+        public static string GenerateError()
+        {
+            return HTMLGenerator.GenerateHeader("Error", HTMLGenerator.Body(HTMLGenerator.GenerateLink("http://localhost:11100/scores", "Return to High Scores"), "Error!"));
+        }
+
         public static string GenerateHeader(string title, string content = "")
         {
             return @"HTTP/1.1 200 OK \r\n
@@ -602,7 +603,7 @@ Content-Type: text/html; charset=UTF-8 \r\n
 
         public static string Body(string bodyContents, string title = "")
         {
-            return @"<body align=""center""><h1>" + title + "</h1>" + bodyContents + "<h1>" + HTMLGenerator.GenerateLink("http://localhost:11100/scores", "High Scores") + "</h1></body>";
+            return @"<body><div align=""center""><h1>" + title + "</h1>" + bodyContents + "<h1>" + HTMLGenerator.GenerateLink("http://localhost:11100/scores", "High Scores") + "</h1></div></body>";
         }
 
 
