@@ -11,7 +11,7 @@
   <max_food_count>5000</max_food_count>
   <food_per_heartbeat>1</food_per_heartbeat>
   <min_split_mass>25</min_split_mass>
-  <max_split_count>20</max_split_count>
+  <max_split_count>70</max_split_count>
   <heartbeats_per_second>30</heartbeats_per_second>
   <virus_percent>2</virus_percent>
   <virus_mass>30</virus_mass>

@@ -171,6 +171,74 @@ namespace AgCubio
 
 
         /// <summary>
+        /// Modified send method for database query
+        /// </summary>
+        public static void Send(Socket socket, String data, bool Query)
+        {
+            byte[] byteData = Encoding.UTF8.GetBytes(data);
+            Tuple<Socket, byte[]> state = new Tuple<Socket, byte[]>(socket, byteData);
+
+            try
+            {
+                socket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(QueryCallback), state);
+            }
+            catch (Exception)
+            {
+                // If there is a problem with the socket, gracefully close it down
+                if (socket.Connected)
+                {
+                    socket.Shutdown(SocketShutdown.Both);
+                    socket.Close();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Helper method for Send - arranges for any leftover data to be sent
+        /// FROM WEBPAGE: THIS METHOD MAY NOT EVEN BE NEEDED- NEED TO UNDERSTAND THIS BETTER
+        /// 
+        /// If you do not close the socket the web browser will "assume" more data is coming and will not display your page!
+        /// If you close your socket before the send is complete, an error is likely to occur.
+        /// The correct solution is to modify your Networking::Send method to take an optional callback parameter representing a method to be called when the send is done.
+        /// If this optional parameter is not specified, then you will just use your default send callback.
+        /// When calling the modified Networking::Send function, you should use a lambda expression to specify a very simply function which reports success and closes the socket.
+        /// </summary>
+        public static void QueryCallback(IAsyncResult state_in_an_ar_object)
+        {
+            Tuple<Socket, byte[]> state = (Tuple<Socket, byte[]>)state_in_an_ar_object.AsyncState;
+
+            try
+            {
+                int bytesSent = state.Item1.EndSend(state_in_an_ar_object);
+
+                if (bytesSent == state.Item2.Length) // if everything was sent, then close the socket
+                {
+                    state.Item1.Shutdown(SocketShutdown.Both);
+                    state.Item1.Close();
+                    return;
+                }
+                else
+                {
+                    byte[] bytes = new byte[state.Item2.Length - bytesSent];
+                    Array.ConstrainedCopy(state.Item2, bytesSent, bytes, 0, bytes.Length);
+                    Tuple<Socket, byte[]> newState = new Tuple<Socket, byte[]>(state.Item1, bytes);
+                    state.Item1.BeginSend(state.Item2, bytesSent, state.Item2.Length, 0, new AsyncCallback(QueryCallback), newState);
+                }
+            }
+            catch (Exception)
+            {
+                // If there is a problem with the socket, gracefully close it down
+                if (state.Item1.Connected)
+                {
+                    state.Item1.Shutdown(SocketShutdown.Both);
+                    state.Item1.Close();
+                }
+            }
+        }
+
+
+
+        /// <summary>
         /// Helper method for Send - arranges for any leftover data to be sent
         /// </summary>
         public static void SendCallBack(IAsyncResult state_in_an_ar_object)
