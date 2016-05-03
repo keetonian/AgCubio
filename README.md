@@ -1,4 +1,3 @@
-# base2
-Co-op repository for Daniel Avery and Keeton Hodgson
-
-Database & web stats implemented. If for some reason 'master' branch doesn't work, try 'database' branch (they should be equivalent)
+# AgCubio
+## Game created by Keeton Hodgson and Daniel Avery
+This was our final project for CS 3500 at the University of Utah.
